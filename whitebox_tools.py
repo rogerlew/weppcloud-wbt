@@ -10508,6 +10508,25 @@ Okay, that's it for now.
         if zero_background: args.append("--zero_background")
         return self.run_tool('strahler_stream_order', args, callback) # returns 1 if error
 
+    def stream_junction_identifier(self, d8_pntr, streams, output, esri_pntr=False, callback=None):
+        """Creates a stream map of channel inflow counts.
+
+        Keyword arguments:
+
+        d8_pntr -- Input raster D8 pointer file. 
+        streams -- Input raster streams file. 
+        output    -- Output raster file (junction inflow counts 0–8, NoData elsewhere).
+        esri_pntr -- D8 pointer uses the ESRI style scheme. 
+        zero_background -- Flag indicating whether a background value of zero should be used. 
+        callback -- Custom function for handling tool text outputs.
+        """
+        args = []
+        args.append("--d8_pntr='{}'".format(d8_pntr))
+        args.append("--streams='{}'".format(streams))
+        args.append("--output='{}'".format(output))
+        if esri_pntr: args.append("--esri_pntr")
+        return self.run_tool('stream_junction_identifier', args, callback) # returns 1 if error
+    
     def stream_link_class(self, d8_pntr, streams, output, esri_pntr=False, zero_background=False, callback=None):
         """Identifies the exterior/interior links and nodes in a stream network.
 

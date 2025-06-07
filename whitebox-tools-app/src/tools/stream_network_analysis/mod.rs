@@ -21,6 +21,7 @@ mod stream_slope_continuous;
 mod topological_stream_order;
 mod total_length_channels;
 mod tributary_id;
+mod stream_junctions;
 
 // exports identifiers from private sub-modules in the current module namespace
 pub use self::dist_to_outlet::DistanceToOutlet;
@@ -45,3 +46,4 @@ pub use self::stream_slope_continuous::StreamSlopeContinuous;
 pub use self::topological_stream_order::TopologicalStreamOrder;
 pub use self::total_length_channels::LengthOfUpstreamChannels;
 pub use self::tributary_id::TributaryIdentifier;
+pub use self::stream_junctions::StreamJunctionIdentifier;

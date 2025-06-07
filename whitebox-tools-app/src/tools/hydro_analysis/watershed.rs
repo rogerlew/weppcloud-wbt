@@ -398,7 +398,10 @@ impl WhiteboxTool for Watershed {
         let mut outlet_id: f64;
         for row in 0..rows {
             for col in 0..columns {
+                // path down from this cell has not yet been identified
                 if output[(row, col)] == low_value {
+
+                    // walk down to identify the outlet_id
                     flag = false;
                     x = col;
                     y = row;
@@ -422,6 +425,7 @@ impl WhiteboxTool for Watershed {
                         }
                     }
 
+                    // start back at at row, col and assign the outlet_id to all cells upslope of the pour point
                     flag = false;
                     x = col;
                     y = row;

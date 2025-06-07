@@ -437,6 +437,7 @@ impl ToolManager {
         tool_names.push("StreamSlopeContinuous".to_string());
         tool_names.push("TopologicalStreamOrder".to_string());
         tool_names.push("TributaryIdentifier".to_string());
+        tool_names.push("StreamJunctionIdentifier".to_string());
 
         // terrain_analysis
         tool_names.push("Aspect".to_string());
@@ -1078,8 +1079,11 @@ impl ToolManager {
             )),
             "tributaryidentifier" => {
                 Some(Box::new(stream_network_analysis::TributaryIdentifier::new()))
-            }
-
+            },
+            "streamjunctionidentifier" =>{
+                Some(Box::new(stream_network_analysis::StreamJunctionIdentifier::new()))
+            },
+            
             // terrain_analysis
             "aspect" => Some(Box::new(terrain_analysis::Aspect::new())),
             "averagenormalvectorangulardeviation" => Some(Box::new(
