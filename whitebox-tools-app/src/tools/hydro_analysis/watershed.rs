@@ -14,6 +14,8 @@ use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use std::fs;
+use geojson::{GeoJson, Geometry, Value};
 
 /// This tool will perform a watershedding operation based on a group of input vector pour points (`--pour_pts`),
 /// i.e. outlets or points-of-interest, or a raster containing point points. Watershedding is a procedure that identifies
@@ -353,6 +355,68 @@ impl WhiteboxTool for Watershed {
                     }
                 }
             }
+        } else if pourpts_file.to_lowercase().ends_with(".geojson")
+            || pourpts_file.to_lowercase().ends_with(".json")
+        {
+            let geojson_str = fs::read_to_string(&pourpts_file)?;
+            let gj: GeoJson = geojson_str
+                .parse()
+                .map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
+
+            // Extract all Point (and MultiPoint) coordinates -------------
+            let mut record_num = 0usize;
+            match gj {
+                GeoJson::FeatureCollection(fc) => {
+                    for feature in fc.features {
+                        if let Some(Geometry { value, .. }) = feature.geometry {
+                            match value {
+                                Value::Point(pt) => {
+                                    let (x, y) = (pt[0], pt[1]);
+                                    let row = pntr.get_row_from_y(y);
+                                    let col = pntr.get_column_from_x(x);
+                                    output.set_value(row, col, (record_num + 1) as f64);
+                                    record_num += 1;
+                                }
+                                Value::MultiPoint(pts) => {
+                                    for pt in pts {
+                                        let (x, y) = (pt[0], pt[1]);
+                                        let row = pntr.get_row_from_y(y);
+                                        let col = pntr.get_column_from_x(x);
+                                        output.set_value(row, col, (record_num + 1) as f64);
+                                        record_num += 1;
+                                    }
+                                }
+                                _ => continue, // ignore Line/Polygon features
+                            }
+                        }
+                    }
+                }
+                _ => return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        "GeoJSON must be a FeatureCollection of Points or MultiPoints.",
+                )),
+            }
+            for row in 0..rows {
+                for col in 0..columns {
+                    z = pntr[(row, col)];
+                    if z != pntr_nodata {
+                        flow_dir.set_value(
+                            row,
+                            col,
+                            if z > 0.0 { pntr_matches[z as usize] } else { -1i8 },
+                        );
+                    } else {
+                        output.set_value(row, col, nodata);
+                    }
+                }
+                if verbose {
+                    progress = (100.0_f64 * row as f64 / (rows - 1) as f64) as usize;
+                    if progress != old_progress {
+                        println!("Initializing: {}%", progress);
+                        old_progress = progress;
+                    }
+                }
+            }     
         } else {
             // it's a raster
             let pourpts = Raster::new(&pourpts_file, "r")?;
