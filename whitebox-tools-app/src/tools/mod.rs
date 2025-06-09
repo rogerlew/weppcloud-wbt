@@ -71,6 +71,7 @@ impl ToolManager {
         tool_names.push("CentroidVector".to_string());
         tool_names.push("Clip".to_string());
         tool_names.push("ClipRasterToPolygon".to_string());
+        tool_names.push("ClipRasterToRaster".to_string());
         tool_names.push("Clump".to_string());
         tool_names.push("CompactnessRatio".to_string());
         tool_names.push("ConstructVectorTIN".to_string());
@@ -568,6 +569,7 @@ impl ToolManager {
             "centroidvector" => Some(Box::new(gis_analysis::CentroidVector::new())),
             "clip" => Some(Box::new(gis_analysis::Clip::new())),
             "cliprastertopolygon" => Some(Box::new(gis_analysis::ClipRasterToPolygon::new())),
+            "cliprastertoraster" => Some(Box::new(gis_analysis::ClipRasterToRaster::new())),
             "clump" => Some(Box::new(gis_analysis::Clump::new())),
             "compactnessratio" => Some(Box::new(gis_analysis::CompactnessRatio::new())),
             "constructvectortin" => Some(Box::new(gis_analysis::ConstructVectorTIN::new())),

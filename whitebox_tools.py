@@ -2124,6 +2124,23 @@ Okay, that's it for now.
         if maintain_dimensions: args.append("--maintain_dimensions")
         return self.run_tool('clip_raster_to_polygon', args, callback) # returns 1 if error
 
+    def clip_raster_to_raster(self, i, mask, output, callback=None):
+        """
+        Clips a raster (`i`) using another raster (`mask`).
+
+        Keyword arguments:
+
+        i -- Input raster file. 
+        mask -- Mask raster (cells with NODATA or value 0 are treated as background). 
+        output -- Output raster file. 
+        callback -- Custom function for handling tool text outputs.
+        """
+        args = []
+        args.append(f"--input='{i}'")
+        args.append(f"--mask='{mask}'")
+        args.append(f"--output='{output}'")
+        return self.run_tool('clip_raster_to_raster', args, callback)  # returns 1 if error
+    
     def count_if(self, inputs, output, value, callback=None):
         """Counts the number of occurrences of a specified value in a cell-stack of rasters.
 
