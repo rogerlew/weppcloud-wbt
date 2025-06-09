@@ -17,13 +17,18 @@ use std::path;
 use std::fs;
 use geojson::{GeoJson, Geometry, Value};
 
-/// This tool will perform a watershedding operation based on a group of input vector pour points (`--pour_pts`),
-/// i.e. outlets or points-of-interest, or a raster containing point points. Watershedding is a procedure that identifies
-/// all of the cells upslope of a cell of interest (pour point) that are connected to the pour point by a flow-path. The
-/// user must specify the name of a D8-derived flow pointer (flow direction) raster (`--d8_pntr`), a vector pour point file
-/// (`--pour_pts`), and the output raster (`--output`). The pour points must be of a Point ShapeType (i.e. Point, PointZ, PointM,
-/// MultiPoint, MultiPointZ, MultiPointM). Watersheds will be assigned the input pour point FID value. The flow
-/// pointer raster must be generated using the D8 algorithm, `D8Pointer`.
+/// This tool will perform a watershedding operation based on a group of input vector pour points (`--pour_pts`)
+///   * **vector points** (`--pour_pts`) – Shapefile **or** GeoJSON ending in
+///     `.json` / `.geojson`, **or**
+///   * **raster points** – any raster whose non-zero cells are pour points.
+///
+/// «GeoJSON support: the file must contain Point or MultiPoint geometries.
+///
+/// Watershedding is a procedure that identifies all of the cells upslope of a cell of interest (pour point) that are 
+/// connected to the pour point by a flow-path. The user must specify the name of a D8-derived flow pointer (flow direction) 
+/// raster (`--d8_pntr`), a vector pour point file (`--pour_pts`), and the output raster (`--output`). The pour points must 
+/// be of a Point ShapeType (i.e. Point, PointZ, PointM, MultiPoint, MultiPointZ, MultiPointM). Watersheds will be assigned 
+/// the input pour point FID value. The flow pointer raster must be generated using the D8 algorithm, `D8Pointer`.
 ///
 /// Pour point vectors can be attained by on-screen digitizing to designate these points-of-interest locations.
 /// Because pour points are usually, although not always, situated on a stream network, it is recommended that you
