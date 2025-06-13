@@ -598,7 +598,7 @@ impl WhiteboxTool for HillslopesTopaz {
         subwta.configs.data_type = DataType::F32;
         subwta.configs.palette = "qual.plt".to_string();
         subwta.configs.photometric_interp = PhotometricInterpretation::Categorical;
-        let low_value = f32::MIN;
+        let low_value = f64::MIN;
         subwta.configs.nodata = low_value;
         subwta.reinitialize_values(low_value);
 
