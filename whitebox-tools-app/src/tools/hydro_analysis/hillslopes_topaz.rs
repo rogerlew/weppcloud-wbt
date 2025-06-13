@@ -351,6 +351,10 @@ impl WhiteboxTool for HillslopesTopaz {
         _working_directory: &'a str,
         verbose: bool,
     ) -> Result<(), Error> {
+
+
+        let start0 = Instant::now();
+
         // Parse command line arguments
         let mut dem_file = String::new();
         let mut d8_file = String::new();
@@ -455,8 +459,6 @@ impl WhiteboxTool for HillslopesTopaz {
             println!("Reading data...")
         };
 
-        let start = Instant::now();
-
         // Add working directory to file paths
         if verbose {
             println!("Reading {} file.", dem_file);
@@ -485,9 +487,12 @@ impl WhiteboxTool for HillslopesTopaz {
         }
         let order = Raster::new(&order_file, "r")?;
         
+        let start = Instant::now();
+
         if verbose {
             println!("Checking grid alignment.");
         }
+
 
         // Validate grid alignment
         if !rasters_share_geometry(&[&dem, &d8_pntr, &streams, &watershed, &chnjnt]) {
@@ -593,11 +598,18 @@ impl WhiteboxTool for HillslopesTopaz {
         subwta.configs.data_type = DataType::F32;
         subwta.configs.palette = "qual.plt".to_string();
         subwta.configs.photometric_interp = PhotometricInterpretation::Categorical;
-        let low_value = f64::MIN;
+        let low_value = f32::MIN;
         subwta.configs.nodata = low_value;
         subwta.reinitialize_values(low_value);
 
+        if verbose {
+            let elapsed = start0.elapsed();
+            println!("Phase 0: Initialization including input data read in {:.2?}.", elapsed);
+        }
+
         // Phase 1: Build links
+        let start1 = Instant::now();
+
         let mut links = Vec::<Link>::new();
 
         // 1.1 Identify headwaters
@@ -624,9 +636,6 @@ impl WhiteboxTool for HillslopesTopaz {
             println!("Walk down headwaters to identify links.");
         }
         for hw in headwaters {
-            if verbose {
-                println!("Processing headwater at ({}, {})", hw.0, hw.1);
-            }
             // Skip if this headwater is already part of a link
             if link_id_grid[hw] != -1 {
                 return Err(Error::new(
@@ -717,7 +726,13 @@ impl WhiteboxTool for HillslopesTopaz {
             }
         }
 
+        if verbose {
+            let elapsed = start1.elapsed();
+            println!("Phase 1: Identified {} links in {:.2?}.", links.len(), elapsed);
+        }
+
         // Phase 2: Now that we have all links, establish their relationships
+        let start2 = Instant::now();
         for i in 0..links.len() {
             if links[i].is_headwater {
                 links[i].inflow0_id = -1;
@@ -780,8 +795,17 @@ impl WhiteboxTool for HillslopesTopaz {
             // Set stream order if provided
             link.order = order.get_value(link.ds.0, link.ds.1) as u8;
         }
+
+        if verbose {
+            let elapsed = start2.elapsed();
+            println!("Phase 2: Established link relationships in {:.2?}.", elapsed);
+        }
         
         // Phase 3: Assign TOPAZ IDs (bottom-up traversal)
+        let start3 = Instant::now();
+        if verbose {
+            println!("Assigning TOPAZ IDs to links.");
+        }
         let mut next_id = 24; // Starting TOPAZ ID
                               // channel ids always end with 4 staring with 24
 
@@ -888,8 +912,13 @@ impl WhiteboxTool for HillslopesTopaz {
             }
         }
 
+        if verbose {
+            let elapsed = start3.elapsed();
+            println!("Phase 3: Assigned TOPAZ IDs in {:.2?}.", elapsed);
+        }
 
         // Phase 4: Stamp channel topaz_ids in output raster
+        let start4 = Instant::now();
         if verbose {
             println!("Stamping channels in output raster.");
         }
@@ -911,86 +940,17 @@ impl WhiteboxTool for HillslopesTopaz {
                 subwta.set_value(row, col, topaz_id as f64);
             }
         }
-        
-        // Phase 5: Headwater hillslopes (ID-3)
-        // we do this next because it seems straight forward
-        // topaz top hillslopes end with 1
+
         if verbose {
-            println!("Filling headwater hillslopes.");
+            let elapsed = start4.elapsed();
+            println!("Phase 4: Stamped channels in output raster in {:.2?}.", elapsed);
         }
         
+        // Phase 5: flood fill hillslope values
+        let start5 = Instant::now();
 
-        // Phase 6: Flood fill for headwater hillslopes
-        for row in 0..rows {
-            for col in 0..columns {
-                if watershed[(row, col)] != 1.0 {
-                    continue; // Not in watershed
-                }
-                
-                // walk downstream from (row, col) until we:
-                // 1. leave the watershed
-                // 2. find a headwater pour point
-                // 3. find a channel cell that isn't a headwater pour point
-                // 4. find a top hillslope cell
-
-                let mut current = (row, col);
-                let mut found_headwater = 0.0;
-                while found_headwater == 0.0 {
-                    let dir_val = d8_pntr.get_value(current.0, current.1);
-                    let dir = dir_val as usize;
-                    let c = pntr_matches[dir];
-                    let row_n = current.0 + dy[c];
-                    let col_n = current.1 + dx[c];
-                    
-                    // Check bounds
-                    if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
-                        break; // Out of bounds
-                    }
-                    
-                    // 1. Check if next cell is outside of the watershed
-                    if watershed[(row_n, col_n)] != 1.0 {
-                        break;
-                    }
-                    
-                    // 2. Check for headwater pour point
-                    if chnjnt[(row_n, col_n)] == 0.0 {
-                        let topaz_id = subwta.get_value(row_n, col_n);
-                        if topaz_id % 10.0 != 4.0 {
-                            return Err(Error::new(
-                                ErrorKind::InvalidInput,
-                                format!("Expected channel cell with ID ending in 4, found {}", topaz_id),
-                            ));
-                        }
-                        found_headwater = topaz_id - 3.0;
-                    } else if chnjnt[(row_n, col_n)] > 0.0 {
-                        break; // 3. Found a channel cell, stop walking downstream
-                    }
-
-                    // 4. Check for top hillslope cell (ID-3)
-                    if subwta[(row_n, col_n)] % 10.0 == 1.0 {
-                        found_headwater = subwta[(row_n, col_n)];
-                    }
-                    current = (row_n, col_n);
-                }
-
-                // If we reached a headwater pour point, walk back down and assign found_headwater value
-                if found_headwater != 0.0 {
-                    let mut backtrack = (row, col);
-                    while backtrack != current {
-                        subwta.set_value(backtrack.0, backtrack.1, found_headwater as f64);
-                        let dir_val = d8_pntr.get_value(backtrack.0, backtrack.1);
-                        let dir = dir_val as usize;
-                        let c = pntr_matches[dir];
-                        backtrack = (backtrack.0 + dy[c], backtrack.1 + dx[c]);
-                    }
-                }
-
-            }
-        }
-
-        // Phase 7: flood fill remaining hillslope values
         if verbose {
-            println!("Flood filling remaining hillslope values.");
+            println!("Flood filling hillslope values.");
         }
         for row in 0..rows {
             for col in 0..columns {
@@ -1033,12 +993,17 @@ impl WhiteboxTool for HillslopesTopaz {
                             ));
                         }
 
-                        // this is a channel need to identify as left or right
+                        // found a hillslope cell
                         if subwta[(row_n, col_n)] % 10.0 <= 3.0 {
                             found_topaz_id = subwta[(row_n, col_n)];
-                        } else {
 
-                            let topaz_id = subwta.get_value(row_n, col_n);
+                        // we know this is a channel cell is it a headwater pour point
+                        } else if chnjnt[(row_n, col_n)] == 0.0 {
+                            found_topaz_id = subwta[(row_n, col_n)] - 3.0;
+
+                        // we know this is a channel cell that isn't a headwater pour point
+                        } else { 
+                            let topaz_id = subwta[(row_n, col_n)];
 
                             let dir_val = d8_pntr.get_value(row_n, col_n);
                             let dir = dir_val as usize;
@@ -1123,8 +1088,17 @@ impl WhiteboxTool for HillslopesTopaz {
             }
         }
 
+        if verbose {
+            let elapsed = start5.elapsed();
+            println!("Phase 5: Flood filled hillslope values in {:.2?}.", elapsed);
+        }
+
 
         // Write netw.tsv
+        let start6 = Instant::now();
+        if verbose {
+            println!("Writing network links to {}.", netw_file);
+        }
         write_links_to_tsv(&links, &netw_file)?;
 
         let elapsed_time = get_formatted_elapsed_time(start);
@@ -1149,6 +1123,9 @@ impl WhiteboxTool for HillslopesTopaz {
         };
 
         if verbose {
+            let elapsed = start6.elapsed();
+            println!("Phase 6: Write files {:.2?}.", elapsed);
+
             println!(
                 "{}",
                 &format!("Elapsed Time (excluding I/O): {}", elapsed_time)
