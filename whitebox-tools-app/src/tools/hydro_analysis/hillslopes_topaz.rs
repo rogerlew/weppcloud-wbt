@@ -467,11 +467,10 @@ impl WhiteboxTool for HillslopesTopaz {
             return Err(Error::new(ErrorKind::InvalidInput, "Input rasters must share geometry"));
         }
         
+        // Validate chnjnt values
         if verbose {
             println!("Checking channel junction map for 3 or more inflows.");
         }
-
-        // Validate chnjnt values
         for row in 0..chnjnt.configs.rows as isize {
             for col in 0..chnjnt.configs.columns as isize {
                 let val = chnjnt.get_value(row, col);
@@ -484,7 +483,6 @@ impl WhiteboxTool for HillslopesTopaz {
         let rows = dem.configs.rows as isize;
         let columns = dem.configs.columns as isize;
         let _nodata = dem.configs.nodata;
-        let pntr_nodata = d8_pntr.configs.nodata;
         let streams_nodata = streams.configs.nodata;
         let cellsize_x = dem.configs.resolution_x;
         let cellsize_y = dem.configs.resolution_y;
@@ -497,7 +495,7 @@ impl WhiteboxTool for HillslopesTopaz {
         // This may seem wasteful, using only 8 of 129 values in the array,
         // but the mapping method is far faster than calculating z.ln() / ln(2.0).
         // It's also a good way of allowing for different point styles.
-        let mut pntr_matches: [usize; 129] = [0usize; 129];
+        let mut pntr_matches: [usize; 129] = [8usize; 129];
         if !esri_style {
             // This maps Whitebox-style D8 pointer values
             // onto the cell offsets in dx and dy.
@@ -520,6 +518,26 @@ impl WhiteboxTool for HillslopesTopaz {
             pntr_matches[32] = 6;
             pntr_matches[64] = 7;
             pntr_matches[128] = 0;
+        }
+
+        // validate d8_pntr values
+        // this avoids having to check after every direction check and reduces cyclomatic complexity
+        if verbose {
+            println!("Checking D8 pointer map for valid values.");
+        }
+        for row in 0..d8_pntr.configs.rows as isize {
+            for col in 0..d8_pntr.configs.columns as isize {
+                if watershed.get_value(row, col) == watershed.configs.nodata {
+                    continue; // Skip cells outside watershed
+                }
+                let val = d8_pntr.get_value(row, col) as usize;
+                if pntr_matches[val] >= 8 {
+                    return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        format!("Invalid D8 pointer value {} at ({}, {})", val, row, col),
+                    ));
+                }
+            }
         }
 
         // Locate pour point
@@ -643,21 +661,7 @@ impl WhiteboxTool for HillslopesTopaz {
                 
                 // Move downstream
                 let pntr_val = d8_pntr.get_value(current.0, current.1);
-                if pntr_val == pntr_nodata {
-                    return Err(Error::new(
-                        ErrorKind::InvalidInput,
-                        "D8 pointer value is nodata at current cell",
-                    ));
-                }
-                
                 let dir = pntr_val as usize;
-                if dir > 128 {
-                    return Err(Error::new(
-                        ErrorKind::InvalidInput,
-                        "Invalid D8 pointer value encountered",
-                    ));
-                }
-                
                 let c = pntr_matches[dir];
                 let row_n = current.0 + dy[c];
                 let col_n = current.1 + dx[c];
@@ -844,15 +848,7 @@ impl WhiteboxTool for HillslopesTopaz {
                 let mut found_headwater = 0.0;
                 while found_headwater == 0.0 {
                     let dir_val = d8_pntr.get_value(current.0, current.1);
-                    if dir_val == pntr_nodata {
-                        break; // No valid flow direction
-                    }
-                    
                     let dir = dir_val as usize;
-                    if dir > 128 {
-                        break; // Invalid pointer value
-                    }
-                    
                     let c = pntr_matches[dir];
                     let row_n = current.0 + dy[c];
                     let col_n = current.1 + dx[c];
@@ -886,15 +882,7 @@ impl WhiteboxTool for HillslopesTopaz {
                     while backtrack != current {
                         subwta.set_value(backtrack.0, backtrack.1, found_headwater as f64);
                         let dir_val = d8_pntr.get_value(backtrack.0, backtrack.1);
-                        if dir_val == pntr_nodata {
-                            break; // No valid flow direction
-                        }
-                        
                         let dir = dir_val as usize;
-                        if dir > 128 {
-                            break; // Invalid pointer value
-                        }
-                        
                         let c = pntr_matches[dir];
                         backtrack = (backtrack.0 + dy[c], backtrack.1 + dx[c]);
                     }
@@ -922,15 +910,7 @@ impl WhiteboxTool for HillslopesTopaz {
                 // boundary cells are cells that drain into a channel
                 // so we need to walk downstream from this cell
                 let dir_val = d8_pntr.get_value(row, col);
-                if dir_val == pntr_nodata {
-                    continue; // No valid flow direction
-                }
-                
                 let dir = dir_val as usize;
-                if dir > 128 {
-                    continue; // Invalid pointer value
-                }
-                
                 let c = pntr_matches[dir];
                 let row_n = row + dy[c];
                 let col_n = col + dx[c];
@@ -940,15 +920,7 @@ impl WhiteboxTool for HillslopesTopaz {
                     let topaz_id = subwta.get_value(row_n, col_n);
 
                     let dir_val = d8_pntr.get_value(row_n, col_n);
-                    if dir_val == pntr_nodata {
-                        continue; // No valid flow direction
-                    }
-                    
                     let dir = dir_val as usize;
-                    if dir > 128 {
-                        continue; // Invalid pointer value
-                    }
-                    
                     let cn = pntr_matches[dir];
 
                     // direction of flow into channel
@@ -977,13 +949,7 @@ impl WhiteboxTool for HillslopesTopaz {
                                 continue; // out of bounds
                             }
                             let dir_val = d8_pntr.get_value(row_nn, col_nn);
-                            if dir_val == pntr_nodata {
-                                continue; // No valid flow direction
-                            }
                             let dir = dir_val as usize;
-                            if dir > 128 {
-                                continue; // Invalid pointer value
-                            }
                             let c_up = pntr_matches[dir];
 
                             let up_chn_candidate_row = row_nn + dy[c_up];
@@ -1039,15 +1005,7 @@ impl WhiteboxTool for HillslopesTopaz {
                     let mut found_topaz_id = 0.0;
                     while found_topaz_id == 0.0 {
                         let dir_val = d8_pntr.get_value(current.0, current.1);
-                        if dir_val == pntr_nodata {
-                            break; // No valid flow direction
-                        }
-                        
                         let dir = dir_val as usize;
-                        if dir > 128 {
-                            break; // Invalid pointer value
-                        }
-                        
                         let c = pntr_matches[dir];
                         let row_n = current.0 + dy[c];
                         let col_n = current.1 + dx[c];
@@ -1077,15 +1035,7 @@ impl WhiteboxTool for HillslopesTopaz {
                         while backtrack != current {
                             subwta.set_value(backtrack.0, backtrack.1, found_topaz_id);
                             let dir_val = d8_pntr.get_value(backtrack.0, backtrack.1);
-                            if dir_val == pntr_nodata {
-                                break; // No valid flow direction
-                            }
-                            
                             let dir = dir_val as usize;
-                            if dir > 128 {
-                                break; // Invalid pointer value
-                            }
-                            
                             let c = pntr_matches[dir];
                             backtrack = (backtrack.0 + dy[c], backtrack.1 + dx[c]);
                         }
