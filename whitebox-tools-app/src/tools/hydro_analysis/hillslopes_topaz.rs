@@ -651,7 +651,7 @@ impl WhiteboxTool for HillslopesTopaz {
                 }
                 
                 let dir = pntr_val as usize;
-                if dir >= 128 {
+                if dir > 128 {
                     return Err(Error::new(
                         ErrorKind::InvalidInput,
                         "Invalid D8 pointer value encountered",
@@ -849,7 +849,7 @@ impl WhiteboxTool for HillslopesTopaz {
                     }
                     
                     let dir = dir_val as usize;
-                    if dir >= 128 {
+                    if dir > 128 {
                         break; // Invalid pointer value
                     }
                     
@@ -891,7 +891,7 @@ impl WhiteboxTool for HillslopesTopaz {
                         }
                         
                         let dir = dir_val as usize;
-                        if dir >= 128 {
+                        if dir > 128 {
                             break; // Invalid pointer value
                         }
                         
@@ -923,12 +923,12 @@ impl WhiteboxTool for HillslopesTopaz {
                 // so we need to walk downstream from this cell
                 let dir_val = d8_pntr.get_value(row, col);
                 if dir_val == pntr_nodata {
-                    break; // No valid flow direction
+                    continue; // No valid flow direction
                 }
                 
                 let dir = dir_val as usize;
-                if dir >= 128 {
-                    break; // Invalid pointer value
+                if dir > 128 {
+                    continue; // Invalid pointer value
                 }
                 
                 let c = pntr_matches[dir];
@@ -941,40 +941,159 @@ impl WhiteboxTool for HillslopesTopaz {
 
                     let dir_val = d8_pntr.get_value(row_n, col_n);
                     if dir_val == pntr_nodata {
-                        break; // No valid flow direction
+                        continue; // No valid flow direction
                     }
                     
                     let dir = dir_val as usize;
-                    if dir >= 128 {
-                        break; // Invalid pointer value
+                    if dir > 128 {
+                        continue; // Invalid pointer value
                     }
                     
-                    let c = pntr_matches[dir];
-                    let row_nn = row_n + dy[c];
-                    let col_nn = col_n + dx[c];
+                    let cn = pntr_matches[dir];
 
-                    // now we need to determine whether this is on the left or right side of the channel
-                    let angle = calculate_rotation_degrees(
-                        row_nn as f64, -col_nn as f64, // a is downstream of chnanel
-                        row_n as f64, -col_n as f64, // origin is the stream channel
-                        row as f64, -col as f64, // b is the current cell
-                    );
+                    // direction of flow into channel
+                    let vx = dx[c] as f64;
+                    let vy = dy[c] as f64;
 
-                    if verbose {
-                        println!("Cell ({}, {}) is a boundary cell to channel ({}, {}) -> {} ({}, {}) {} with angle: {}", row, col, row_n, col_n, c, row_nn, col_nn, topaz_id, angle);
-                    }
+                    // direction of flow down channel
+                    let ux = dx[cn] as f64;
+                    let uy = dy[cn] as f64;
 
-                    if angle <= 180.0 {
-                        // left side of channel
-                        subwta.set_value(row, col, topaz_id - 2.0); // left boundary
+                    // Calculate cross product to determine side of flow
+                    let cross = ux * vy - uy * vx;
+
+                    if cross > 0.0 {
+                        // test cell is on the “left” side of the flow
+                        subwta.set_value(row, col, topaz_id - 2.0);
+                    } else if cross < 0.0 {
+                        // test cell is on the “right” side of the flow
+                        subwta.set_value(row, col, topaz_id - 1.0);
                     } else {
-                        // right side of channel
-                        subwta.set_value(row, col, topaz_id - 1.0); // right boundary
+                        // need to find channel that drains into the channel cell (row_n, col_n)
+                        for i in 0..8 {
+                            let row_nn = row_n + dy[i];
+                            let col_nn = col_n + dx[i];
+                            if row_nn < 0 || row_nn >= rows || col_nn < 0 || col_nn >= columns {
+                                continue; // out of bounds
+                            }
+                            let dir_val = d8_pntr.get_value(row_nn, col_nn);
+                            if dir_val == pntr_nodata {
+                                continue; // No valid flow direction
+                            }
+                            let dir = dir_val as usize;
+                            if dir > 128 {
+                                continue; // Invalid pointer value
+                            }
+                            let c_up = pntr_matches[dir];
+
+                            let up_chn_candidate_row = row_nn + dy[c_up];
+                            let up_chn_candidate_col = col_nn + dx[c_up];
+                            
+                            if up_chn_candidate_row == row_n && 
+                               up_chn_candidate_col == col_n && 
+                               chnjnt.get_value(row_nn, col_nn) > 0.0 {
+                                            
+                                // direction of the flow down channel from the upstream channel cell
+                                let ux = dx[c_up] as f64;
+                                let uy = dy[c_up] as f64;
+
+                                // Calculate cross product to determine side of flow
+                                let cross = ux * vy - uy * vx;
+
+                                if cross > 0.0 {
+                                    // test cell is on the “left” side of the flow
+                                    subwta.set_value(row, col, topaz_id - 2.0);
+                                } else if cross < 0.0 {
+                                    // test cell is on the “right” side of the flow
+                                    subwta.set_value(row, col, topaz_id - 1.0);
+                                }
+                                break;
+                            }
+                        }
                     }
                 }
             }
         }
-        
+
+
+        // Phase 8: flood fill remaining hillslope values
+        if true {
+
+            if verbose {
+                println!("Flood filling remaining hillslope values.");
+            }
+            for row in 0..rows {
+                for col in 0..columns {
+                    // check if not in watershed
+                    if watershed[(row, col)] != 1.0 {
+                        continue; 
+                    }
+                    
+                    // check if already labeled
+                    if subwta.get_value(row, col) != low_value {
+                        continue;
+                    }
+                    
+                    // flood fill from this cell
+                    let mut current = (row, col);
+                    let mut found_topaz_id = 0.0;
+                    while found_topaz_id == 0.0 {
+                        let dir_val = d8_pntr.get_value(current.0, current.1);
+                        if dir_val == pntr_nodata {
+                            break; // No valid flow direction
+                        }
+                        
+                        let dir = dir_val as usize;
+                        if dir > 128 {
+                            break; // Invalid pointer value
+                        }
+                        
+                        let c = pntr_matches[dir];
+                        let row_n = current.0 + dy[c];
+                        let col_n = current.1 + dx[c];
+                        
+                        // Check bounds
+                        if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
+                            break; // Out of bounds
+                        }
+                        
+                        // Check if next cell is in watershed
+                        if watershed[(row_n, col_n)] != 1.0 {
+                            break; // left the watershed
+                        }
+                        
+                        // Check for hillslope cell (ID-3)
+                        if subwta[(row_n, col_n)] != low_value {
+                            found_topaz_id = subwta[(row_n, col_n)];
+                            subwta.set_value(row_n, col_n, found_topaz_id);
+                        }
+
+                        current = (row_n, col_n);
+                    }
+
+                    // If we reached a hillslope cell, walk back down and assign found_topaz_id value
+                    if found_topaz_id != 0.0 {
+                        let mut backtrack = (row, col);
+                        while backtrack != current {
+                            subwta.set_value(backtrack.0, backtrack.1, found_topaz_id);
+                            let dir_val = d8_pntr.get_value(backtrack.0, backtrack.1);
+                            if dir_val == pntr_nodata {
+                                break; // No valid flow direction
+                            }
+                            
+                            let dir = dir_val as usize;
+                            if dir > 128 {
+                                break; // Invalid pointer value
+                            }
+                            
+                            let c = pntr_matches[dir];
+                            backtrack = (backtrack.0 + dy[c], backtrack.1 + dx[c]);
+                        }
+                    }
+                }
+            }
+
+        }
         // Write netw.tsv
         write_links_to_tsv(&links, &netw_file)?;
 
