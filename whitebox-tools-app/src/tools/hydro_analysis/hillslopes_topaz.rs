@@ -553,7 +553,7 @@ impl WhiteboxTool for HillslopesTopaz {
             return Err(Error::new(ErrorKind::InvalidInput, "Pour point must be within watershed"));
         }
 
-        // Initialize output raster (u32 with nodata=0)
+        // Initialize output raster
         // whitebox_raster::Raster treats data as f64 then writes to the config.data_type
         if verbose {
             println!("Initializing output raster.");
@@ -739,8 +739,9 @@ impl WhiteboxTool for HillslopesTopaz {
             link.order = order.get_value(link.ds.0, link.ds.1) as u8;
         }
         
-        // Phase 3: Assign TOPAZ IDs (bottom-up traversal)// Phase 3: Assign TOPAZ IDs (bottom-up traversal)
+        // Phase 3: Assign TOPAZ IDs (bottom-up traversal)
         let mut next_id = 24; // Starting TOPAZ ID
+                              // channel ids always end with 4 staring with 24
 
         let mut outlet_idx: i32 = -1; // Index of the outlet link
         for i in 1..links.len() {
@@ -756,6 +757,7 @@ impl WhiteboxTool for HillslopesTopaz {
             return Err(Error::new(ErrorKind::InvalidInput, "No outlet link found"));
         }
 
+        // We walk up the channel network using a breadth-firest queue
         let mut queue = VecDeque::new();
         queue.push_back(outlet_idx as usize); // Start with outlet link
 
@@ -772,9 +774,13 @@ impl WhiteboxTool for HillslopesTopaz {
                 ));
             }
 
+            // the link ids and the indexes are the same
+            // because the ids are assigned as links.len()
             let inflow0_id = links[link_idx].inflow0_id as usize;
             let inflow1_id = links[link_idx].inflow1_id as usize;
 
+            // determien clockwise rotations of the inflows.
+            // The lesser is numbered first
             let inflow0_angle = calculate_rotation_degrees(
                 links[link_idx].ds.0 as f64, -links[link_idx].ds.1 as f64,            // a
                 links[link_idx].us.0 as f64, -links[link_idx].us.1 as f64,            // o
@@ -787,10 +793,12 @@ impl WhiteboxTool for HillslopesTopaz {
                 links[inflow1_id].us.0 as f64, -links[inflow1_id].us.1 as f64, // b
             );
 
+            // queue pops from the front, push the index in the
+            // clockwise order of the inflows
             if inflow0_angle < inflow1_angle {
                 links[inflow0_id].topaz_id = next_id;
                 queue.push_back(inflow0_id as usize);
-                next_id += 10;
+                next_id += 10;  // channels are enumerated by 10s
                 links[inflow1_id].topaz_id = next_id;
                 queue.push_back(inflow1_id as usize);
                 next_id += 10;
@@ -804,7 +812,7 @@ impl WhiteboxTool for HillslopesTopaz {
             }
         }
 
-        // Phase 4: Stamp channels in output raster
+        // Phase 4: Stamp channel topaz_ids in output raster
         if verbose {
             println!("Stamping channels in output raster.");
         }
@@ -821,6 +829,8 @@ impl WhiteboxTool for HillslopesTopaz {
         }
         
         // Phase 5: Headwater hillslopes (ID-3)
+        // we do this next because it seems straight forward
+        // topaz top hillslopes end with 1
         if verbose {
             println!("Filling headwater hillslopes.");
         }
@@ -858,9 +868,9 @@ impl WhiteboxTool for HillslopesTopaz {
                         break; // Out of bounds
                     }
                     
-                    // 1. Check if next cell is in watershed
+                    // 1. Check if next cell is outside of the watershed
                     if watershed[(row_n, col_n)] != 1.0 {
-                        break; // left the watershed
+                        break;
                     }
                     
                     // 2. Check for headwater pour point
@@ -909,6 +919,7 @@ impl WhiteboxTool for HillslopesTopaz {
                 
                 // boundary cells are cells that drain into a channel
                 // so we need to walk downstream from this cell
+                // and check if it drains into a channel cell
                 let dir_val = d8_pntr.get_value(row, col);
                 let dir = dir_val as usize;
                 let c = pntr_matches[dir];
@@ -936,12 +947,16 @@ impl WhiteboxTool for HillslopesTopaz {
 
                     if cross > 0.0 {
                         // test cell is on the “left” side of the flow
+                        // ends with 2
                         subwta.set_value(row, col, topaz_id - 2.0);
                     } else if cross < 0.0 {
                         // test cell is on the “right” side of the flow
+                        // ends with 3
                         subwta.set_value(row, col, topaz_id - 1.0);
                     } else {
-                        // need to find channel that drains into the channel cell (row_n, col_n)
+                        // the hillslope drains in the same direction as the channel cell. 
+                        // The cross product is ambiguous and can't be used to determine the side of the flow.
+                        // So we need to look at the flow direciton of the upstream channel to determine the side of the hillslope
                         for i in 0..8 {
                             let row_nn = row_n + dy[i];
                             let col_nn = col_n + dx[i];
@@ -983,67 +998,64 @@ impl WhiteboxTool for HillslopesTopaz {
 
 
         // Phase 8: flood fill remaining hillslope values
-        if true {
+        if verbose {
+            println!("Flood filling remaining hillslope values.");
+        }
+        for row in 0..rows {
+            for col in 0..columns {
+                // check if not in watershed
+                if watershed[(row, col)] != 1.0 {
+                    continue; 
+                }
+                
+                // check if already labeled
+                if subwta.get_value(row, col) != low_value {
+                    continue;
+                }
+                
+                // flood fill from this cell
+                let mut current = (row, col);
+                let mut found_topaz_id = 0.0;
+                while found_topaz_id == 0.0 {
+                    let dir_val = d8_pntr.get_value(current.0, current.1);
+                    let dir = dir_val as usize;
+                    let c = pntr_matches[dir];
+                    let row_n = current.0 + dy[c];
+                    let col_n = current.1 + dx[c];
+                    
+                    // Check bounds
+                    if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
+                        break; // Out of bounds
+                    }
+                    
+                    // Check if next cell is in watershed
+                    if watershed[(row_n, col_n)] != 1.0 {
+                        break; // left the watershed
+                    }
+                    
+                    // Check for hillslope cell (ID-3)
+                    if subwta[(row_n, col_n)] != low_value {
+                        found_topaz_id = subwta[(row_n, col_n)];
+                        subwta.set_value(row_n, col_n, found_topaz_id);
+                    }
 
-            if verbose {
-                println!("Flood filling remaining hillslope values.");
-            }
-            for row in 0..rows {
-                for col in 0..columns {
-                    // check if not in watershed
-                    if watershed[(row, col)] != 1.0 {
-                        continue; 
-                    }
-                    
-                    // check if already labeled
-                    if subwta.get_value(row, col) != low_value {
-                        continue;
-                    }
-                    
-                    // flood fill from this cell
-                    let mut current = (row, col);
-                    let mut found_topaz_id = 0.0;
-                    while found_topaz_id == 0.0 {
-                        let dir_val = d8_pntr.get_value(current.0, current.1);
+                    current = (row_n, col_n);
+                }
+
+                // If we reached a hillslope cell, walk back down and assign found_topaz_id value
+                if found_topaz_id != 0.0 {
+                    let mut backtrack = (row, col);
+                    while backtrack != current {
+                        subwta.set_value(backtrack.0, backtrack.1, found_topaz_id);
+                        let dir_val = d8_pntr.get_value(backtrack.0, backtrack.1);
                         let dir = dir_val as usize;
                         let c = pntr_matches[dir];
-                        let row_n = current.0 + dy[c];
-                        let col_n = current.1 + dx[c];
-                        
-                        // Check bounds
-                        if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
-                            break; // Out of bounds
-                        }
-                        
-                        // Check if next cell is in watershed
-                        if watershed[(row_n, col_n)] != 1.0 {
-                            break; // left the watershed
-                        }
-                        
-                        // Check for hillslope cell (ID-3)
-                        if subwta[(row_n, col_n)] != low_value {
-                            found_topaz_id = subwta[(row_n, col_n)];
-                            subwta.set_value(row_n, col_n, found_topaz_id);
-                        }
-
-                        current = (row_n, col_n);
-                    }
-
-                    // If we reached a hillslope cell, walk back down and assign found_topaz_id value
-                    if found_topaz_id != 0.0 {
-                        let mut backtrack = (row, col);
-                        while backtrack != current {
-                            subwta.set_value(backtrack.0, backtrack.1, found_topaz_id);
-                            let dir_val = d8_pntr.get_value(backtrack.0, backtrack.1);
-                            let dir = dir_val as usize;
-                            let c = pntr_matches[dir];
-                            backtrack = (backtrack.0 + dy[c], backtrack.1 + dx[c]);
-                        }
+                        backtrack = (backtrack.0 + dy[c], backtrack.1 + dx[c]);
                     }
                 }
             }
-
         }
+
         // Write netw.tsv
         write_links_to_tsv(&links, &netw_file)?;
 
@@ -1074,7 +1086,6 @@ impl WhiteboxTool for HillslopesTopaz {
                 &format!("Elapsed Time (excluding I/O): {}", elapsed_time)
             );
         }
-
 
         Ok(())
     }
