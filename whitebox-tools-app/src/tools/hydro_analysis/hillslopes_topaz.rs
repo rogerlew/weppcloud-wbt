@@ -25,6 +25,7 @@ struct Link {
     us: (isize, isize),     // Upstream end coordinates
     inflow0_id: i32,        // Link index of first inflow
     inflow1_id: i32,        // Link index of second inflow
+    inflow2_id: i32,        // Link index of third inflow
     length_m: f64,          // Channel length in meters
     ds_z: f64,              // Elevation at downstream end
     us_z: f64,              // Elevation at upstream end
@@ -44,6 +45,7 @@ impl Link {
             us: (-1, -1),
             inflow0_id: -1,
             inflow1_id: -1,
+            inflow2_id: -1,
             length_m: 0.0,
             ds_z: f64::NAN,
             us_z: f64::NAN,
@@ -62,14 +64,14 @@ fn write_links_to_tsv(links: &[Link], file_path: &str) -> io::Result<()> {
     // Write header
     writeln!(
         &mut file,
-        "id\ttopaz_id\tds_x\tds_y\tus_x\tus_y\tinflow0_id\tinflow1_id\tlength_m\tds_z\tus_z\tdrop_m\torder\tis_headwater\tis_outlet"
+        "id\ttopaz_id\tds_x\tds_y\tus_x\tus_y\tinflow0_id\tinflow1_id\tinflow2_id\tlength_m\tds_z\tus_z\tdrop_m\torder\tis_headwater\tis_outlet"
     )?;
     
     // Write each link
     for link in links {
         writeln!(
             &mut file,
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.3}\t{:.3}\t{:.3}\t{:.3}\t{}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.3}\t{:.3}\t{:.3}\t{:.3}\t{}\t{}\t{}",
             link.id,
             link.topaz_id,
             link.ds.0,
@@ -78,6 +80,7 @@ fn write_links_to_tsv(links: &[Link], file_path: &str) -> io::Result<()> {
             link.us.1,
             link.inflow0_id,
             link.inflow1_id,
+            link.inflow2_id,
             link.length_m,
             link.ds_z,
             link.us_z,
@@ -474,8 +477,11 @@ impl WhiteboxTool for HillslopesTopaz {
         for row in 0..chnjnt.configs.rows as isize {
             for col in 0..chnjnt.configs.columns as isize {
                 let val = chnjnt.get_value(row, col);
-                if val != chnjnt.configs.nodata && val >= 3.0 {
-                    return Err(Error::new(ErrorKind::InvalidInput, "chnjnt values must be 0, 1, or 2"));
+
+                // Limit the number of inflows to 3 or fewer
+                // this is a requiremnent for WEPP watershed model
+                if val != chnjnt.configs.nodata && val > 3.0 {
+                    return Err(Error::new(ErrorKind::InvalidInput, "chnjnt values must be 0, 1, 2, or 3"));
                 }
             }
         }
@@ -621,8 +627,9 @@ impl WhiteboxTool for HillslopesTopaz {
 
                 // Check if we're joining an existing link
                 if link_id_grid[current] != -1 {
-                    // double check that chnjnt[current] == 2.0
-                    if chnjnt[current] != 2.0 {
+
+                    // validate it is a junction
+                    if chnjnt[current] < 2.0 {
                         return Err(Error::new(
                             ErrorKind::InvalidInput,
                             "Current cell is not recognized as a junction",
@@ -646,7 +653,7 @@ impl WhiteboxTool for HillslopesTopaz {
                 }
                 
                 // Check if we've reached a junction
-                if current != hw && chnjnt[current] == 2.0 {
+                if current != hw && chnjnt[current] >= 2.0 {
                     link.ds = current;
                     links.push(link);
                     
@@ -691,6 +698,7 @@ impl WhiteboxTool for HillslopesTopaz {
             if links[i].is_headwater {
                 links[i].inflow0_id = -1;
                 links[i].inflow1_id = -1;
+                links[i].inflow2_id = -1;
                 continue;
             }
 
@@ -710,6 +718,9 @@ impl WhiteboxTool for HillslopesTopaz {
             }
             if inflows.len() > 1 {
                 links[i].inflow1_id = inflows[1];
+            }
+            if inflows.len() > 2 {
+                links[i].inflow2_id = inflows[1];
             }
         }
 
@@ -778,36 +789,70 @@ impl WhiteboxTool for HillslopesTopaz {
             // because the ids are assigned as links.len()
             let inflow0_id = links[link_idx].inflow0_id as usize;
             let inflow1_id = links[link_idx].inflow1_id as usize;
-
-            // determien clockwise rotations of the inflows.
-            // The lesser is numbered first
+            
             let inflow0_angle = calculate_rotation_degrees(
-                links[link_idx].ds.0 as f64, -links[link_idx].ds.1 as f64,            // a
-                links[link_idx].us.0 as f64, -links[link_idx].us.1 as f64,            // o
+                links[link_idx].ds.0 as f64, -links[link_idx].ds.1 as f64,     // a
+                links[link_idx].us.0 as f64, -links[link_idx].us.1 as f64,     // o
                 links[inflow0_id].us.0 as f64, -links[inflow0_id].us.1 as f64, // b
             );
 
             let inflow1_angle = calculate_rotation_degrees(
-                links[link_idx].ds.0 as f64, -links[link_idx].ds.1 as f64,            // a
-                links[link_idx].us.0 as f64, -links[link_idx].us.1 as f64,            // o
+                links[link_idx].ds.0 as f64, -links[link_idx].ds.1 as f64,     // a
+                links[link_idx].us.0 as f64, -links[link_idx].us.1 as f64,     // o
                 links[inflow1_id].us.0 as f64, -links[inflow1_id].us.1 as f64, // b
             );
 
-            // queue pops from the front, push the index in the
-            // clockwise order of the inflows
-            if inflow0_angle < inflow1_angle {
-                links[inflow0_id].topaz_id = next_id;
-                queue.push_back(inflow0_id as usize);
-                next_id += 10;  // channels are enumerated by 10s
-                links[inflow1_id].topaz_id = next_id;
-                queue.push_back(inflow1_id as usize);
-                next_id += 10;
+            // no third inflow
+            if links[link_idx].inflow2_id == -1
+            {
+                // determien clockwise rotations of the inflows.
+                // The lesser is numbered first
+                // queue pops from the front, push the index in the
+                // clockwise order of the inflows
+                if inflow0_angle < inflow1_angle {
+                    links[inflow0_id].topaz_id = next_id;
+                    queue.push_back(inflow0_id as usize);
+                    next_id += 10;  // channels are enumerated by 10s
+                    links[inflow1_id].topaz_id = next_id;
+                    queue.push_back(inflow1_id as usize);
+                    next_id += 10;
+                } else {
+                    links[inflow1_id].topaz_id = next_id;
+                    queue.push_back(inflow1_id as usize);
+                    next_id += 10;
+                    links[inflow0_id].topaz_id = next_id;
+                    queue.push_back(inflow0_id as usize);
+                    next_id += 10;
+                }
             } else {
-                links[inflow1_id].topaz_id = next_id;
-                queue.push_back(inflow1_id as usize);
+                // handle thrid inflow
+                // aiming for maintainability here over succinctness
+                let inflow2_id = links[link_idx].inflow2_id as usize;
+                
+                let inflow2_angle = calculate_rotation_degrees(
+                    links[link_idx].ds.0 as f64, -links[link_idx].ds.1 as f64,     // a
+                    links[link_idx].us.0 as f64, -links[link_idx].us.1 as f64,     // o
+                    links[inflow2_id].us.0 as f64, -links[inflow2_id].us.1 as f64, // b
+                );
+
+                // Determine clockwise rotations of the inflows.
+                // order them smallest to largest
+                let mut inflows = vec![
+                    (inflow0_id, inflow0_angle),
+                    (inflow1_id, inflow1_angle),
+                    (inflow2_id, inflow2_angle),
+                ];
+                inflows.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+
+                // Assign TOPAZ IDs in clockwise order
+                links[inflows[0].0].topaz_id = next_id;
+                queue.push_back(inflows[0].0);
+                next_id += 10; // channels are enumerated by 10s
+                links[inflows[1].0].topaz_id = next_id;
+                queue.push_back(inflows[1].0);
                 next_id += 10;
-                links[inflow0_id].topaz_id = next_id;
-                queue.push_back(inflow0_id as usize);
+                links[inflows[2].0].topaz_id = next_id;
+                queue.push_back(inflows[2].0);
                 next_id += 10;
             }
         }
@@ -998,59 +1043,62 @@ impl WhiteboxTool for HillslopesTopaz {
 
 
         // Phase 8: flood fill remaining hillslope values
-        if verbose {
-            println!("Flood filling remaining hillslope values.");
-        }
-        for row in 0..rows {
-            for col in 0..columns {
-                // check if not in watershed
-                if watershed[(row, col)] != 1.0 {
-                    continue; 
-                }
+        if false {
                 
-                // check if already labeled
-                if subwta.get_value(row, col) != low_value {
-                    continue;
-                }
-                
-                // flood fill from this cell
-                let mut current = (row, col);
-                let mut found_topaz_id = 0.0;
-                while found_topaz_id == 0.0 {
-                    let dir_val = d8_pntr.get_value(current.0, current.1);
-                    let dir = dir_val as usize;
-                    let c = pntr_matches[dir];
-                    let row_n = current.0 + dy[c];
-                    let col_n = current.1 + dx[c];
-                    
-                    // Check bounds
-                    if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
-                        break; // Out of bounds
+            if verbose {
+                println!("Flood filling remaining hillslope values.");
+            }
+            for row in 0..rows {
+                for col in 0..columns {
+                    // check if not in watershed
+                    if watershed[(row, col)] != 1.0 {
+                        continue; 
                     }
                     
-                    // Check if next cell is in watershed
-                    if watershed[(row_n, col_n)] != 1.0 {
-                        break; // left the watershed
+                    // check if already labeled
+                    if subwta.get_value(row, col) != low_value {
+                        continue;
                     }
                     
-                    // Check for hillslope cell (ID-3)
-                    if subwta[(row_n, col_n)] != low_value {
-                        found_topaz_id = subwta[(row_n, col_n)];
-                        subwta.set_value(row_n, col_n, found_topaz_id);
-                    }
-
-                    current = (row_n, col_n);
-                }
-
-                // If we reached a hillslope cell, walk back down and assign found_topaz_id value
-                if found_topaz_id != 0.0 {
-                    let mut backtrack = (row, col);
-                    while backtrack != current {
-                        subwta.set_value(backtrack.0, backtrack.1, found_topaz_id);
-                        let dir_val = d8_pntr.get_value(backtrack.0, backtrack.1);
+                    // flood fill from this cell
+                    let mut current = (row, col);
+                    let mut found_topaz_id = 0.0;
+                    while found_topaz_id == 0.0 {
+                        let dir_val = d8_pntr.get_value(current.0, current.1);
                         let dir = dir_val as usize;
                         let c = pntr_matches[dir];
-                        backtrack = (backtrack.0 + dy[c], backtrack.1 + dx[c]);
+                        let row_n = current.0 + dy[c];
+                        let col_n = current.1 + dx[c];
+                        
+                        // Check bounds
+                        if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
+                            break; // Out of bounds
+                        }
+                        
+                        // Check if next cell is in watershed
+                        if watershed[(row_n, col_n)] != 1.0 {
+                            break; // left the watershed
+                        }
+                        
+                        // Check for hillslope cell (ID-3)
+                        if subwta[(row_n, col_n)] != low_value {
+                            found_topaz_id = subwta[(row_n, col_n)];
+                            subwta.set_value(row_n, col_n, found_topaz_id);
+                        }
+
+                        current = (row_n, col_n);
+                    }
+
+                    // If we reached a hillslope cell, walk back down and assign found_topaz_id value
+                    if found_topaz_id != 0.0 {
+                        let mut backtrack = (row, col);
+                        while backtrack != current {
+                            subwta.set_value(backtrack.0, backtrack.1, found_topaz_id);
+                            let dir_val = d8_pntr.get_value(backtrack.0, backtrack.1);
+                            let dir = dir_val as usize;
+                            let c = pntr_matches[dir];
+                            backtrack = (backtrack.0 + dy[c], backtrack.1 + dx[c]);
+                        }
                     }
                 }
             }
