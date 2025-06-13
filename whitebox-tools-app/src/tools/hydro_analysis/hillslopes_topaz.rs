@@ -710,6 +710,13 @@ impl WhiteboxTool for HillslopesTopaz {
                 if links[j].ds == us_end {
                     inflows.push(links[j].id);
                 }
+
+                if inflows.len() > 3 {
+                    return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        "Link has more than 3 inflows",
+                    ));
+                }
             }
             
             // Assign inflow IDs (up to 2)
@@ -720,7 +727,7 @@ impl WhiteboxTool for HillslopesTopaz {
                 links[i].inflow1_id = inflows[1];
             }
             if inflows.len() > 2 {
-                links[i].inflow2_id = inflows[1];
+                links[i].inflow2_id = inflows[2];
             }
         }
 
@@ -857,6 +864,7 @@ impl WhiteboxTool for HillslopesTopaz {
             }
         }
 
+
         // Phase 4: Stamp channel topaz_ids in output raster
         if verbose {
             println!("Stamping channels in output raster.");
@@ -864,9 +872,16 @@ impl WhiteboxTool for HillslopesTopaz {
 
         for link in &links {
             let topaz_id = link.topaz_id as f64;
+            if topaz_id <= 0.0 {
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    format!("Invalid TOPAZ ID {} for link {}", topaz_id, link.id),
+                ));
+            }
+
             for &(row, col) in &link.path {
-                if link.is_headwater && (row, col) == link.ds && !link.is_outlet {
-                    // Headwater pour points should not be stamped
+                if (row, col) == link.ds && !link.is_outlet {
+                    // pour points should not be stamped unless it is the outlet
                     continue;
                 }
                 subwta.set_value(row, col, topaz_id as f64);
@@ -921,7 +936,6 @@ impl WhiteboxTool for HillslopesTopaz {
                     // 2. Check for headwater pour point
                     if headwater_pour_points[(row_n, col_n)] != 0.0 {
                         found_headwater = headwater_pour_points[(row_n, col_n)];
-                        subwta.set_value(row_n, col_n, found_headwater as f64);
                     }
 
                     // 3. Check for top hillslope cell (ID-3)
@@ -946,9 +960,9 @@ impl WhiteboxTool for HillslopesTopaz {
             }
         }
 
-        // Phase 7: identify and label hillslope boundary cells
+        // Phase 7: flood fill remaining hillslope values
         if verbose {
-            println!("Identifying hillslope boundary cells.");
+            println!("Flood filling remaining hillslope values.");
         }
         for row in 0..rows {
             for col in 0..columns {
@@ -962,147 +976,125 @@ impl WhiteboxTool for HillslopesTopaz {
                     continue;
                 }
                 
-                // boundary cells are cells that drain into a channel
-                // so we need to walk downstream from this cell
-                // and check if it drains into a channel cell
-                let dir_val = d8_pntr.get_value(row, col);
-                let dir = dir_val as usize;
-                let c = pntr_matches[dir];
-                let row_n = row + dy[c];
-                let col_n = col + dx[c];
-
-                // check if this is a boundary cell
-                if subwta[(row_n, col_n)] % 10.0 == 4.0 {
-                    let topaz_id = subwta.get_value(row_n, col_n);
-
-                    let dir_val = d8_pntr.get_value(row_n, col_n);
+                // flood fill from this cell
+                let mut current = (row, col);
+                let mut found_topaz_id = 0.0;
+                while found_topaz_id == 0.0 {
+                    let dir_val = d8_pntr.get_value(current.0, current.1);
                     let dir = dir_val as usize;
-                    let cn = pntr_matches[dir];
-
-                    // direction of flow into channel
-                    let vx = dx[c] as f64;
-                    let vy = dy[c] as f64;
-
-                    // direction of flow down channel
-                    let ux = dx[cn] as f64;
-                    let uy = dy[cn] as f64;
-
-                    // Calculate cross product to determine side of flow
-                    let cross = ux * vy - uy * vx;
-
-                    if cross > 0.0 {
-                        // test cell is on the “left” side of the flow
-                        // ends with 2
-                        subwta.set_value(row, col, topaz_id - 2.0);
-                    } else if cross < 0.0 {
-                        // test cell is on the “right” side of the flow
-                        // ends with 3
-                        subwta.set_value(row, col, topaz_id - 1.0);
-                    } else {
-                        // the hillslope drains in the same direction as the channel cell. 
-                        // The cross product is ambiguous and can't be used to determine the side of the flow.
-                        // So we need to look at the flow direciton of the upstream channel to determine the side of the hillslope
-                        for i in 0..8 {
-                            let row_nn = row_n + dy[i];
-                            let col_nn = col_n + dx[i];
-                            if row_nn < 0 || row_nn >= rows || col_nn < 0 || col_nn >= columns {
-                                continue; // out of bounds
-                            }
-                            let dir_val = d8_pntr.get_value(row_nn, col_nn);
-                            let dir = dir_val as usize;
-                            let c_up = pntr_matches[dir];
-
-                            let up_chn_candidate_row = row_nn + dy[c_up];
-                            let up_chn_candidate_col = col_nn + dx[c_up];
-                            
-                            if up_chn_candidate_row == row_n && 
-                               up_chn_candidate_col == col_n && 
-                               chnjnt.get_value(row_nn, col_nn) > 0.0 {
-                                            
-                                // direction of the flow down channel from the upstream channel cell
-                                let ux = dx[c_up] as f64;
-                                let uy = dy[c_up] as f64;
-
-                                // Calculate cross product to determine side of flow
-                                let cross = ux * vy - uy * vx;
-
-                                if cross > 0.0 {
-                                    // test cell is on the “left” side of the flow
-                                    subwta.set_value(row, col, topaz_id - 2.0);
-                                } else if cross < 0.0 {
-                                    // test cell is on the “right” side of the flow
-                                    subwta.set_value(row, col, topaz_id - 1.0);
-                                }
-                                break;
-                            }
+                    let c = pntr_matches[dir];
+                    let row_n = current.0 + dy[c];
+                    let col_n = current.1 + dx[c];
+                    
+                    // Check bounds
+                    if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
+                        break; // Out of bounds
+                    }
+                    
+                    // Check if next cell is in watershed
+                    if watershed[(row_n, col_n)] != 1.0 {
+                        break; // left the watershed
+                    }
+                    
+                    // Check for hillslope cell (ID-3)
+                    if subwta[(row_n, col_n)] != low_value {
+                        if subwta[(row_n, col_n)] <= 0.0 {
+                            return Err(Error::new(
+                                ErrorKind::InvalidInput,
+                                format!("Invalid hillslope ID {} at ({}, {})", subwta[(row_n, col_n)], row_n, col_n),
+                            ));
                         }
+
+                        // this is a channel need to identify as left or right
+                        if subwta[(row_n, col_n)] % 10.0 <= 3.0 {
+                            found_topaz_id = subwta[(row_n, col_n)];
+                        } else {
+
+                            let topaz_id = subwta.get_value(row_n, col_n);
+
+                            let dir_val = d8_pntr.get_value(row_n, col_n);
+                            let dir = dir_val as usize;
+                            let cn = pntr_matches[dir];
+
+                            // direction of flow into channel
+                            let vx = dx[c] as f64;
+                            let vy = dy[c] as f64;
+
+                            // direction of flow down channel
+                            let ux = dx[cn] as f64;
+                            let uy = dy[cn] as f64;
+
+                            // Calculate cross product to determine side of flow
+                            let cross = ux * vy - uy * vx;
+
+                            if cross > 0.0 {
+                                // test cell is on the “left” side of the flow
+                                // ends with 2
+                                found_topaz_id = topaz_id - 2.0;
+                            } else if cross < 0.0 {
+                                // test cell is on the “right” side of the flow
+                                // ends with 3
+                                found_topaz_id = topaz_id - 1.0;
+                            } else {
+                                // the hillslope drains in the same direction as the channel cell. 
+                                // The cross product is ambiguous and can't be used to determine the side of the flow.
+                                // So we need to look at the flow direciton of the upstream channel to determine the side of the hillslope
+                                for i in 0..8 {
+                                    let row_nn = row_n + dy[i];
+                                    let col_nn = col_n + dx[i];
+                                    if row_nn < 0 || row_nn >= rows || col_nn < 0 || col_nn >= columns {
+                                        continue; // out of bounds
+                                    }
+                                    let dir_val = d8_pntr.get_value(row_nn, col_nn);
+                                    let dir = dir_val as usize;
+                                    let c_up = pntr_matches[dir];
+
+                                    let up_chn_candidate_row = row_nn + dy[c_up];
+                                    let up_chn_candidate_col = col_nn + dx[c_up];
+                                    
+                                    if up_chn_candidate_row == row_n && 
+                                    up_chn_candidate_col == col_n && 
+                                    chnjnt.get_value(row_nn, col_nn) > 0.0 {
+                                                    
+                                        // direction of the flow down channel from the upstream channel cell
+                                        let ux = dx[c_up] as f64;
+                                        let uy = dy[c_up] as f64;
+
+                                        // Calculate cross product to determine side of flow
+                                        let cross = ux * vy - uy * vx;
+
+                                        if cross > 0.0 {
+                                            // test cell is on the “left” side of the flow
+                                            found_topaz_id = topaz_id - 2.0;
+                                        } else if cross < 0.0 {
+                                            // test cell is on the “right” side of the flow
+                                            found_topaz_id = topaz_id - 1.0;
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        } 
                     }
+                    current = (row_n, col_n);
                 }
-            }
-        }
 
-
-        // Phase 8: flood fill remaining hillslope values
-        if false {
-                
-            if verbose {
-                println!("Flood filling remaining hillslope values.");
-            }
-            for row in 0..rows {
-                for col in 0..columns {
-                    // check if not in watershed
-                    if watershed[(row, col)] != 1.0 {
-                        continue; 
-                    }
-                    
-                    // check if already labeled
-                    if subwta.get_value(row, col) != low_value {
-                        continue;
-                    }
-                    
-                    // flood fill from this cell
-                    let mut current = (row, col);
-                    let mut found_topaz_id = 0.0;
-                    while found_topaz_id == 0.0 {
-                        let dir_val = d8_pntr.get_value(current.0, current.1);
+                // If we reached a hillslope cell, walk back down and assign found_topaz_id value
+                if found_topaz_id != 0.0 {
+                    let mut backtrack = (row, col);
+                    while backtrack != current {
+                        if subwta[(backtrack.0, backtrack.1)] == low_value {
+                            subwta.set_value(backtrack.0, backtrack.1, found_topaz_id);
+                        }
+                        let dir_val = d8_pntr.get_value(backtrack.0, backtrack.1);
                         let dir = dir_val as usize;
                         let c = pntr_matches[dir];
-                        let row_n = current.0 + dy[c];
-                        let col_n = current.1 + dx[c];
-                        
-                        // Check bounds
-                        if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
-                            break; // Out of bounds
-                        }
-                        
-                        // Check if next cell is in watershed
-                        if watershed[(row_n, col_n)] != 1.0 {
-                            break; // left the watershed
-                        }
-                        
-                        // Check for hillslope cell (ID-3)
-                        if subwta[(row_n, col_n)] != low_value {
-                            found_topaz_id = subwta[(row_n, col_n)];
-                            subwta.set_value(row_n, col_n, found_topaz_id);
-                        }
-
-                        current = (row_n, col_n);
-                    }
-
-                    // If we reached a hillslope cell, walk back down and assign found_topaz_id value
-                    if found_topaz_id != 0.0 {
-                        let mut backtrack = (row, col);
-                        while backtrack != current {
-                            subwta.set_value(backtrack.0, backtrack.1, found_topaz_id);
-                            let dir_val = d8_pntr.get_value(backtrack.0, backtrack.1);
-                            let dir = dir_val as usize;
-                            let c = pntr_matches[dir];
-                            backtrack = (backtrack.0 + dy[c], backtrack.1 + dx[c]);
-                        }
+                        backtrack = (backtrack.0 + dy[c], backtrack.1 + dx[c]);
                     }
                 }
             }
         }
+
 
         // Write netw.tsv
         write_links_to_tsv(&links, &netw_file)?;
