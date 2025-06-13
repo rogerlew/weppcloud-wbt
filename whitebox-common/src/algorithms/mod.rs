@@ -6,6 +6,7 @@ Last Modified: 25/09/2018
 License: MIT
 */
 // private sub-module defined in other files
+mod calculate_rotation_degrees;
 mod convex_hull;
 mod delaunay_triangulation;
 mod is_clockwise_order;
@@ -18,6 +19,7 @@ mod poly_perimeter;
 mod smallest_enclosing_circle;
 
 // exports identifiers from private sub-modules in the current module namespace
+pub use self::calculate_rotation_degrees::calculate_rotation_degrees;
 pub use self::convex_hull::convex_hull;
 pub use self::delaunay_triangulation::{triangulate, Triangulation};
 pub use self::delaunay_triangulation::EMPTY;

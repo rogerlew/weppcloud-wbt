@@ -5208,7 +5208,51 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         return self.run_tool('hillslopes', args, callback) # returns 1 if error
+    
+    def hillslopes_topaz(
+        self, 
+        dem, 
+        d8_pntr, 
+        streams, 
+        pour_pts, 
+        watershed, 
+        chnjnt, 
+        subwta, 
+        netw, 
+        order, 
+        esri_pntr=False, 
+        callback=None
+    ):
+        """Implements TOPAZ-style channel & hillslope IDs for a single watershed.
 
+        Keyword arguments:
+
+        dem -- Input filled or breached DEM raster file. 
+        d8_pntr -- Input raster D8 pointer file. 
+        streams -- Input raster streams file (1=stream, 0=non-stream). 
+        pour_pts -- Input pour points (outlet) file (vector or raster). 
+        watershed -- Input watershed mask raster file (1=inside, 0=outside). 
+        chnjnt -- Input channel junctions raster file (0=headwater, 1=mid-link, 2=junction). 
+        order -- Input stream order raster file (optional). 
+        subwta -- Output raster file for TOPAZ identifiers. 
+        netw -- Output TSV file for channel network table. 
+        esri_pntr -- D8 pointer uses the ESRI style scheme (default: False). 
+        callback -- Custom function for handling tool text outputs.
+        """
+        args = []
+        args.append("--dem='{}'".format(dem))
+        args.append("--d8_pntr='{}'".format(d8_pntr))
+        args.append("--streams='{}'".format(streams))
+        args.append("--pour_pts='{}'".format(pour_pts))
+        args.append("--watershed='{}'".format(watershed))
+        args.append("--chnjnt='{}'".format(chnjnt))
+        args.append("--subwta='{}'".format(subwta))
+        args.append("--netw='{}'".format(netw))
+        args.append("--order='{}'".format(order))
+        if esri_pntr: 
+            args.append("--esri_pntr")
+        return self.run_tool('hillslopes_topaz', args, callback)
+    
     def hydrologic_connectivity(self, dem, output1, output2, exponent=1.0, threshold=None, callback=None):
         """This tool evaluates hydrologic connectivity within a DEM.
 

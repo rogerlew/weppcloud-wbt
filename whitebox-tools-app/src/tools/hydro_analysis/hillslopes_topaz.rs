@@ -6,12 +6,13 @@ Created: 09/06/2025
 
 use whitebox_raster::*;
 use whitebox_common::structures::Array2D;
+use whitebox_common::algorithms::calculate_rotation_degrees;
 use whitebox_vector::*;
 use crate::tools::*;
 use std::env;
 use std::f64;
 use std::fs::File;
-use std::io::{Error, ErrorKind, Write};
+use std::io::{self, Error, ErrorKind, Write};
 use std::path;
 use std::collections::VecDeque;
 use geojson::{GeoJson, Geometry, Value};
@@ -20,17 +21,18 @@ use geojson::{GeoJson, Geometry, Value};
 struct Link {
     id: i32,
     topaz_id: i32,
-    pourpoint: (isize, isize),    // Downstream pourpoint coordinates
     ds: (isize, isize),     // Downstream end coordinates
     us: (isize, isize),     // Upstream end coordinates
     inflow0_id: i32,        // Link index of first inflow
     inflow1_id: i32,        // Link index of second inflow
     length_m: f64,          // Channel length in meters
+    ds_z: f64,              // Elevation at downstream end
+    us_z: f64,              // Elevation at upstream end
     drop_m: f64,            // Elevation drop along channel
     order: u8,              // Stream order
     is_headwater: bool,     // True for headwater links
     is_outlet: bool,        // True for outlet link
-    path: Vec<(isize, isize)>, // Cells in the channel path from bottom to top
+    path: Vec<(isize, isize)>, // Cells in the channel path from top to bottom
 }
 
 impl Link {
@@ -38,19 +40,55 @@ impl Link {
         Link {
             id: -1,
             topaz_id: 0,
-            jnt: (-1, -1),
             ds: (-1, -1),
             us: (-1, -1),
             inflow0_id: -1,
             inflow1_id: -1,
             length_m: 0.0,
-            drop_m: 0.0,
+            ds_z: f64::NAN,
+            us_z: f64::NAN,
+            drop_m: f64::NAN,
             order: 0,
             is_headwater: false,
             is_outlet: false,
             path: Vec::new(),
         }
     }
+}
+
+fn write_links_to_tsv(links: &[Link], file_path: &str) -> io::Result<()> {
+    let mut file = File::create(file_path)?;
+    
+    // Write header
+    writeln!(
+        &mut file,
+        "id\ttopaz_id\tds_x\tds_y\tus_x\tus_y\tinflow0_id\tinflow1_id\tlength_m\tds_z\tus_z\tdrop_m\torder\tis_headwater\tis_outlet"
+    )?;
+    
+    // Write each link
+    for link in links {
+        writeln!(
+            &mut file,
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.3}\t{:.3}\t{:.3}\t{:.3}\t{}\t{}\t{}",
+            link.id,
+            link.topaz_id,
+            link.ds.0,
+            link.ds.1,
+            link.us.0,
+            link.us.1,
+            link.inflow0_id,
+            link.inflow1_id,
+            link.length_m,
+            link.ds_z,
+            link.us_z,
+            link.drop_m,
+            link.order,
+            link.is_headwater,
+            link.is_outlet
+        )?;
+    }
+    
+    Ok(())
 }
 
 pub struct HillslopesTopaz {
@@ -250,139 +288,6 @@ impl HillslopesTopaz {
             Ok(pour_point)
         }
     }
-    
-    /// Calculate flow vector between two points
-    fn flow_vector(from: (isize, isize), to: (isize, isize)) -> (f64, f64) {
-        let dx = (to.1 - from.1) as f64;
-        let dy = (from.0 - to.0) as f64; // Inverted Y-axis
-        let magnitude = (dx * dx + dy * dy).sqrt();
-        if magnitude > 0.0 {
-            (dx / magnitude, dy / magnitude)
-        } else {
-            (0.0, 0.0)
-        }
-    }
-    
-    /// Calculate angle between two vectors
-    fn angle_between(v1: (f64, f64), v2: (f64, f64)) -> f64 {
-        let dot = v1.0 * v2.0 + v1.1 * v2.1;
-        let det = v1.0 * v2.1 - v1.1 * v2.0;
-        det.atan2(dot).to_degrees()
-    }
-    
-    /// Flood fill operation for headwater hillslopes
-    fn flood_fill(
-        start: (isize, isize), 
-        value: f64, 
-        output: &mut Raster, 
-        watershed: &Raster,
-        d8_pntr: &Raster,
-        pntr_nodata: f64,
-        pntr_matches: &[usize; 129]
-    ) {
-        let mut stack = vec![start];
-        let rows = watershed.configs.rows as isize;
-        let columns = watershed.configs.columns as isize;
-        let dx = [1, 1, 1, 0, -1, -1, -1, 0];
-        let dy = [-1, 0, 1, 1, 1, 0, -1, -1];
-        
-        while let Some((row, col)) = stack.pop() {
-            // Only process if in watershed and not already labeled
-            if watershed[(row, col)] == 1.0 && output[(row, col)] == 0.0 {
-                output[(row, col)] = value;
-                
-                // Add neighbors that flow into this cell
-                for n in 0..8 {
-                    let row_n = row + dy[n];
-                    let col_n = col + dx[n];
-                    
-                    if row_n >= 0 && row_n < rows && col_n >= 0 && col_n < columns {
-                        let pntr_val = d8_pntr[(row_n, col_n)];
-                        if pntr_val != pntr_nodata {
-                            let dir = pntr_val as usize;
-                            if dir < 129 && pntr_matches[dir] == n {
-                                stack.push((row_n, col_n));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    /// Residual fill for remaining hillslope cells
-    fn residual_fill(
-        output: &mut Raster,
-        d8_pntr: &Raster,
-        watershed: &Raster,
-        pntr_nodata: f64,
-        pntr_matches: &[usize; 129]
-    ) {
-        let rows = output.configs.rows as isize;
-        let columns = output.configs.columns as isize;
-
-        let dx = [1, 1, 1, 0, -1, -1, -1, 0];
-        let dy = [-1, 0, 1, 1, 1, 0, -1, -1];
-        
-        for row in 0..rows {
-            for col in 0..columns {
-                if watershed[(row, col)] == 1.0 && output[(row, col)] == 0.0 {
-                    let mut flag = false;
-                    let (mut x, mut y) = (col, row);
-                    let mut outlet_id = 0f64;
-                    
-                    // Trace flow path to find labeled cell
-                    while !flag {
-                        let dir_val = d8_pntr[(y, x)];
-                        if dir_val != pntr_nodata {
-                            let dir = dir_val as usize;
-                            if dir < 129 {
-                                let c = pntr_matches[dir];
-                                y += dy[c];
-                                x += dx[c];
-                                
-                                if output[(y, x)] > 0.0 {
-                                    outlet_id = output[(y, x)];
-                                    flag = true;
-                                }
-                            } else {
-                                flag = true; // Invalid direction
-                            }
-                        } else {
-                            flag = true; // Nodata
-                        }
-                    }
-                    
-                    // Back-fill the path
-                    flag = false;
-                    let (mut x2, mut y2) = (col, row);
-                    output[(y2, x2)] = outlet_id;
-                    
-                    while !flag {
-                        let dir_val = d8_pntr[(y2, x2)];
-                        if dir_val != pntr_nodata {
-                            let dir = dir_val as usize;
-                            if dir < 129 {
-                                let c = pntr_matches[dir];
-                                y2 += dy[c];
-                                x2 += dx[c];
-                                
-                                if output[(y2, x2)] > 0.0 {
-                                    flag = true;
-                                } else {
-                                    output[(y2, x2)] = outlet_id;
-                                }
-                            } else {
-                                flag = true;
-                            }
-                        } else {
-                            flag = true;
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 impl WhiteboxTool for HillslopesTopaz {
@@ -520,8 +425,10 @@ impl WhiteboxTool for HillslopesTopaz {
         }
 
         if verbose {
-            println!("Reading grids.");
-        }
+            println!("Reading data...")
+        };
+
+        let start = Instant::now();
 
         // Add working directory to file paths
         if verbose {
@@ -576,13 +483,16 @@ impl WhiteboxTool for HillslopesTopaz {
 
         let rows = dem.configs.rows as isize;
         let columns = dem.configs.columns as isize;
-        let nodata = dem.configs.nodata;
+        let _nodata = dem.configs.nodata;
         let pntr_nodata = d8_pntr.configs.nodata;
         let streams_nodata = streams.configs.nodata;
         let cellsize_x = dem.configs.resolution_x;
         let cellsize_y = dem.configs.resolution_y;
         let diag_cellsize = (cellsize_x * cellsize_x + cellsize_y * cellsize_y).sqrt();
 
+        let dx = [1, 1, 1, 0, -1, -1, -1, 0];
+        let dy = [-1, 0, 1, 1, 1, 0, -1, -1];
+        
         // Create a mapping from the pointer values to cells offsets.
         // This may seem wasteful, using only 8 of 129 values in the array,
         // but the mapping method is far faster than calculating z.ln() / ln(2.0).
@@ -630,106 +540,178 @@ impl WhiteboxTool for HillslopesTopaz {
         if verbose {
             println!("Initializing output raster.");
         }
-        let mut output_config = dem.configs.clone();
-        output_config.data_type = DataType::U32;
-        let mut subwta = Raster::initialize_using_config(&subwta_file, &output_config);
-
-        // Phase 1: Build channel tree (BFS from outlet)
-        let mut links = Vec::<Link>::new();
-        let mut queue = VecDeque::new();
-        let mut visited: Array2D<u8> = Array2D::new(rows, columns, 0u8, 0u8)?;
-        let mut link_id_grid = Array2D::new(rows, columns, -1i32, -1i32)?;
-        let dx = [1, 1, 1, 0, -1, -1, -1, 0];
-        let dy = [-1, 0, 1, 1, 1, 0, -1, -1];
         
-        // Start at pour point
-        queue.push_back(pour_point);
-        visited[pour_point] = 1;
-        let mut link_id = 0;
+        let mut subwta = Raster::initialize_using_file(&subwta_file, &d8_pntr);
+        subwta.configs.data_type = DataType::F32;
+        subwta.configs.palette = "qual.plt".to_string();
+        subwta.configs.photometric_interp = PhotometricInterpretation::Categorical;
+        let low_value = f64::MIN;
+        subwta.configs.nodata = low_value;
+        subwta.reinitialize_values(low_value);
 
-        while let Some(mut current) = queue.pop_front() {
-            // Create new link
-            let mut link = Link::new();
-            link.id = link_id;
-            link.ds = current;
-            link.path.push(current);
-            link.is_outlet = links.is_empty();
-            
-            // Trace upstream until junction or headwater
-            loop {
-                // Mark cell as part of this link
-                link_id_grid[current] = link_id;
-                
-                // Check if we've reached a junction or headwater
-                let jnt_val = chnjnt.get_value(current.0, current.1);
-                if jnt_val == 0.0 || jnt_val == 2.0 {
-                    link.us = current;
-                    link.is_headwater = jnt_val == 0.0;
-                    link.pourpoint = current;
-                    break;
-                }
-                
-                // Move upstream
-                let mut found = false;
-                let pntr_val = d8_pntr.get_value(current.0, current.1);
-                if pntr_val != pntr_nodata {
-                    let dir = pntr_val as usize;
-                    if dir < 129 {
-                        let c = pntr_matches[dir];
-                        let row_n = current.0 + dy[c];
-                        let col_n = current.1 + dx[c];
-                        
-                        if row_n >= 0 && row_n < rows && col_n >= 0 && col_n < columns {
-                            // Only follow if not visited and in watershed
-                            if visited[(row_n, col_n)] == 0 && watershed[(row_n, col_n)] == 1.0 {
-                                current = (row_n, col_n);
-                                visited[(row_n, col_n)] = 1;
-                                link.path.push(current);
-                                found = true;
-                            }
-                        }
-                    }
-                }
-                
-                if !found {
-                    link.us = current;
-                    link.is_headwater = true; // Premature end
-                    break;
+        // Phase 1: Build links
+        let mut links = Vec::<Link>::new();
+
+        // 1.1 Identify headwaters
+        if verbose {
+            println!("Finding headwaters.");
+        }
+        let mut headwaters = Vec::new();
+        for row in 0..rows {
+            for col in 0..columns {
+                if chnjnt[(row, col)] == 0.0 && watershed[(row, col)] == 1.0 {
+                    headwaters.push((row, col));
                 }
             }
-            
-            // Add upstream inflows to queue (if junction)
-            if chnjnt.get_value(link.us.0, link.us.1) == 2.0 {
-                for n in 0..8 {
-                    let row_n = link.us.0 + dy[n];
-                    let col_n = link.us.1 + dx[n];
-                    
-                    if row_n >= 0 && row_n < rows && col_n >= 0 && col_n < columns {
-                        // Check if flows into junction
-                        if d8_pntr.get_value(row_n, col_n) != pntr_nodata {
-                            let dir_val = d8_pntr.get_value(row_n, col_n) as usize;
-                            if dir_val < 129 {
-                                let dir = pntr_matches[dir_val];
-                                let target_row = row_n + dy[dir];
-                                let target_col = col_n + dx[dir];
-                                
-                                if target_row == link.us.0 && target_col == link.us.1 {
-                                    if watershed[(row_n, col_n)] == 1.0 && visited[(row_n, col_n)] == 0 {
-                                        queue.push_back((row_n, col_n));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            links.push(link);
-            link_id += 1;
         }
 
-        // Phase 2: Calculate link lengths and drops
+        if verbose {
+            println!("Found {} headwaters.", headwaters.len());
+        }
+
+        let mut link_id_grid = Array2D::new(rows, columns, -1i32, -1i32)?;
+
+        // Walk down headwaters to identify links.
+        if verbose {
+            println!("Walk down headwaters to identify links.");
+        }
+        for hw in headwaters {
+            if verbose {
+                println!("Processing headwater at ({}, {})", hw.0, hw.1);
+            }
+            // Skip if this headwater is already part of a link
+            if link_id_grid[hw] != -1 {
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    "Headwater cell is already part of a link",
+                ));
+            }
+            
+            let mut link = Link::new();
+            link.id = links.len() as i32; // Assign current link ID
+            link.us = hw;  // set the upstream location
+            link.is_headwater = true;
+            
+            let mut current = hw;
+            loop {
+                // push current cell to the link path
+                link.path.push(current);
+
+                // There are two break conditions:
+                // 1. If we reach a cell that is already part of a link (link_id_grid[current] != -1)
+                // 2. If we reach the pour point
+
+                // Check if we're joining an existing link
+                if link_id_grid[current] != -1 {
+                    // double check that chnjnt[current] == 2.0
+                    if chnjnt[current] != 2.0 {
+                        return Err(Error::new(
+                            ErrorKind::InvalidInput,
+                            "Current cell is not recognized as a junction",
+                        ));
+                    }
+                    link.ds = current;
+                    links.push(link);
+                    break;
+                }
+
+                // Mark cell as part of this link
+                // we would have broken out of the loop if if current was already part of a link
+                link_id_grid[current] = link.id;
+                
+                // Check if we've reached the outlet
+                if current == pour_point {
+                    link.ds = current;
+                    link.is_outlet = true;
+                    links.push(link);
+                    break;
+                }
+                
+                // Check if we've reached a junction
+                if current != hw && chnjnt[current] == 2.0 {
+                    link.ds = current;
+                    links.push(link);
+                    
+                    // we now this hasn't been visited. create a new link and continue walking downstream.
+                    // we would have returned if link_id_grid[current] != -1
+                    link = Link::new();
+                    link.id = links.len() as i32; // Assign current link ID
+                    link.us = current; // set the upstream location
+                    link.path.push(current);
+                    link.is_headwater = false; // this is not a headwater link
+                }
+                
+                // Move downstream
+                let pntr_val = d8_pntr.get_value(current.0, current.1);
+                if pntr_val == pntr_nodata {
+                    return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        "D8 pointer value is nodata at current cell",
+                    ));
+                }
+                
+                let dir = pntr_val as usize;
+                if dir >= 128 {
+                    return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        "Invalid D8 pointer value encountered",
+                    ));
+                }
+                
+                let c = pntr_matches[dir];
+                let row_n = current.0 + dy[c];
+                let col_n = current.1 + dx[c];
+                
+                // Check bounds
+                if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
+                    return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        "Pointer direction leads outside raster bounds",
+                    ));
+                }
+                
+                // Check if next cell is in watershed
+                if watershed[(row_n, col_n)] != 1.0 {
+                    return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        "Pointer direction leads outside watershed",
+                    ));
+                }
+                
+                current = (row_n, col_n);                
+            }
+        }
+
+        // Phase 2: Now that we have all links, establish their relationships
+        for i in 0..links.len() {
+            if links[i].is_headwater {
+                links[i].inflow0_id = -1;
+                links[i].inflow1_id = -1;
+                continue;
+            }
+
+            let us_end = links[i].us;
+            
+            // Find links that flow into this one
+            let mut inflows = Vec::new();
+            for j in 0..links.len() {
+                if links[j].ds == us_end {
+                    inflows.push(links[j].id);
+                }
+            }
+            
+            // Assign inflow IDs (up to 2)
+            if inflows.len() > 0 {
+                links[i].inflow0_id = inflows[0];
+            }
+            if inflows.len() > 1 {
+                links[i].inflow1_id = inflows[1];
+            }
+        }
+
+        // Calculate link lengths and drops
         for link in &mut links {
+
             // Calculate length
             let mut length = 0.0;
             for i in 1..link.path.len() {
@@ -745,11 +727,9 @@ impl WhiteboxTool for HillslopesTopaz {
             link.length_m = length;
             
             // Calculate elevation drop
-            let ds_elev = dem.get_value(link.ds.0, link.ds.1);
-            let us_elev = dem.get_value(link.us.0, link.us.1);
-            if ds_elev != nodata && us_elev != nodata {
-                link.drop_m = us_elev - ds_elev;
-            }
+            link.ds_z = dem.get_value(link.ds.0, link.ds.1);
+            link.us_z = dem.get_value(link.us.0, link.us.1);
+            link.drop_m = link.us_z - link.ds_z;
             
             // Set stream order if provided
             link.order = order.get_value(link.ds.0, link.ds.1) as u8;
@@ -757,225 +737,275 @@ impl WhiteboxTool for HillslopesTopaz {
         
         // Phase 3: Assign TOPAZ IDs (bottom-up traversal)// Phase 3: Assign TOPAZ IDs (bottom-up traversal)
         let mut next_id = 24; // Starting TOPAZ ID
+
+        let mut outlet_idx: i32 = -1; // Index of the outlet link
+        for i in 1..links.len() {
+            if links[i].is_outlet {
+                outlet_idx = i as i32;
+                links[i].topaz_id = next_id;
+                next_id += 10;
+                break;
+            }
+        }
+
+        if outlet_idx == -1 {
+            return Err(Error::new(ErrorKind::InvalidInput, "No outlet link found"));
+        }
+
         let mut queue = VecDeque::new();
-        queue.push_back(0); // Start with outlet link
+        queue.push_back(outlet_idx as usize); // Start with outlet link
 
         while let Some(link_idx) = queue.pop_front() {
-            // 1. Update current link first
-            {
-                let link = &mut links[link_idx];
-                link.topaz_id = next_id;
-                next_id += 10;
-            } // Mutable borrow ends here
-            
-            // 2. Prepare data for children without holding references
-            let mut inflows = Vec::new();
-            for n in 0..8 {
-                let row_n = links[link_idx].us.0 + dy[n];
-                let col_n = links[link_idx].us.1 + dx[n];
-                
-                if row_n >= 0 && row_n < rows && col_n >= 0 && col_n < columns {
-                    let inflow_id = link_id_grid[(row_n, col_n)];
-                    if inflow_id >= 0 && inflow_id != links[link_idx].id {
-                        inflows.push(inflow_id as usize);
-                    }
-                }
+            // If this is a headwater link, skip to next iteration
+            if links[link_idx].is_headwater {
+                continue;
             }
-            
-            // 3. Process children if any exist
-            if !inflows.is_empty() {
-                if inflows.len() == 2 {
-                    // Calculate parent vector once
-                    let parent_vec = if links[link_idx].path.len() > 1 {
-                        let last = links[link_idx].path.len() - 1;
-                        HillslopesTopaz::flow_vector(links[link_idx].path[last - 1], links[link_idx].path[last])
-                    } else {
-                        let dir_val = d8_pntr.get_value(links[link_idx].us.0, links[link_idx].us.1) as usize;
-                        if dir_val < 129 {
-                            let c = pntr_matches[dir_val];
-                            (dx[c] as f64, dy[c] as f64)
-                        } else {
-                            (0.0, 0.0)
-                        }
-                    };
-                    
-                    // Calculate child vectors without references
-                    let mut child_angles = Vec::new();
-                    for &inflow_id in &inflows {
-                        let child_vec = if links[inflow_id].path.len() > 1 {
-                            HillslopesTopaz::flow_vector(links[inflow_id].path[0], links[inflow_id].path[1])
-                        } else {
-                            let dir_val = d8_pntr.get_value(links[inflow_id].ds.0, links[inflow_id].ds.1) as usize;
-                            if dir_val < 129 {
-                                let c = pntr_matches[dir_val];
-                                (dx[c] as f64, dy[c] as f64)
-                            } else {
-                                (0.0, 0.0)
-                            }
-                        };
-                        
-                        let angle = HillslopesTopaz::angle_between(parent_vec, child_vec);
-                        child_angles.push((inflow_id, angle));
-                    }
-                    
-                    // Order by angle
-                    child_angles.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
-                    let left_id = child_angles[0].0;
-                    let right_id = child_angles[1].0;
-                    
-                    // Update children using indices directly
-                    links[left_id].topaz_id = next_id;
-                    links[right_id].topaz_id = next_id + 10;
-                    
-                    // Update current link's inflow references
-                    {
-                        let link = &mut links[link_idx];
-                        link.inflow0_id = left_id as i32;
-                        link.inflow1_id = right_id as i32;
-                    }
-                    
-                    // Add to queue
-                    queue.push_back(left_id);
-                    queue.push_back(right_id);
-                    next_id += 20;
-                } else {
-                    // Single inflow
-                    let inflow_id = inflows[0];
-                    links[inflow_id].topaz_id = next_id;
-                    
-                    {
-                        let link = &mut links[link_idx];
-                        link.inflow0_id = inflow_id as i32;
-                    }
-                    
-                    queue.push_back(inflow_id);
-                    next_id += 10;
-                }
+
+            if links[link_idx].inflow0_id == -1 || links[link_idx].inflow1_id == -1 {
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    "Link does not have two inflows",
+                ));
+            }
+
+            let inflow0_id = links[link_idx].inflow0_id as usize;
+            let inflow1_id = links[link_idx].inflow1_id as usize;
+
+            let inflow0_angle = calculate_rotation_degrees(
+                links[link_idx].ds.0 as f64, -links[link_idx].ds.1 as f64,            // a
+                links[link_idx].us.0 as f64, -links[link_idx].us.1 as f64,            // o
+                links[inflow0_id].us.0 as f64, -links[inflow0_id].us.1 as f64, // b
+            );
+
+            let inflow1_angle = calculate_rotation_degrees(
+                links[link_idx].ds.0 as f64, -links[link_idx].ds.1 as f64,            // a
+                links[link_idx].us.0 as f64, -links[link_idx].us.1 as f64,            // o
+                links[inflow1_id].us.0 as f64, -links[inflow1_id].us.1 as f64, // b
+            );
+
+            if inflow0_angle < inflow1_angle {
+                links[inflow0_id].topaz_id = next_id;
+                queue.push_back(inflow0_id as usize);
+                next_id += 10;
+                links[inflow1_id].topaz_id = next_id;
+                queue.push_back(inflow1_id as usize);
+                next_id += 10;
+            } else {
+                links[inflow1_id].topaz_id = next_id;
+                queue.push_back(inflow1_id as usize);
+                next_id += 10;
+                links[inflow0_id].topaz_id = next_id;
+                queue.push_back(inflow0_id as usize);
+                next_id += 10;
             }
         }
 
         // Phase 4: Stamp channels in output raster
+        if verbose {
+            println!("Stamping channels in output raster.");
+        }
+
         for link in &links {
+            let topaz_id = link.topaz_id as f64;
             for &(row, col) in &link.path {
-                if watershed[(row, col)] == 1.0 {
-                    subwta[(row, col)] = link.topaz_id as f64;
+                if link.is_headwater && (row, col) == link.ds && !link.is_outlet {
+                    // Headwater pour points should not be stamped
+                    continue;
                 }
+                subwta.set_value(row, col, topaz_id as f64);
             }
         }
         
         // Phase 5: Headwater hillslopes (ID-3)
-        for link in &links {
-            if link.is_headwater {
-                let value = (link.topaz_id - 3) as f64;
-                HillslopesTopaz::flood_fill(
-                    link.us, 
-                    value, 
-                    &mut subwta, 
-                    &watershed,
-                    &d8_pntr,
-                    pntr_nodata,
-                    &pntr_matches
-                );
-            }
+        if verbose {
+            println!("Filling headwater hillslopes.");
         }
         
-        // Phase 6: Side hillslopes (along channel buffers)
-        let dx_f64 = [1.0, 1.0, 1.0, 0.0, -1.0, -1.0, -1.0, 0.0];
-        let dy_f64 = [-1.0, 0.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0];
-        
+        let mut headwater_pour_points = Array2D::new(rows, columns, 0f64, 0f64)?;
         for link in &links {
-            for i in 0..link.path.len() {
-                let (row, col) = link.path[i];
-                let topaz_id = link.topaz_id as u32;
+            if link.is_headwater {
+                headwater_pour_points[(link.us.0, link.us.1)] = (link.topaz_id - 3) as f64; // ID-3
+            }
+        }
+
+        // Phase 6: Flood fill for headwater hillslopes
+        for row in 0..rows {
+            for col in 0..columns {
+                if watershed[(row, col)] != 1.0 {
+                    continue; // Not in watershed
+                }
                 
-                // Determine downstream direction
-                let ds_vec = if i > 0 {
-                    // Flow from previous cell to current
-                    let prev = link.path[i - 1];
-                    HillslopesTopaz::flow_vector(prev, (row, col))
-                } else if link.path.len() > 1 {
-                    // First cell - flow to next
-                    let next = link.path[1];
-                    HillslopesTopaz::flow_vector((row, col), next)
-                } else {
-                    // Single-cell link - use flow direction
-                    let dir_val = d8_pntr.get_value(row, col) as usize;
-                    if dir_val < 129 {
-                        let c = pntr_matches[dir_val];
-                        (dx_f64[c], dy_f64[c])
-                    } else {
-                        (0.0, 0.0)
+                // walk downstream from (row, col) until we:
+                // 1. leave the watershed
+                // 2. find a headwater pour point
+                // 3. find a top hillslope cell
+
+                let mut current = (row, col);
+                let mut found_headwater = 0.0;
+                while found_headwater == 0.0 {
+                    let dir_val = d8_pntr.get_value(current.0, current.1);
+                    if dir_val == pntr_nodata {
+                        break; // No valid flow direction
                     }
-                };
-                
-                // Check neighbors
-                for n in 0..8 {
-                    let row_n = row + dy[n] as isize;
-                    let col_n = col + dx[n] as isize;
                     
-                    if row_n >= 0 && row_n < rows && col_n >= 0 && col_n < columns {
-                        if watershed[(row_n, col_n)] == 1.0 && 
-                           subwta.get_value(row_n, col_n) == 0.0 {
-                            // Calculate angle between downstream vector and neighbor vector
-                            let neighbor_vec = (dx_f64[n], dy_f64[n]);
-                            let mut angle = HillslopesTopaz::angle_between(ds_vec, neighbor_vec);
-                            
-                            // Normalize to 0-360
-                            if angle < 0.0 {
-                                angle += 360.0;
-                            }
-                            
-                            // Assign left (ID-2) or right (ID-1)
-                            let value = if angle < 180.0 {
-                                (topaz_id - 2) as f64
-                            } else {
-                                (topaz_id - 1) as f64
-                            };
-                            
-                            subwta[(row_n, col_n)] = value;
+                    let dir = dir_val as usize;
+                    if dir >= 128 {
+                        break; // Invalid pointer value
+                    }
+                    
+                    let c = pntr_matches[dir];
+                    let row_n = current.0 + dy[c];
+                    let col_n = current.1 + dx[c];
+                    
+                    // Check bounds
+                    if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
+                        break; // Out of bounds
+                    }
+                    
+                    // 1. Check if next cell is in watershed
+                    if watershed[(row_n, col_n)] != 1.0 {
+                        break; // left the watershed
+                    }
+                    
+                    // 2. Check for headwater pour point
+                    if headwater_pour_points[(row_n, col_n)] != 0.0 {
+                        found_headwater = headwater_pour_points[(row_n, col_n)];
+                        subwta.set_value(row_n, col_n, found_headwater as f64);
+                    }
+
+                    // 3. Check for top hillslope cell (ID-3)
+                    if subwta[(row_n, col_n)] % 10.0 == 1.0 {
+                        found_headwater = subwta[(row_n, col_n)];
+                    }
+                    current = (row_n, col_n);
+                }
+
+                // If we reached a headwater pour point, walk back down and assign found_headwater value
+                if found_headwater != 0.0 {
+                    let mut backtrack = (row, col);
+                    while backtrack != current {
+                        subwta.set_value(backtrack.0, backtrack.1, found_headwater as f64);
+                        let dir_val = d8_pntr.get_value(backtrack.0, backtrack.1);
+                        if dir_val == pntr_nodata {
+                            break; // No valid flow direction
                         }
+                        
+                        let dir = dir_val as usize;
+                        if dir >= 128 {
+                            break; // Invalid pointer value
+                        }
+                        
+                        let c = pntr_matches[dir];
+                        backtrack = (backtrack.0 + dy[c], backtrack.1 + dx[c]);
+                    }
+                }
+
+            }
+        }
+
+        // Phase 7: identify and label hillslope boundary cells
+        if verbose {
+            println!("Identifying hillslope boundary cells.");
+        }
+        for row in 0..rows {
+            for col in 0..columns {
+                // check if not in watershed
+                if watershed[(row, col)] != 1.0 {
+                    continue; 
+                }
+                
+                // check if already labeled
+                if subwta.get_value(row, col) != low_value {
+                    continue;
+                }
+                
+                // boundary cells are cells that drain into a channel
+                // so we need to walk downstream from this cell
+                let dir_val = d8_pntr.get_value(row, col);
+                if dir_val == pntr_nodata {
+                    break; // No valid flow direction
+                }
+                
+                let dir = dir_val as usize;
+                if dir >= 128 {
+                    break; // Invalid pointer value
+                }
+                
+                let c = pntr_matches[dir];
+                let row_n = row + dy[c];
+                let col_n = col + dx[c];
+
+                // check if this is a boundary cell
+                if subwta[(row_n, col_n)] % 10.0 == 4.0 {
+                    let topaz_id = subwta.get_value(row_n, col_n);
+
+                    let dir_val = d8_pntr.get_value(row_n, col_n);
+                    if dir_val == pntr_nodata {
+                        break; // No valid flow direction
+                    }
+                    
+                    let dir = dir_val as usize;
+                    if dir >= 128 {
+                        break; // Invalid pointer value
+                    }
+                    
+                    let c = pntr_matches[dir];
+                    let row_nn = row_n + dy[c];
+                    let col_nn = col_n + dx[c];
+
+                    // now we need to determine whether this is on the left or right side of the channel
+                    let angle = calculate_rotation_degrees(
+                        row_nn as f64, -col_nn as f64, // a is downstream of chnanel
+                        row_n as f64, -col_n as f64, // origin is the stream channel
+                        row as f64, -col as f64, // b is the current cell
+                    );
+
+                    if verbose {
+                        println!("Cell ({}, {}) is a boundary cell to channel ({}, {}) -> {} ({}, {}) {} with angle: {}", row, col, row_n, col_n, c, row_nn, col_nn, topaz_id, angle);
+                    }
+
+                    if angle <= 180.0 {
+                        // left side of channel
+                        subwta.set_value(row, col, topaz_id - 2.0); // left boundary
+                    } else {
+                        // right side of channel
+                        subwta.set_value(row, col, topaz_id - 1.0); // right boundary
                     }
                 }
             }
         }
         
-        // Phase 7: Residual fill for remaining hillslope cells
-        HillslopesTopaz::residual_fill(
-            &mut subwta,
-            &d8_pntr,
-            &watershed,
-            pntr_nodata,
-            &pntr_matches
-        );
-        
-        // Phase 8: Write outputs
-        // Write subwta raster
-        subwta.add_metadata_entry(format!("Created by whitebox_tools' {}", self.get_tool_name()));
-        subwta.write()?;
-        
         // Write netw.tsv
-        let mut tsv = File::create(netw_file)?;
-        writeln!(tsv, "id\ttopaz_id\tjnt_row\tjnt_col\tds_row\tds_col\tus_row\tus_col\tinflow0_id\tinflow1_id\tlength_m\tdrop_m\torder\tis_headwater\tis_outlet")?;
-        
-        for link in &links {
-            writeln!(tsv, "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.2}\t{:.2}\t{}\t{}\t{}",
-                link.id,
-                link.topaz_id,
-                link.pourpoint.0, link.pourpoint.1,
-                link.ds.0, link.ds.1,
-                link.us.0, link.us.1,
-                link.inflow0_id, link.inflow1_id,
-                link.length_m,
-                link.drop_m,
-                link.order,
-                link.is_headwater as u8,
-                link.is_outlet as u8
-            )?;
-        }
+        write_links_to_tsv(&links, &netw_file)?;
+
+        let elapsed_time = get_formatted_elapsed_time(start);
+        subwta.add_metadata_entry(format!(
+            "Created by whitebox_tools\' {} tool",
+            self.get_tool_name()
+        ));
+        subwta.add_metadata_entry(format!("D8 pointer file: {}", d8_file));
+        subwta.add_metadata_entry(format!("Pour-points file: {}", pourpts_file));
+        subwta.add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed_time));
 
         if verbose {
-            println!("TOPAZ hillslope identification complete");
+            println!("Saving data...")
+        };
+        let _ = match subwta.write() {
+            Ok(_) => {
+                if verbose {
+                    println!("Output file written")
+                }
+            }
+            Err(e) => return Err(e),
+        };
+
+        if verbose {
+            println!(
+                "{}",
+                &format!("Elapsed Time (excluding I/O): {}", elapsed_time)
+            );
         }
+
 
         Ok(())
     }
