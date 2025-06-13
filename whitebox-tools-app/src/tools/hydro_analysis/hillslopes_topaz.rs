@@ -17,6 +17,30 @@ use std::path;
 use std::collections::VecDeque;
 use geojson::{GeoJson, Geometry, Value};
 
+/// This tool will identify the hillslopes associated with a user-specified stream network for a single catchment. Hillslopes
+/// include the catchment areas draining to the left and right sides of each stream link in the network as well
+/// as the catchment areas draining to all channel heads. `Hillslopes` are conceptually similar to `Subbasins`,
+/// except that sub-basins do not distinguish between the right-bank and left-bank catchment areas of stream links.
+/// The `Subbasins` tool simply assigns a unique identifier to each stream link in a stream network. Each hillslope
+/// output by this tool is assigned a unique, positive identifier  value. All grid cells in the output raster that
+/// coincide with a stream cell are assigned a non-zero idenitifier. 
+///
+/// The tool implements the TOPAZ-style channel and hillslope IDs with channels ending with "4" starting with 24, and hillslopes 
+/// ending with 1 ("top"), 2 ("left"), or 3 ("right"). 
+///
+/// The user must specify the name of a flow pointer
+/// (flow direction) raster (`--d8_pntr`), a streams raster (`--streams`), and the output raster (`--output`).
+/// The flow pointer and streams rasters should be generated using the `D8Pointer` algorithm. This will require
+/// a depressionless DEM, processed using either the `BreachDepressions` or `FillDepressions` tool.
+///
+/// By default, the pointer raster is assumed to use the clockwise indexing method used by WhiteboxTools.
+/// If the pointer file contains ESRI flow direction values instead, the `--esri_pntr` parameter must be specified.
+///
+/// NoData values in the input flow pointer raster are assigned NoData values in the output image.
+///
+/// # See Also
+/// `Hillslopes`, `StreamLinkIdentifier`, `Watershed`, `Subbasins`, `D8Pointer`, `BreachDepressions`, `FillDepressions`
+
 /// Represents a channel link segment
 struct Link {
     id: i32,
@@ -895,12 +919,6 @@ impl WhiteboxTool for HillslopesTopaz {
             println!("Filling headwater hillslopes.");
         }
         
-        let mut headwater_pour_points = Array2D::new(rows, columns, 0f64, 0f64)?;
-        for link in &links {
-            if link.is_headwater {
-                headwater_pour_points[(link.us.0, link.us.1)] = (link.topaz_id - 3) as f64; // ID-3
-            }
-        }
 
         // Phase 6: Flood fill for headwater hillslopes
         for row in 0..rows {
@@ -912,7 +930,8 @@ impl WhiteboxTool for HillslopesTopaz {
                 // walk downstream from (row, col) until we:
                 // 1. leave the watershed
                 // 2. find a headwater pour point
-                // 3. find a top hillslope cell
+                // 3. find a channel cell that isn't a headwater pour point
+                // 4. find a top hillslope cell
 
                 let mut current = (row, col);
                 let mut found_headwater = 0.0;
@@ -934,11 +953,20 @@ impl WhiteboxTool for HillslopesTopaz {
                     }
                     
                     // 2. Check for headwater pour point
-                    if headwater_pour_points[(row_n, col_n)] != 0.0 {
-                        found_headwater = headwater_pour_points[(row_n, col_n)];
+                    if chnjnt[(row_n, col_n)] == 0.0 {
+                        let topaz_id = subwta.get_value(row_n, col_n);
+                        if topaz_id % 10.0 != 4.0 {
+                            return Err(Error::new(
+                                ErrorKind::InvalidInput,
+                                format!("Expected channel cell with ID ending in 4, found {}", topaz_id),
+                            ));
+                        }
+                        found_headwater = topaz_id - 3.0;
+                    } else if chnjnt[(row_n, col_n)] > 0.0 {
+                        break; // 3. Found a channel cell, stop walking downstream
                     }
 
-                    // 3. Check for top hillslope cell (ID-3)
+                    // 4. Check for top hillslope cell (ID-3)
                     if subwta[(row_n, col_n)] % 10.0 == 1.0 {
                         found_headwater = subwta[(row_n, col_n)];
                     }
