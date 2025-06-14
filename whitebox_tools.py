@@ -50,13 +50,30 @@ def to_snakecase(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
+class WhiteboxAppError(Exception):
+    pass
+
+class WhiteboxToolsRunningError(Exception):
+    pass
 
 class WhiteboxTools(object):
     ''' 
     An object for interfacing with the WhiteboxTools executable.
     '''
 
-    def __init__(self):
+    def __init__(self, verbose=None, raise_on_error=None):
+        """
+        Initializes the WhiteboxTools object.
+        Parameters:
+        verbose -- 
+          If True, tools will print output messages. If False, tools will run as background processes.
+          When provided the argument will override the settings.json file.
+        raise_on_error -- 
+          If True, an error will be raised if a tool fails. 
+          If False, the error will be printed to the console by the default callback.
+          When provided the argument will override the settings.json file.
+        """
+
         if running_windows:
             self.ext = '.exe'
         else:
@@ -68,9 +85,19 @@ class WhiteboxTools(object):
         self.exe_path = path.dirname(path.abspath(__file__))
 
         self.work_dir = ""
-        self.verbose = True
+        if verbose is None:
+            self.verbose = True
+        else:
+            self.verbose = verbose
+
         self.__compress_rasters = False
         self.__max_procs = -1
+        self.__env =  os.environ.copy()
+
+        if raise_on_error is None:
+            self.set_raise_on_error(False)
+        else:
+            self.set_raise_on_error(raise_on_error)
 
         if os.path.isfile('settings.json'):
             # read the settings.json file if it exists
@@ -80,15 +107,34 @@ class WhiteboxTools(object):
             # parse file
             settings = json.loads(data)
             self.work_dir = str(settings['working_directory'])
-            self.verbose = str(settings['verbose_mode'])
+            if verbose is None:
+                self.verbose = str(settings['verbose_mode'])
             self.__compress_rasters = settings['compress_rasters']
             self.__max_procs = settings['max_procs']
-
+            if raise_on_error is None:
+                self.set_raise_on_error(bool(settings['raise_on_error']))
 
         self.cancel_op = False
+
         self.default_callback = default_callback
         self.start_minimized = False
         
+    def set_raise_on_error(self, val: bool):
+        """
+        Sets the flag used by WhiteboxTools to determine whether to raise an error.
+        """
+        if running_windows:
+            Warning("env is not passed to Popen on Windows in `run_tool`.  Someone needs to test this to make sure it works.")
+
+        self.__env['RUST_BACKTRACE'] = str(int(val))
+        self.__raise_on_error = val
+
+    def get_raise_on_error(self):
+        """
+        Returns the flag used by WhiteboxTools to determine whether to raise an error.
+        """
+        return self.__raise_on_error
+    
     def set_whitebox_dir(self, path_str):
         ''' 
         Sets the directory to the WhiteboxTools executable file.
@@ -213,12 +259,12 @@ class WhiteboxTools(object):
                         self.cancel_op = False
                         proc.terminate()
                         return 2
-
                 else:
                     break
 
             return 0
         except (OSError, ValueError, CalledProcessError) as err:
+
             callback(str(err))
             return 1
     
@@ -263,7 +309,6 @@ class WhiteboxTools(object):
                         self.cancel_op = False
                         proc.terminate()
                         return 2
-
                 else:
                     break
 
@@ -325,10 +370,12 @@ class WhiteboxTools(object):
                             startupinfo=si)
             else:
                 proc = Popen(args2, shell=False, stdout=PIPE,
-                            stderr=STDOUT, bufsize=1, universal_newlines=True)
+                            stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            env=self.__env)
 
             while proc is not None:
                 line = proc.stdout.readline()
+
                 sys.stdout.flush()
                 if line != '':
                     if not self.cancel_op:
@@ -338,11 +385,16 @@ class WhiteboxTools(object):
                         self.cancel_op = False
                         proc.terminate()
                         return 2
+                    if self.__raise_on_error and line.startswith('Error:'):
+                        raise WhiteboxAppError(line.strip())
                 else:
                     break
 
             return 0
         except (OSError, ValueError, CalledProcessError) as err:
+            if self.__raise_on_error:
+                raise WhiteboxToolsRunningError(f"An error occurred while running the tool '{tool_name}'. Return code: {proc.returncode} - {str(err)}")
+            
             callback(str(err))
             return 1
 

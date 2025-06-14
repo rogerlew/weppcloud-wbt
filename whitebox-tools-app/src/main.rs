@@ -47,6 +47,7 @@ use nalgebra as na;
 use std::env;
 use std::io::Error;
 use std::path;
+use std;
 
 #[macro_use]
 extern crate serde_derive;
@@ -66,11 +67,9 @@ extern crate serde_derive;
 /// >>./whitebox_tools --wd='/Users/johnlindsay/Documents/data/' --run=DevFromMeanElev --input='DEM clipped.dep' --output='DEV raster.dep' -v
 /// ```
 
-fn main() {
-    match run() {
-        Ok(()) => {}
-        Err(err) => panic!("{}", err),
-    }
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    run()?;      // propogate error to provide ability to backtrace
+    Ok(())
 }
 
 // // This is just used for testing new features.
