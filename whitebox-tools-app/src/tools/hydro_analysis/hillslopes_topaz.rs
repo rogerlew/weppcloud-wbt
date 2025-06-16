@@ -55,6 +55,7 @@ struct Link {
     us_z: f64,              // Elevation at upstream end
     drop_m: f64,            // Elevation drop along channel
     order: u8,              // Stream order
+    areaup: f64,            // Area upstream of the link in square meters
     is_headwater: bool,     // True for headwater links
     is_outlet: bool,        // True for outlet link
     path: Vec<(isize, isize)>, // Cells in the channel path from top to bottom
@@ -75,6 +76,7 @@ impl Link {
             us_z: f64::NAN,
             drop_m: f64::NAN,
             order: 0,
+            areaup: 0.0,
             is_headwater: false,
             is_outlet: false,
             path: Vec::new(),
@@ -88,14 +90,14 @@ fn write_links_to_tsv(links: &[Link], file_path: &str) -> io::Result<()> {
     // Write header
     writeln!(
         &mut file,
-        "id\ttopaz_id\tds_x\tds_y\tus_x\tus_y\tinflow0_id\tinflow1_id\tinflow2_id\tlength_m\tds_z\tus_z\tdrop_m\torder\tis_headwater\tis_outlet"
+        "id\ttopaz_id\tds_x\tds_y\tus_x\tus_y\tinflow0_id\tinflow1_id\tinflow2_id\tlength_m\tds_z\tus_z\tdrop_m\torder\tareaup\tis_headwater\tis_outlet"
     )?;
     
     // Write each link
     for link in links {
         writeln!(
             &mut file,
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.3}\t{:.3}\t{:.3}\t{:.3}\t{}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.3}\t{:.3}\t{:.3}\t{:.3}t{:.3}\t{}\t{}\t{}",
             link.id,
             link.topaz_id,
             link.ds.0,
@@ -110,6 +112,7 @@ fn write_links_to_tsv(links: &[Link], file_path: &str) -> io::Result<()> {
             link.us_z,
             link.drop_m,
             link.order,
+            link.areaup,
             link.is_headwater,
             link.is_outlet
         )?;
@@ -1091,6 +1094,36 @@ impl WhiteboxTool for HillslopesTopaz {
         if verbose {
             let elapsed = start5.elapsed();
             println!("Phase 5: Flood filled hillslope values in {:.2?}.", elapsed);
+        }
+
+
+        // Phase 6: Calculate up area for each link
+        let start6 = Instant::now();
+        if verbose {
+            println!("Calculating area for each link.");
+        }
+
+        for link in &mut links {
+            let topaz_id = link.topaz_id;
+
+            let mut count = 0;
+            for i in 1..3 {
+                let hill_id = topaz_id as f64 - i as f64;
+                // find number of cells in subwta with hill_id
+                for row in 0..rows {
+                    for col in 0..columns {
+                        if subwta[(row, col)] == hill_id {
+                            count += 1;
+                        }
+                    }
+                }
+            }
+            link.areaup = count as f64 * cellsize_x * cellsize_y; // area in m2
+        }
+
+        if verbose {
+            let elapsed = start6.elapsed();
+            println!("Phase 6: Calculated area for each link in {:.2?}.", elapsed);
         }
 
 
