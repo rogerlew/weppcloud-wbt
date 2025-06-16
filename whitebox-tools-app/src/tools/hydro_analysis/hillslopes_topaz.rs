@@ -97,25 +97,25 @@ fn write_links_to_tsv(links: &[Link], file_path: &str) -> io::Result<()> {
     for link in links {
         writeln!(
             &mut file,
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.3}\t{:.3}\t{:.3}\t{:.3}t{:.3}\t{}\t{}\t{}",
-            link.id,
-            link.topaz_id,
-            link.ds.0,
-            link.ds.1,
-            link.us.0,
-            link.us.1,
-            link.inflow0_id,
-            link.inflow1_id,
-            link.inflow2_id,
-            link.length_m,
-            link.ds_z,
-            link.us_z,
-            link.drop_m,
-            link.order,
-            link.areaup,
-            link.is_headwater,
-            link.is_outlet
-        )?;
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.3}\t{:.3}\t{:.3}\t{:.3}\t{}\t{:.3}\t{}\t{}",
+                link.id,
+                link.topaz_id,
+                link.ds.0,
+                link.ds.1,
+                link.us.0,
+                link.us.1,
+                link.inflow0_id,
+                link.inflow1_id,
+                link.inflow2_id,
+                link.length_m,
+                link.ds_z,
+                link.us_z,
+                link.drop_m,
+                link.order,
+                link.areaup,
+                link.is_headwater,
+                link.is_outlet
+            )?;
     }
     
     Ok(())
