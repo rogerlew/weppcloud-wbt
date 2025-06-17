@@ -952,6 +952,8 @@ impl WhiteboxTool for HillslopesTopaz {
         // Phase 5: flood fill hillslope values
         let start5 = Instant::now();
 
+
+        let mut subwta_counts = HashMap::new();
         if verbose {
             println!("Flood filling hillslope values.");
         }
@@ -963,7 +965,7 @@ impl WhiteboxTool for HillslopesTopaz {
                 }
                 
                 // check if already labeled
-                if subwta.get_value(row, col) != low_value {
+                if subwta[(row, col)] != low_value {
                     continue;
                 }
                 
@@ -1080,7 +1082,11 @@ impl WhiteboxTool for HillslopesTopaz {
                     let mut backtrack = (row, col);
                     while backtrack != current {
                         if subwta[(backtrack.0, backtrack.1)] == low_value {
-                            subwta.set_value(backtrack.0, backtrack.1, found_topaz_id);
+                            subwta[(backtrack.0, backtrack.1)] = found_topaz_id;
+                            subwta_counts
+                                .entry(found_topaz_id as i32)
+                                .and_modify(|e| *e += 1)
+                                .or_insert(1);
                         }
                         let dir_val = d8_pntr.get_value(backtrack.0, backtrack.1);
                         let dir = dir_val as usize;
@@ -1108,14 +1114,9 @@ impl WhiteboxTool for HillslopesTopaz {
 
             let mut count = 0;
             for i in 1..3 {
-                let hill_id = topaz_id as f64 - i as f64;
-                // find number of cells in subwta with hill_id
-                for row in 0..rows {
-                    for col in 0..columns {
-                        if subwta[(row, col)] == hill_id {
-                            count += 1;
-                        }
-                    }
+                let hill_id = (topaz_id - i) as i32;
+                if let Some(&area_count) = subwta_counts.get(&hill_id) {
+                    count += area_count;
                 }
             }
             link.areaup = count as f64 * cellsize_x * cellsize_y; // area in m2
