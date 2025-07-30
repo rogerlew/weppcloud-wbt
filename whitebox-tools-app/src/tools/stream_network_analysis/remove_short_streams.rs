@@ -6,13 +6,14 @@ Last Modified: 30/01/2020
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
+use std::collections::{HashSet, VecDeque};
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 
 /// This tool can be used to remove stream links in a stream network that are shorter than a user-specified length (`--min_length`).
 /// The user must specify the names of a streams raster image (`--streams`) and D8 pointer image (`--d8_pntr`). Stream cells
@@ -113,6 +114,68 @@ impl RemoveShortStreams {
     }
 }
 
+/// Walks upstream from (r,c) and returns (length_in_cells, list_of_cells)
+fn collect_branch(
+    r: isize,
+    c: isize,
+    output: &Raster,
+    pntr: &Raster,
+    inflowing_vals: &[f64; 8],
+    d_x: &[isize; 8],
+    d_y: &[isize; 8],
+) -> (usize, Vec<(isize, isize)>) {
+    let rows = output.configs.rows as isize;
+    let cols = output.configs.columns as isize;
+    let mut visited = HashSet::<(isize, isize)>::new();
+    let mut stack = VecDeque::<(isize, isize)>::new();
+    stack.push_back((r, c));
+
+    while let Some((row, col)) = stack.pop_back() {
+        if !visited.insert((row, col)) {
+            continue; // already visited
+        }
+        // push each inflowing neighbour
+        for k in 0..8 {
+            let rn = row + d_y[k];
+            let cn = col + d_x[k];
+            if rn < 0 || rn >= rows || cn < 0 || cn >= cols {
+                continue;
+            }
+            if output[(rn, cn)] > 0.0 && pntr[(rn, cn)] == inflowing_vals[k] {
+                stack.push_back((rn, cn));
+            }
+        }
+    }
+    (visited.len(), visited.into_iter().collect())
+}
+
+/// Flood-fills the branch cells and updates num_inflowing grid
+fn delete_branch(
+    cells: &[(isize, isize)],
+    output: &mut Raster,
+    num_inflowing: &mut Array2D<u8>,
+    background_val: f64,
+    pntr: &Raster,
+    inflowing_vals: &[f64; 8],
+    d_x: &[isize; 8],
+    d_y: &[isize; 8],
+) {
+    for &(row, col) in cells {
+        output[(row, col)] = background_val;
+
+        // one neighbour is the downstream cell – decrement its count
+        for k in 0..8 {
+            let rn = row + d_y[k];
+            let cn = col + d_x[k];
+            if output[(rn, cn)] > 0.0 && pntr[(row, col)] == inflowing_vals[(k + 4) & 7] {
+                // (k+4)&7 is the opposite direction
+                num_inflowing.decrement(rn, cn, 1);
+            }
+        }
+        num_inflowing[(row, col)] = 0;
+    }
+}
+
 impl WhiteboxTool for RemoveShortStreams {
     fn get_source_file(&self) -> String {
         String::from(file!())
@@ -159,6 +222,7 @@ impl WhiteboxTool for RemoveShortStreams {
         let mut output_file = String::new();
         let mut esri_style = false;
         let mut min_length = 0.0;
+        let mut max_junctions = 3i32;
 
         if args.len() == 0 {
             return Err(Error::new(
@@ -210,16 +274,35 @@ impl WhiteboxTool for RemoveShortStreams {
                 if vec.len() == 1 || !vec[1].to_string().to_lowercase().contains("false") {
                     esri_style = true;
                 }
+            } else if flag_val == "-max_junctions" {
+                if keyval {
+                    max_junctions = vec[1]
+                        .to_string()
+                        .parse::<i32>()
+                        .expect(&format!("Error parsing {}", flag_val));
+                } else {
+                    max_junctions = args[i + 1]
+                        .to_string()
+                        .parse::<i32>()
+                        .expect(&format!("Error parsing {}", flag_val));
+                }
             }
         }
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -432,6 +515,83 @@ impl WhiteboxTool for RemoveShortStreams {
                 }
             }
         }
+
+        // -----------------------------------------------------------------------------
+        // SECOND PASS ─ limit every confluence to ≤ 3 inflowing branches
+        // -----------------------------------------------------------------------------
+
+        // ── build a fresh inflow-count grid for the length-pruned streams ────────────
+        let mut num_inflowing: Array2D<u8> = Array2D::new(rows, columns, 0u8, 0u8)?;
+        for row in 0..rows {
+            for col in 0..columns {
+                if output[(row, col)] > 0.0 {
+                    let mut cnt = 0u8;
+                    for k in 0..8 {
+                        if output[(row + d_y[k], col + d_x[k])] > 0.0
+                            && pntr[(row + d_y[k], col + d_x[k])] == inflowing_vals[k]
+                        {
+                            cnt += 1;
+                        }
+                    }
+                    num_inflowing[(row, col)] = cnt;
+                }
+            }
+        }
+
+        // ── iterate until all junctions have ≤ 3 inflows ────────────────────────────
+        if max_junctions >= 3 {
+            let mut changed = true;
+            while changed {
+                changed = false;
+                for row in 0..rows {
+                    for col in 0..columns {
+                        if output[(row, col)] > 0.0 && num_inflowing[(row, col)] > 3 {
+                            // -----------------------------------------------------------------
+                            // 1. collect each inflowing branch with its full upstream reach
+                            // -----------------------------------------------------------------
+                            let mut branches: Vec<(usize, Vec<(isize, isize)>)> = Vec::new();
+                            for k in 0..8 {
+                                let rn = row + d_y[k];
+                                let cn = col + d_x[k];
+                                if output[(rn, cn)] > 0.0 && pntr[(rn, cn)] == inflowing_vals[k] {
+                                    let (len, cells) = collect_branch(
+                                        rn,
+                                        cn,
+                                        &output,
+                                        &pntr,
+                                        &inflowing_vals,
+                                        &d_x,
+                                        &d_y,
+                                    );
+                                    branches.push((len, cells));
+                                }
+                            }
+
+                            // -----------------------------------------------------------------
+                            // 2. keep the max_junctions (3) longest; mark the others for deletion
+                            // -----------------------------------------------------------------
+                            branches.sort_by(|a, b| b.0.cmp(&a.0)); // descending
+                            for (_, cells) in branches.into_iter().skip(max_junctions as usize) {
+                                delete_branch(
+                                    &cells,
+                                    &mut output,
+                                    &mut num_inflowing,
+                                    background_val,
+                                    &pntr,
+                                    &inflowing_vals,
+                                    &d_x,
+                                    &d_y,
+                                );
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // -----------------------------------------------------------------------------
+        // END second-pass pruning
+        // -----------------------------------------------------------------------------
 
         let elapsed_time = get_formatted_elapsed_time(start);
         output.add_metadata_entry(format!(

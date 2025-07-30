@@ -393,7 +393,10 @@ class WhiteboxTools(object):
             return 0
         except (OSError, ValueError, CalledProcessError) as err:
             if self.__raise_on_error:
-                raise WhiteboxToolsRunningError(f"An error occurred while running the tool '{tool_name}'. Return code: {proc.returncode} - {str(err)}")
+                if proc is None:
+                    raise WhiteboxToolsRunningError(f"An error occurred while running the tool '{tool_name}'. {str(err)}")
+                else:
+                    raise WhiteboxToolsRunningError(f"An error occurred while running the tool '{tool_name}'. Return code: {proc.returncode} - {str(err)}")
             
             callback(str(err))
             return 1
@@ -10545,7 +10548,7 @@ Okay, that's it for now.
         if feature_id: args.append("--feature_id")
         return self.run_tool('rasterize_streams', args, callback) # returns 1 if error
 
-    def remove_short_streams(self, d8_pntr, streams, output, min_length, esri_pntr=False, callback=None):
+    def remove_short_streams(self, d8_pntr, streams, output, min_length, esri_pntr=False, max_junctions=3, callback=None):
         """Removes short first-order streams from a stream network.
 
         Keyword arguments:
@@ -10554,6 +10557,7 @@ Okay, that's it for now.
         streams -- Input raster streams file. 
         output -- Output raster file. 
         min_length -- Minimum tributary length (in map units) used for network pruning. 
+        max_junctions -- Maximum number of junctions allowed in a stream segment.
         esri_pntr -- D8 pointer uses the ESRI style scheme. 
         callback -- Custom function for handling tool text outputs.
         """
@@ -10562,6 +10566,7 @@ Okay, that's it for now.
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
         args.append("--min_length='{}'".format(min_length))
+        args.append("--max_junctions='{}'".format(max_junctions))
         if esri_pntr: args.append("--esri_pntr")
         return self.run_tool('remove_short_streams', args, callback) # returns 1 if error
 
