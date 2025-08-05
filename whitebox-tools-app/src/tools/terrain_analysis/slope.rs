@@ -6,7 +6,6 @@ Last Modified: 15/01/2022
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -16,24 +15,21 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
-use whitebox_common::utils::{
-    get_formatted_elapsed_time, 
-    haversine_distance,
-    vincenty_distance
-};
+use whitebox_common::utils::{get_formatted_elapsed_time, haversine_distance, vincenty_distance};
+use whitebox_raster::*;
 
-/// This tool calculates slope gradient (i.e. slope steepness in degrees, radians, or percent) for each grid cell
+/// This tool calculates slope gradient (i.e. slope steepness in degrees, radians, percent, or ratio) for each grid cell
 /// in an input digital elevation model (DEM). The user must specify the name of the input
 /// DEM (`--dem`) and the output raster image. The *Z conversion factor* is only important
 /// when the vertical and horizontal units are not the same in the DEM, and the DEM is in a projected coordinate system. When this is the case,
-/// the algorithm will multiply each elevation in the DEM by the Z conversion factor. 
-/// 
-/// For DEMs in projected coordinate systems, the tool uses the 3rd-order bivariate 
-/// Taylor polynomial method described by Florinsky (2016). Based on a polynomial fit 
-/// of the elevations within the 5x5 neighbourhood surrounding each cell, this method is considered more 
+/// the algorithm will multiply each elevation in the DEM by the Z conversion factor.
+///
+/// For DEMs in projected coordinate systems, the tool uses the 3rd-order bivariate
+/// Taylor polynomial method described by Florinsky (2016). Based on a polynomial fit
+/// of the elevations within the 5x5 neighbourhood surrounding each cell, this method is considered more
 /// robust against outlier elevations (noise) than other methods. For DEMs in geographic coordinate systems
-/// (i.e. angular units), the tool uses the 3x3 polynomial fitting method for equal angle grids also 
-/// described by Florinsky (2016). 
+/// (i.e. angular units), the tool uses the 3x3 polynomial fitting method for equal angle grids also
+/// described by Florinsky (2016).
 ///
 /// # Reference
 /// Florinsky, I. (2016). Digital terrain analysis in soil science and geology. Academic Press.
@@ -88,12 +84,14 @@ impl Slope {
         parameters.push(ToolParameter {
             name: "Units".to_owned(),
             flags: vec!["--units".to_owned()],
-            description: "Units of output raster; options include 'degrees', 'radians', 'percent'"
-                .to_owned(),
+            description:
+                "Units of output raster; options include 'degrees', 'radians', 'percent', 'ratio'."
+                    .to_owned(),
             parameter_type: ParameterType::OptionList(vec![
                 "degrees".to_owned(),
                 "radians".to_owned(),
                 "percent".to_owned(),
+                "ratio".to_owned(),
             ]),
             default_value: Some("degrees".to_owned()),
             optional: true,
@@ -180,6 +178,7 @@ impl WhiteboxTool for Slope {
         let mut input_file = String::new();
         let mut output_file = String::new();
         let mut z_factor = 1f64;
+        let mut units = "degrees".to_string();
         let mut units_numeric = 1; // degrees
 
         if args.len() == 0 {
@@ -223,27 +222,55 @@ impl WhiteboxTool for Slope {
                         .expect(&format!("Error parsing {}", flag_val));
                 }
             } else if flag_val == "-units" {
-                let units = if keyval {
+                // Grab raw argument (keep original for metadata if valid)
+                units = if keyval {
                     vec[1].to_string()
                 } else {
                     args[i + 1].to_string()
                 };
-                units_numeric = if units.to_lowercase().contains("deg") {
-                    1
-                } else if units.contains("rad") {
-                    2
+
+                let units_lc = units.to_lowercase();
+
+                // Normalise & classify
+                if units_lc.starts_with("deg") {
+                    units_numeric = 1;
+                    units = "degrees".to_owned();
+                } else if units_lc.starts_with("rad") {
+                    units_numeric = 2;
+                    units = "radians".to_owned();
+                } else if units_lc.starts_with("per") {
+                    units_numeric = 3; // percent
+                    units = "percent".to_owned();
+                } else if units_lc.starts_with("ratio")
+                    || units_lc.starts_with("grad")
+                    || units_lc.starts_with("rise_run")
+                {
+                    units_numeric = 4; // ratio
+                    units = "ratio".to_owned();
                 } else {
-                    3
-                };
+                    eprintln!(
+                        "Warning: unrecognized slope units \"{}\" — defaulting to ratio (unit-less rise/run).",
+                        units
+                    );
+                    units_numeric = 4;
+                    units = "ratio".to_owned();
+                }
             }
         }
 
         if verbose {
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -268,7 +295,7 @@ impl WhiteboxTool for Slope {
         let resx = input.configs.resolution_x;
         let resy = input.configs.resolution_y;
         let res = (resx + resy) / 2.;
-        
+
         let mut num_procs = num_cpus::get() as isize;
         if max_procs > 0 && max_procs < num_procs {
             num_procs = max_procs;
@@ -283,11 +310,31 @@ impl WhiteboxTool for Slope {
                     let mut p: f64;
                     let mut q: f64;
                     let offsets = [
-                        [-2, -2], [-1, -2], [0, -2], [1, -2], [2, -2], 
-                        [-2, -1], [-1, -1], [0, -1], [1, -1], [2, -1], 
-                        [-2, 0], [-1, 0], [0, 0], [1, 0], [2, 0], 
-                        [-2, 1], [-1, 1], [0, 1], [1, 1], [2, 1], 
-                        [-2, 2], [-1, 2], [0, 2], [1, 2], [2, 2]
+                        [-2, -2],
+                        [-1, -2],
+                        [0, -2],
+                        [1, -2],
+                        [2, -2],
+                        [-2, -1],
+                        [-1, -1],
+                        [0, -1],
+                        [1, -1],
+                        [2, -1],
+                        [-2, 0],
+                        [-1, 0],
+                        [0, 0],
+                        [1, 0],
+                        [2, 0],
+                        [-2, 1],
+                        [-1, 1],
+                        [0, 1],
+                        [1, 1],
+                        [2, 1],
+                        [-2, 2],
+                        [-1, 2],
+                        [0, 2],
+                        [1, 2],
+                        [2, 2],
                     ];
                     let mut z = [0f64; 25];
                     for row in (0..rows).filter(|r| r % num_procs == tid) {
@@ -296,7 +343,8 @@ impl WhiteboxTool for Slope {
                             z12 = input.get_value(row, col);
                             if z12 != nodata {
                                 for n in 0..25 {
-                                    z[n] = input.get_value(row + offsets[n][1], col + offsets[n][0]);
+                                    z[n] =
+                                        input.get_value(row + offsets[n][1], col + offsets[n][0]);
                                     if z[n] != nodata {
                                         z[n] *= z_factor;
                                     } else {
@@ -304,19 +352,27 @@ impl WhiteboxTool for Slope {
                                     }
                                 }
 
-                                /* 
+                                /*
                                 The following equations have been taken from Florinsky (2016) Principles and Methods
                                 of Digital Terrain Modelling, Chapter 4, pg. 117.
                                 */
-                                p = 1. / (420. * res) * (44. * (z[3] + z[23] - z[1] - z[21]) + 31. * (z[0] + z[20] - z[4] - z[24]
-                                + 2. * (z[8] + z[18] - z[6] - z[16])) + 17. * (z[14] - z[10] + 4. * (z[13] - z[11]))
-                                + 5. * (z[9] + z[19] - z[5] - z[15]));
+                                p = 1. / (420. * res)
+                                    * (44. * (z[3] + z[23] - z[1] - z[21])
+                                        + 31.
+                                            * (z[0] + z[20] - z[4] - z[24]
+                                                + 2. * (z[8] + z[18] - z[6] - z[16]))
+                                        + 17. * (z[14] - z[10] + 4. * (z[13] - z[11]))
+                                        + 5. * (z[9] + z[19] - z[5] - z[15]));
 
-                                q = 1. / (420. * res) * (44. * (z[5] + z[9] - z[15] - z[19]) + 31. * (z[20] + z[24] - z[0] - z[4]
-                                    + 2. * (z[6] + z[8] - z[16] - z[18])) + 17. * (z[2] - z[22] + 4. * (z[7] - z[17]))
-                                    + 5. * (z[1] + z[3] - z[21] - z[23]));
+                                q = 1. / (420. * res)
+                                    * (44. * (z[5] + z[9] - z[15] - z[19])
+                                        + 31.
+                                            * (z[20] + z[24] - z[0] - z[4]
+                                                + 2. * (z[6] + z[8] - z[16] - z[18]))
+                                        + 17. * (z[2] - z[22] + 4. * (z[7] - z[17]))
+                                        + 5. * (z[1] + z[3] - z[21] - z[23]));
 
-                                /* 
+                                /*
                                 The following equation has been taken from Florinsky (2016) Principles and Methods
                                 of Digital Terrain Modelling, Chapter 2, pg. 18.
                                 */
@@ -324,7 +380,8 @@ impl WhiteboxTool for Slope {
                                 data[col as usize] = match units_numeric {
                                     1 => (p * p + q * q).sqrt().atan().to_degrees(), // degrees
                                     2 => (p * p + q * q).sqrt().atan(),              // radians
-                                    _ => (p * p + q * q).sqrt() * 100f64,            // percent
+                                    3 => (p * p + q * q).sqrt() * 100f64,            // percent
+                                    _ => (p * p + q * q).sqrt(),                     // ratio
                                 };
                             }
                         }
@@ -333,7 +390,8 @@ impl WhiteboxTool for Slope {
                     }
                 });
             }
-        } else { // geographic coordinates
+        } else {
+            // geographic coordinates
 
             let phi1 = input.get_y_from_row(0);
             let lambda1 = input.get_x_from_column(0);
@@ -342,7 +400,7 @@ impl WhiteboxTool for Slope {
             let lambda2 = input.get_x_from_column(-1);
 
             let linear_res = vincenty_distance((phi1, lambda1), (phi2, lambda2));
-            let lr2 =  haversine_distance((phi1, lambda1), (phi2, lambda2)); 
+            let lr2 = haversine_distance((phi1, lambda1), (phi2, lambda2));
             let diff = 100. * (linear_res - lr2).abs() / linear_res;
             let use_haversine = diff < 0.5; // if the difference is less than 0.5%, use the faster haversine method to calculate distances.
 
@@ -363,9 +421,15 @@ impl WhiteboxTool for Slope {
                     let mut phi2: f64;
                     let mut lambda2: f64;
                     let offsets = [
-                        [-1, -1], [0, -1], [1, -1], 
-                        [-1, 0], [0, 0], [1, 0], 
-                        [-1, 1], [0, 1], [1, 1]
+                        [-1, -1],
+                        [0, -1],
+                        [1, -1],
+                        [-1, 0],
+                        [0, 0],
+                        [1, 0],
+                        [-1, 1],
+                        [0, 1],
+                        [1, 1],
                     ];
                     let mut z = [0f64; 25];
                     for row in (0..rows).filter(|r| r % num_procs == tid) {
@@ -374,7 +438,8 @@ impl WhiteboxTool for Slope {
                             z4 = input.get_value(row, col);
                             if z4 != nodata {
                                 for n in 0..9 {
-                                    z[n] = input.get_value(row + offsets[n][1], col + offsets[n][0]);
+                                    z[n] =
+                                        input.get_value(row + offsets[n][1], col + offsets[n][0]);
                                     if z[n] != nodata {
                                         z[n] *= z_factor;
                                     } else {
@@ -387,7 +452,7 @@ impl WhiteboxTool for Slope {
                                 lambda1 = input.get_x_from_column(col);
 
                                 phi2 = phi1;
-                                lambda2 = input.get_x_from_column(col-1);
+                                lambda2 = input.get_x_from_column(col - 1);
 
                                 b = if use_haversine {
                                     haversine_distance((phi1, lambda1), (phi2, lambda2))
@@ -395,7 +460,7 @@ impl WhiteboxTool for Slope {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                phi2 = input.get_y_from_row(row+1);
+                                phi2 = input.get_y_from_row(row + 1);
                                 lambda2 = lambda1;
 
                                 d = if use_haversine {
@@ -404,7 +469,7 @@ impl WhiteboxTool for Slope {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                phi2 = input.get_y_from_row(row-1);
+                                phi2 = input.get_y_from_row(row - 1);
                                 lambda2 = lambda1;
 
                                 e = if use_haversine {
@@ -413,11 +478,11 @@ impl WhiteboxTool for Slope {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                phi1 = input.get_y_from_row(row+1);
+                                phi1 = input.get_y_from_row(row + 1);
                                 lambda1 = input.get_x_from_column(col);
 
                                 phi2 = phi1;
-                                lambda2 = input.get_x_from_column(col-1);
+                                lambda2 = input.get_x_from_column(col - 1);
 
                                 a = if use_haversine {
                                     haversine_distance((phi1, lambda1), (phi2, lambda2))
@@ -425,11 +490,11 @@ impl WhiteboxTool for Slope {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                phi1 = input.get_y_from_row(row-1);
+                                phi1 = input.get_y_from_row(row - 1);
                                 lambda1 = input.get_x_from_column(col);
 
                                 phi2 = phi1;
-                                lambda2 = input.get_x_from_column(col-1);
+                                lambda2 = input.get_x_from_column(col - 1);
 
                                 c = if use_haversine {
                                     haversine_distance((phi1, lambda1), (phi2, lambda2))
@@ -437,23 +502,43 @@ impl WhiteboxTool for Slope {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                /* 
+                                /*
                                 The following equations have been taken from Florinsky (2016) Principles and Methods
                                 of Digital Terrain Modelling, Chapter 4, pg. 117.
                                 */
 
-                                p = (a * a * c * d * (d + e) * (z[2] - z[0]) + b * (a * a * d * d + c * c * e * e) * (z[5] - z[3]) + a * c * c * e * (d + e) * (z[8] - z[6]))
-                                / (2. * (a * a * c * c * (d + e).powi(2) + b * b * (a * a * d * d + c * c * e * e)));
+                                p = (a * a * c * d * (d + e) * (z[2] - z[0])
+                                    + b * (a * a * d * d + c * c * e * e) * (z[5] - z[3])
+                                    + a * c * c * e * (d + e) * (z[8] - z[6]))
+                                    / (2.
+                                        * (a * a * c * c * (d + e).powi(2)
+                                            + b * b * (a * a * d * d + c * c * e * e)));
 
-                                q = 1. / (3. * d * e * (d + e) * (a.powi(4) + b.powi(4) + c.powi(4))) 
-                                * ((d * d * (a.powi(4) + b.powi(4) + b * b * c * c) + c * c * e * e * (a * a - b * b)) * (z[0] + z[2])
-                                - (d * d * (a.powi(4) + c.powi(4) + b * b * c * c) - e * e * (a.powi(4) + c.powi(4) + a * a * b * b)) * (z[3] + z[5])
-                                - (e * e * (b.powi(4) + c.powi(4) + a * a * b * b) - a * a * d * d * (b * b - c * c)) * (z[6] + z[8])
-                                + d * d * (b.powi(4) * (z[1] - 3. * z[4]) + c.powi(4) * (3. * z[1] - z[4]) + (a.powi(4) - 2. * b * b * c * c) * (z[1] - z[4]))
-                                + e * e * (a.powi(4) * (z[4] - 3. * z[7]) + b.powi(4) * (3. * z[4] - z[7]) + (c.powi(4) - 2. * a * a * b * b) * (z[4] - z[7]))
-                                - 2. * (a * a * d * d * (b * b - c * c) * z[7] + c * c * e * e * (a * a - b * b) * z[1]));
+                                q = 1.
+                                    / (3. * d * e * (d + e) * (a.powi(4) + b.powi(4) + c.powi(4)))
+                                    * ((d * d * (a.powi(4) + b.powi(4) + b * b * c * c)
+                                        + c * c * e * e * (a * a - b * b))
+                                        * (z[0] + z[2])
+                                        - (d * d * (a.powi(4) + c.powi(4) + b * b * c * c)
+                                            - e * e * (a.powi(4) + c.powi(4) + a * a * b * b))
+                                            * (z[3] + z[5])
+                                        - (e * e * (b.powi(4) + c.powi(4) + a * a * b * b)
+                                            - a * a * d * d * (b * b - c * c))
+                                            * (z[6] + z[8])
+                                        + d * d
+                                            * (b.powi(4) * (z[1] - 3. * z[4])
+                                                + c.powi(4) * (3. * z[1] - z[4])
+                                                + (a.powi(4) - 2. * b * b * c * c)
+                                                    * (z[1] - z[4]))
+                                        + e * e
+                                            * (a.powi(4) * (z[4] - 3. * z[7])
+                                                + b.powi(4) * (3. * z[4] - z[7])
+                                                + (c.powi(4) - 2. * a * a * b * b)
+                                                    * (z[4] - z[7]))
+                                        - 2. * (a * a * d * d * (b * b - c * c) * z[7]
+                                            + c * c * e * e * (a * a - b * b) * z[1]));
 
-                                /* 
+                                /*
                                 The following equation has been taken from Florinsky (2016) Principles and Methods
                                 of Digital Terrain Modelling, Chapter 2, pg. 18.
                                 */
@@ -461,7 +546,8 @@ impl WhiteboxTool for Slope {
                                 data[col as usize] = match units_numeric {
                                     1 => (p * p + q * q).sqrt().atan().to_degrees(), // degrees
                                     2 => (p * p + q * q).sqrt().atan(),              // radians
-                                    _ => (p * p + q * q).sqrt() * 100f64,            // percent
+                                    3 => (p * p + q * q).sqrt() * 100f64,            // percent
+                                    _ => (p * p + q * q).sqrt(),                     // ratio
                                 };
                             }
                         }
@@ -486,22 +572,19 @@ impl WhiteboxTool for Slope {
             }
         }
 
-        
         //////////////////////
         // Output the image //
         //////////////////////
         if verbose {
             println!("Saving data...")
         };
-        
+
         let elapsed_time = get_formatted_elapsed_time(start);
-        
-        output.add_metadata_entry(format!(
-            "Created by whitebox_tools\' {} tool",
-            tool_name
-        ));
+
+        output.add_metadata_entry(format!("Created by whitebox_tools\' {} tool", tool_name));
         output.add_metadata_entry(format!("Input file: {}", input_file));
         output.add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed_time));
+        output.add_metadata_entry(format!("Slope units: {}", units));
 
         let _ = match output.write() {
             Ok(_) => {
