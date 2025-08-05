@@ -796,7 +796,7 @@ impl WhiteboxTool for HillslopesTopaz {
             link.drop_m = link.us_z - link.ds_z;
             
             // Set stream order if provided
-            link.order = order.get_value(link.ds.0, link.ds.1) as u8;
+            link.order = order.get_value(link.us.0, link.us.1) as u8;
         }
 
         if verbose {
