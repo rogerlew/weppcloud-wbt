@@ -432,6 +432,7 @@ impl ToolManager {
         tool_names.push("RemoveShortStreams".to_string());
         tool_names.push("ShreveStreamMagnitude".to_string());
         tool_names.push("StrahlerStreamOrder".to_string());
+        tool_names.push("PruneStrahlerStreamOrder".to_string());
         tool_names.push("StreamLinkClass".to_string());
         tool_names.push("StreamLinkIdentifier".to_string());
         tool_names.push("StreamLinkLength".to_string());
@@ -1062,7 +1063,10 @@ impl ToolManager {
             )),
             "removeshortstreams" => {
                 Some(Box::new(stream_network_analysis::RemoveShortStreams::new()))
-            }
+            },
+            "prunestrahlerorder" => {
+                Some(Box::new(stream_network_analysis::PruneStrahlerStreamOrder::new()))
+            },
             "shrevestreammagnitude" => Some(Box::new(
                 stream_network_analysis::ShreveStreamMagnitude::new(),
             )),
