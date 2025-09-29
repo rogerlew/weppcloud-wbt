@@ -1064,7 +1064,7 @@ impl ToolManager {
             "removeshortstreams" => {
                 Some(Box::new(stream_network_analysis::RemoveShortStreams::new()))
             },
-            "prunestrahlerorder" => {
+            "prunestrahlerstreamorder" => {
                 Some(Box::new(stream_network_analysis::PruneStrahlerStreamOrder::new()))
             },
             "shrevestreammagnitude" => Some(Box::new(
