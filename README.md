@@ -1,3 +1,32 @@
+# https://github.com/rogerlew/whitebox-tools
+
+This is a fork of John Lindsay's WhiteBoxTools. 
+
+This fork diverges from the upstream WhiteboxTools distribution in the following ways (all used operationally within WEPPcloud workflows):
+
+- `HillslopesTopaz` (hydro_analysis/hillslopes_topaz.rs)
+  - Implements Garbrecht & Martz TOPAZ-style stream and hillslope identifiers for a single watershed, emitting channel metadata tables (`netw.tsv`, `netw_props.tsv`) and left/right/top hillslope rasters needed by WEPPcloud.
+  - Includes numerous performance optimizations (e.g., combined flood-fill phases, cached upstream areas) and additional output attributes such as `areaup` for each link.
+- `StreamJunctionIdentifier` (stream_network_analysis/stream_junctions.rs)
+  - Counts inflowing tributaries for every stream pixel, producing junction maps that WEPPcloud uses to locate confluences, outlets, and pseudo-gauges.
+- `PruneStrahlerStreamOrder` (stream_network_analysis/prune_strahler_order.rs)
+  - Drops first-order (Strahler order = 1) links from an existing order grid, subtracts one from downstream orders, and optionally preserves zero-valued background cells.
+  - Exposed through new Python bindings (`whitebox_tools.py` and `WBT/whitebox_tools.py`).
+- `ClipRasterToRaster` (gis_analysis/clip_raster_to_raster.rs) adds raster-on-raster clipping with a corresponding Python wrapper.
+- `RemoveShortStreams` enhancement (stream_network_analysis/remove_short_streams.rs)
+  - Adds `--max_junctions` pruning with iterative branch deletion so no junction retains more than the requested inflows; Python API updated with the new argument.
+- `Slope` tool modification (terrain_analysis/slope.rs) introducing ratio units and recording the chosen unit in output metadata; banner text updated to reflect maintenance through 2025.
+- `Watershed` tool update (hydro_analysis/watershed.rs)
+  - Accepts GeoJSON pour-point inputs (Point/MultiPoint) in addition to shapefiles and rasters, pulling in the `geojson` crate and documenting the extended behaviour.
+- CLI/runtime updates
+  - Command-line entry point now propagates errors (`main.rs` returns `Result`), enabling backtraces from scripted environments.
+  - Python wrapper enhancements provide optional `raise_on_error` semantics, custom exceptions, environment propagation, and richer error reporting for all tools.
+
+
+Developers extending this fork can follow the guidelines in [DEVELOPING_TOOLS.md](DEVELOPING_TOOLS.md).
+
+
+
 ![](./img/WhiteboxToolsLogoBlue.png)
 
 
