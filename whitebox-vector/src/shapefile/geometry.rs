@@ -5,10 +5,10 @@ Created: 10/04/2018
 Last Modified: 30/09/2018
 License: MIT
 */
-use whitebox_common::algorithms::point_in_poly;
-use whitebox_common::structures::{BoundingBox, Point2D};
 use std::f64;
 use std::fmt;
+use whitebox_common::algorithms::point_in_poly;
+use whitebox_common::structures::{BoundingBox, Point2D};
 
 #[derive(Clone, Debug)]
 pub struct ShapefileGeometry {
@@ -266,7 +266,15 @@ impl ShapefileGeometry {
             }
             ShapeType::PolyLineZ | ShapeType::PolygonZ => {
                 if self.has_m_data() {
-                    32i32 + 4 + 4 + 4 * self.num_parts + 16 * self.num_points + 16 + 8 * self.num_points + 16 + 8 * self.num_points
+                    32i32
+                        + 4
+                        + 4
+                        + 4 * self.num_parts
+                        + 16 * self.num_points
+                        + 16
+                        + 8 * self.num_points
+                        + 16
+                        + 8 * self.num_points
                 } else {
                     40i32 + 4 * self.num_parts + 16 * self.num_points + 16 + 8 * self.num_points
                 }

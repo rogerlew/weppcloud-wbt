@@ -6,16 +6,16 @@ Last Modified: 26/03/2023
 License: MIT
 */
 
-use whitebox_raster::{Raster, RasterConfigs};
-use whitebox_common::structures::{Array2D, Point2D};
 use crate::tools::*;
-use whitebox_vector::*;
 use std::cmp;
+use std::cmp::Ordering;
+use std::collections::BTreeSet;
 use std::env;
 use std::io::{Error, ErrorKind};
 use std::path;
-use std::cmp::Ordering;
-use std::collections::BTreeSet;
+use whitebox_common::structures::{Array2D, Point2D};
+use whitebox_raster::{Raster, RasterConfigs};
+use whitebox_vector::*;
 const EPSILON: f64 = f64::EPSILON;
 use kdtree::distance::squared_euclidean;
 use kdtree::KdTree;
@@ -150,8 +150,9 @@ impl TopographicHachures {
         parameters.push(ToolParameter {
             name: "Minimum distance".to_owned(),
             flags: vec!["--distmin".to_owned()],
-            description: "Minimum distance between converging flowlines (in relation to seed separation)."
-                .to_owned(),
+            description:
+                "Minimum distance between converging flowlines (in relation to seed separation)."
+                    .to_owned(),
             parameter_type: ParameterType::Float,
             default_value: Some("0.5".to_owned()),
             optional: false,
@@ -160,8 +161,9 @@ impl TopographicHachures {
         parameters.push(ToolParameter {
             name: "Maximum distance".to_owned(),
             flags: vec!["--distmax".to_owned()],
-            description: "Maximum distance between diverging flowlines (in relation to seed separation)."
-                .to_owned(),
+            description:
+                "Maximum distance between diverging flowlines (in relation to seed separation)."
+                    .to_owned(),
             parameter_type: ParameterType::Float,
             default_value: Some("2".to_owned()),
             optional: false,
@@ -170,8 +172,7 @@ impl TopographicHachures {
         parameters.push(ToolParameter {
             name: "Discretization".to_owned(),
             flags: vec!["--discr".to_owned()],
-            description: "Discretization step used in tracing the flowline (in pixels)."
-                .to_owned(),
+            description: "Discretization step used in tracing the flowline (in pixels).".to_owned(),
             parameter_type: ParameterType::Float,
             default_value: Some("0.5".to_owned()),
             optional: false,
@@ -180,8 +181,7 @@ impl TopographicHachures {
         parameters.push(ToolParameter {
             name: "Maximum turning angle".to_owned(),
             flags: vec!["--turnmax".to_owned()],
-            description: "Maximum turning angle valid for hachure (in degrees, 0-90)"
-                .to_owned(),
+            description: "Maximum turning angle valid for hachure (in degrees, 0-90)".to_owned(),
             parameter_type: ParameterType::Float,
             default_value: Some("45.0".to_owned()),
             optional: false,
@@ -190,8 +190,9 @@ impl TopographicHachures {
         parameters.push(ToolParameter {
             name: "Minimum slope angle".to_owned(),
             flags: vec!["--slopemin".to_owned()],
-            description: "Slope angle, in degrees, at which flowline tracing ends (in degrees, 0-90)"
-                .to_owned(),
+            description:
+                "Slope angle, in degrees, at which flowline tracing ends (in degrees, 0-90)"
+                    .to_owned(),
             parameter_type: ParameterType::Float,
             default_value: Some("0.5".to_owned()),
             optional: false,
@@ -200,8 +201,9 @@ impl TopographicHachures {
         parameters.push(ToolParameter {
             name: "Nesting depth".to_owned(),
             flags: vec!["--depthmax".to_owned()],
-            description: "Maximum depth of nested flowlines, inserted within divergence areas (0-255)"
-                .to_owned(),
+            description:
+                "Maximum depth of nested flowlines, inserted within divergence areas (0-255)"
+                    .to_owned(),
             parameter_type: ParameterType::Float,
             default_value: Some("16".to_owned()),
             optional: false,
@@ -289,7 +291,7 @@ impl WhiteboxTool for TopographicHachures {
         let mut discretization = 0.5f64;
         let mut turnmax = 45.0f64;
         let mut slopemin = 0.5f64;
-        let mut depth= 16u8;
+        let mut depth = 16u8;
 
         if args.len() == 0 {
             return Err(Error::new(
@@ -478,11 +480,18 @@ impl WhiteboxTool for TopographicHachures {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -526,12 +535,9 @@ impl WhiteboxTool for TopographicHachures {
         output.projection = input.configs.coordinate_ref_system_wkt.clone();
 
         // add the attributes
-        output.attributes.add_field(&AttributeField::new(
-            "FID",
-            FieldDataType::Int,
-            10u8,
-            0u8
-        ));
+        output
+            .attributes
+            .add_field(&AttributeField::new("FID", FieldDataType::Int, 10u8, 0u8));
 
         output.attributes.add_field(&AttributeField::new(
             "HEIGHT",
@@ -554,61 +560,37 @@ impl WhiteboxTool for TopographicHachures {
             5u8,
         ));
 
-        output.attributes.add_field(&AttributeField::new(
-            "N",
-            FieldDataType::Real,
-            12u8,
-            5u8,
-        ));
+        output
+            .attributes
+            .add_field(&AttributeField::new("N", FieldDataType::Real, 12u8, 5u8));
 
-        output.attributes.add_field(&AttributeField::new(
-            "NE",
-            FieldDataType::Real,
-            12u8,
-            5u8,
-        ));
+        output
+            .attributes
+            .add_field(&AttributeField::new("NE", FieldDataType::Real, 12u8, 5u8));
 
-        output.attributes.add_field(&AttributeField::new(
-            "E",
-            FieldDataType::Real,
-            12u8,
-            5u8,
-        ));
+        output
+            .attributes
+            .add_field(&AttributeField::new("E", FieldDataType::Real, 12u8, 5u8));
 
-        output.attributes.add_field(&AttributeField::new(
-            "SE",
-            FieldDataType::Real,
-            12u8,
-            5u8,
-        ));
+        output
+            .attributes
+            .add_field(&AttributeField::new("SE", FieldDataType::Real, 12u8, 5u8));
 
-        output.attributes.add_field(&AttributeField::new(
-            "S",
-            FieldDataType::Real,
-            12u8,
-            5u8,
-        ));
+        output
+            .attributes
+            .add_field(&AttributeField::new("S", FieldDataType::Real, 12u8, 5u8));
 
-        output.attributes.add_field(&AttributeField::new(
-            "SW",
-            FieldDataType::Real,
-            12u8,
-            5u8,
-        ));
+        output
+            .attributes
+            .add_field(&AttributeField::new("SW", FieldDataType::Real, 12u8, 5u8));
 
-        output.attributes.add_field(&AttributeField::new(
-            "W",
-            FieldDataType::Real,
-            12u8,
-            5u8,
-        ));
+        output
+            .attributes
+            .add_field(&AttributeField::new("W", FieldDataType::Real, 12u8, 5u8));
 
-        output.attributes.add_field(&AttributeField::new(
-            "NW",
-            FieldDataType::Real,
-            12u8,
-            5u8,
-        ));
+        output
+            .attributes
+            .add_field(&AttributeField::new("NW", FieldDataType::Real, 12u8, 5u8));
 
         let dx = [0, 1, 0, -1, 1, 1, -1, -1];
         let dy = [-1, 0, 1, 0, -1, 1, 1, -1];
@@ -960,14 +942,11 @@ impl WhiteboxTool for TopographicHachures {
                             }
                         }
 
-                        contours.push(
-                            Contour {
-                                points: points,
-                                value: base_contour + z * contour_interval,
-                                closed: false
-                            }
-                        );
-
+                        contours.push(Contour {
+                            points: points,
+                            value: base_contour + z * contour_interval,
+                            closed: false,
+                        });
                     }
                 }
             }
@@ -1161,13 +1140,11 @@ impl WhiteboxTool for TopographicHachures {
                     }
 
                     if (max_x - min_x) > res_x || (max_y - min_y) > res_y {
-                        contours.push(
-                            Contour {
-                                points: points,
-                                value: base_contour + z * contour_interval,
-                                closed: true
-                            }
-                        );
+                        contours.push(Contour {
+                            points: points,
+                            value: base_contour + z * contour_interval,
+                            closed: true,
+                        });
                     }
                 }
             }
@@ -1202,7 +1179,6 @@ impl WhiteboxTool for TopographicHachures {
         let mut finished_level: bool;
 
         for contour in &contours {
-
             let points = &contour.points;
             let npts = points.len();
             let mut perim: f64 = 0.0;
@@ -1210,15 +1186,19 @@ impl WhiteboxTool for TopographicHachures {
 
             // adjust seed separation so each contour fits integer number of hachures
             for i in 1..npts {
-                perim += points[i-1].distance(&points[i]);
+                perim += points[i - 1].distance(&points[i]);
                 accdist[i] = perim;
             }
 
             let step = separation * res_xy;
             let num = perim / step;
             let to_up = (num.ceil() - num) < (num - num.floor());
-            let new_step = if to_up { perim / num.ceil() } else { perim / num.floor() };
-            let num_seeds= (perim / new_step) as i32;
+            let new_step = if to_up {
+                perim / num.ceil()
+            } else {
+                perim / num.floor()
+            };
+            let num_seeds = (perim / new_step) as i32;
 
             let discr = discretization * res_xy;
             let val = contour.value;
@@ -1237,32 +1217,30 @@ impl WhiteboxTool for TopographicHachures {
 
             for i in 1..num_seeds {
                 dist = i as f64 * new_step;
-                while dist > accdist[j] { j+=1; }
-                let t = (dist - accdist[j-1]) / (accdist[j] - accdist[j-1]);
+                while dist > accdist[j] {
+                    j += 1;
+                }
+                let t = (dist - accdist[j - 1]) / (accdist[j] - accdist[j - 1]);
 
                 let seed = Point2D::new(
-                    (1.-t) * points[j-1].x + t * points[j].x,
-                    (1.-t) * points[j-1].y + t * points[j].y
+                    (1. - t) * points[j - 1].x + t * points[j].x,
+                    (1. - t) * points[j - 1].y + t * points[j].y,
                 );
                 seeds.push(seed);
                 level_seeds.push(seed);
             }
 
-            seeds.push(points[npts-1]);
-            level_seeds.push(points[npts-1]);
+            seeds.push(points[npts - 1]);
+            level_seeds.push(points[npts - 1]);
 
             starts.insert(flowlines.len());
             seed_starts.insert(level_seeds.len());
 
             // downslope hachures main cycle
             for seed in &seeds {
-                let mut flowline = get_flowline(
-                    &cov, &seed, discr,
-                    zmin, slopemin, turnmax, true
-                );
+                let mut flowline = get_flowline(&cov, &seed, discr, zmin, slopemin, turnmax, true);
                 if flowline.len() > 1 {
-                    let idx = intersection_idx(&flowline, &flowlines,
-                                                   new_distmin);
+                    let idx = intersection_idx(&flowline, &flowlines, new_distmin);
                     flowline.truncate(idx);
 
                     if flowline.len() > 1 {
@@ -1272,10 +1250,10 @@ impl WhiteboxTool for TopographicHachures {
             }
 
             finished_level = false;
-            if counter == ncont-1 {
+            if counter == ncont - 1 {
                 finished_level = true;
             } else {
-                if contours[counter+1].value != val {
+                if contours[counter + 1].value != val {
                     finished_level = true;
                 }
             }
@@ -1284,15 +1262,27 @@ impl WhiteboxTool for TopographicHachures {
             // then try to insert additional hachures in divergence areas,
             // and then try to add upslope hachures
             if finished_level {
-
                 let mut n = flowlines.len();
 
                 if n > 1 {
-                    for i in 0..n-1 {
-                        if !starts.contains(&(i+1)) {
-                            insert_flowlines(&cov, &mut flowlines, i, i+1, 0, 0,
-                                             depth, new_distmin, new_distmax,
-                                             discr, zmin, slopemin, turnmax, true);
+                    for i in 0..n - 1 {
+                        if !starts.contains(&(i + 1)) {
+                            insert_flowlines(
+                                &cov,
+                                &mut flowlines,
+                                i,
+                                i + 1,
+                                0,
+                                0,
+                                depth,
+                                new_distmin,
+                                new_distmax,
+                                discr,
+                                zmin,
+                                slopemin,
+                                turnmax,
+                                true,
+                            );
                         }
                     }
                 }
@@ -1303,18 +1293,13 @@ impl WhiteboxTool for TopographicHachures {
 
                 // upslope hachures
                 for seed in &level_seeds {
-
-                    let mut flowline = get_flowline(
-                        &cov, &seed, discr,
-                        zmax, slopemin, turnmax, false
-                    );
+                    let mut flowline =
+                        get_flowline(&cov, &seed, discr, zmax, slopemin, turnmax, false);
 
                     if flowline.len() > 1 {
-                        let idx1 = intersection_idx(&flowline, &flowlines_prev,
-                                                        step);
+                        let idx1 = intersection_idx(&flowline, &flowlines_prev, step);
 
-                        let idx2 = intersection_idx(&flowline, &flowlines_up,
-                                                       new_distmin);
+                        let idx2 = intersection_idx(&flowline, &flowlines_up, new_distmin);
 
                         let idx = cmp::min(idx1, idx2);
 
@@ -1326,17 +1311,29 @@ impl WhiteboxTool for TopographicHachures {
                         }
                     }
                     i += 1;
-
                 }
 
                 n = flowlines_up.len();
 
                 if n > 1 {
-                    for i in 0..n-1 {
-                        if (!seed_starts.contains(&idxs[i+1])) && (idxs[i+1]-idxs[i] == 1) {
-                            insert_flowlines(&cov, &mut flowlines_up, i, i+1, 0, 0,
-                                             depth, new_distmin, new_distmax,
-                                             discr, zmax, slopemin, turnmax, false);
+                    for i in 0..n - 1 {
+                        if (!seed_starts.contains(&idxs[i + 1])) && (idxs[i + 1] - idxs[i] == 1) {
+                            insert_flowlines(
+                                &cov,
+                                &mut flowlines_up,
+                                i,
+                                i + 1,
+                                0,
+                                0,
+                                depth,
+                                new_distmin,
+                                new_distmax,
+                                discr,
+                                zmax,
+                                slopemin,
+                                turnmax,
+                                false,
+                            );
                         }
                     }
                 }
@@ -1369,7 +1366,6 @@ impl WhiteboxTool for TopographicHachures {
                 let sqrt_05 = 0.5_f64.sqrt();
 
                 for flowline in &flowlines {
-
                     dxsum = 0.0;
                     dysum = 0.0;
 
@@ -1381,22 +1377,26 @@ impl WhiteboxTool for TopographicHachures {
 
                     dx = -dxsum / flowline.len() as f64;
                     dy = -dysum / flowline.len() as f64;
-                    grad_len = (dx*dx + dy*dy).sqrt();
+                    grad_len = (dx * dx + dy * dy).sqrt();
 
                     slope = grad_len.atan().to_degrees();
                     math_aspect = dy.atan2(dx).to_degrees();
-                    aspect = if math_aspect < 90.0 { 90.0 - math_aspect } else { 450.0 - math_aspect };
+                    aspect = if math_aspect < 90.0 {
+                        90.0 - math_aspect
+                    } else {
+                        450.0 - math_aspect
+                    };
 
                     dx1 = dx / grad_len;
                     dy1 = dy / grad_len;
 
-                    cos_n =       0.0 * dx1 +     1.0 * dy1;
-                    cos_ne =  sqrt_05 * dx1 + sqrt_05 * dy1;
-                    cos_e =       1.0 * dx1 +     0.0 * dy1;
-                    cos_se =  sqrt_05 * dx1 - sqrt_05 * dy1;
-                    cos_s =       0.0 * dx1 -     1.0 * dy1;
+                    cos_n = 0.0 * dx1 + 1.0 * dy1;
+                    cos_ne = sqrt_05 * dx1 + sqrt_05 * dy1;
+                    cos_e = 1.0 * dx1 + 0.0 * dy1;
+                    cos_se = sqrt_05 * dx1 - sqrt_05 * dy1;
+                    cos_s = 0.0 * dx1 - 1.0 * dy1;
                     cos_sw = -sqrt_05 * dx1 - sqrt_05 * dy1;
-                    cos_w =      -1.0 * dx1 +     0.0 * dy1;
+                    cos_w = -1.0 * dx1 + 0.0 * dy1;
                     cos_nw = -sqrt_05 * dx1 + sqrt_05 * dy1;
 
                     let mut sfg = ShapefileGeometry::new(ShapeType::PolyLine);
@@ -1415,7 +1415,7 @@ impl WhiteboxTool for TopographicHachures {
                             FieldData::Real(cos_s),
                             FieldData::Real(cos_sw),
                             FieldData::Real(cos_w),
-                            FieldData::Real(cos_nw)
+                            FieldData::Real(cos_nw),
                         ],
                         false,
                     );
@@ -1431,8 +1431,7 @@ impl WhiteboxTool for TopographicHachures {
             counter += 1;
 
             if verbose {
-                progress =
-                    (100.0_f64 * counter as f64 / (ncont- 1) as f64) as usize;
+                progress = (100.0_f64 * counter as f64 / (ncont - 1) as f64) as usize;
                 if progress != old_progress {
                     println!("Tracing hachures: {}%", progress);
                     old_progress = progress;
@@ -1511,7 +1510,7 @@ pub fn path_turn(previous: Point2D, current: Point2D, next: Point2D) -> f64 {
 pub struct Contour {
     points: Vec<Point2D>,
     value: f64,
-    closed: bool
+    closed: bool,
 }
 
 impl PartialOrd for Contour {
@@ -1522,18 +1521,17 @@ impl PartialOrd for Contour {
 
 impl Ord for Contour {
     fn cmp(&self, other: &Self) -> Ordering {
-        if self.value > other.value { // deliberately inverted
+        if self.value > other.value {
+            // deliberately inverted
             Ordering::Less
-        }
-        else if self.value < other.value {  // deliberately inverted
+        } else if self.value < other.value {
+            // deliberately inverted
             Ordering::Greater
-        }
-        else {
+        } else {
             Ordering::Equal
         }
     }
 }
-
 
 impl PartialEq for Contour {
     fn eq(&self, other: &Self) -> bool {
@@ -1551,14 +1549,13 @@ pub struct RasterCoverage {
     a00: Vec<f64>,
     a10: Vec<f64>,
     a01: Vec<f64>,
-    a11: Vec<f64>
+    a11: Vec<f64>,
 }
 
 // raster coverage is a continuous surface that returns interpolated
 // value at any specified coordinate within its spatial domain
 impl RasterCoverage {
     pub fn new<'a>(raster: &'a Raster) -> RasterCoverage {
-
         let rows = raster.configs.rows as isize;
         let columns = raster.configs.columns as isize;
         let npixels = (rows * columns) as usize;
@@ -1568,7 +1565,7 @@ impl RasterCoverage {
             a00: vec![0f64; npixels],
             a10: vec![0f64; npixels],
             a01: vec![0f64; npixels],
-            a11: vec![0f64; npixels]
+            a11: vec![0f64; npixels],
         };
 
         for row in 0..rows {
@@ -1578,7 +1575,7 @@ impl RasterCoverage {
                 let z01 = raster.get_value(row, col);
                 let z11 = raster.get_value(row, col + 1);
 
-                let idx= (row * columns + col) as usize;
+                let idx = (row * columns + col) as usize;
 
                 output.a00[idx] = z00;
                 output.a10[idx] = z10 - z00;
@@ -1588,15 +1585,16 @@ impl RasterCoverage {
         }
 
         output
-
     }
 
     pub fn get_column_from_x(&self, x: f64) -> isize {
-        ((x - self.configs.west - 0.5*self.configs.resolution_x) / self.configs.resolution_x).floor() as isize
+        ((x - self.configs.west - 0.5 * self.configs.resolution_x) / self.configs.resolution_x)
+            .floor() as isize
     }
 
     pub fn get_row_from_y(&self, y: f64) -> isize {
-        ((self.configs.north - y - 0.5*self.configs.resolution_y) / self.configs.resolution_y).floor() as isize
+        ((self.configs.north - y - 0.5 * self.configs.resolution_y) / self.configs.resolution_y)
+            .floor() as isize
     }
 
     pub fn get_x_from_column(&self, column: isize) -> f64 {
@@ -1615,15 +1613,17 @@ impl RasterCoverage {
         let row = self.get_row_from_y(y);
         let col = self.get_column_from_x(x);
 
-        if  row < 0 || col < 0 ||
-            row as usize >= self.configs.rows-1 ||
-            col as usize >= self.configs.columns-1 {
-            return (usize::MAX, -1f64, -1f64)
+        if row < 0
+            || col < 0
+            || row as usize >= self.configs.rows - 1
+            || col as usize >= self.configs.columns - 1
+        {
+            return (usize::MAX, -1f64, -1f64);
         } else {
             let xcol = self.get_x_from_column(col);
             let yrow = self.get_y_from_row(row);
 
-            let idx= (row * self.configs.columns as isize + col) as usize;
+            let idx = (row * self.configs.columns as isize + col) as usize;
 
             let xcell = (x - xcol) / self.configs.resolution_x;
             let ycell = 1.0 - (yrow - y) / self.configs.resolution_y;
@@ -1638,8 +1638,10 @@ impl RasterCoverage {
         if idx == usize::MAX {
             self.configs.nodata
         } else {
-            self.a00[idx] + self.a10[idx] * xcell +
-                self.a01[idx] * ycell + self.a11[idx] * xcell * ycell
+            self.a00[idx]
+                + self.a10[idx] * xcell
+                + self.a01[idx] * ycell
+                + self.a11[idx] * xcell * ycell
         }
     }
 
@@ -1648,13 +1650,13 @@ impl RasterCoverage {
 
         [
             (self.a10[idx] + self.a11[idx] * ycell) / self.configs.resolution_x,
-            (self.a01[idx] + self.a11[idx] * xcell) / self.configs.resolution_y
+            (self.a01[idx] + self.a11[idx] * xcell) / self.configs.resolution_y,
         ]
     }
 
     pub fn get_slope(&self, x: f64, y: f64) -> f64 {
         let grad = self.get_gradient(x, y);
-        (grad[0]*grad[0] + grad[1]*grad[1]).sqrt()
+        (grad[0] * grad[0] + grad[1] * grad[1]).sqrt()
     }
 
     // currently unused functions
@@ -1672,8 +1674,15 @@ impl RasterCoverage {
 /// - elevation is smaller/greater than `zlim` or
 /// - slope is smaller than `slopemin` or
 /// - deflection is larger than `defmax`
-pub fn get_flowline(cov: &RasterCoverage, p: &Point2D,
-                    discr: f64, zlim: f64, slopemin: f64, defmin: f64, down: bool) -> Vec<Point2D> {
+pub fn get_flowline(
+    cov: &RasterCoverage,
+    p: &Point2D,
+    discr: f64,
+    zlim: f64,
+    slopemin: f64,
+    defmin: f64,
+    down: bool,
+) -> Vec<Point2D> {
     let mut points = vec![];
     let mut zcur: f64;
     let mut zprev: f64;
@@ -1697,13 +1706,15 @@ pub fn get_flowline(cov: &RasterCoverage, p: &Point2D,
     loop {
         slope = cov.get_slope(p1.x, p1.y);
 
-        if slope < slopemin { break; }
+        if slope < slopemin {
+            break;
+        }
 
         grad = cov.get_gradient(p1.x, p1.y);
 
         p2 = Point2D::new(
-          p1.x - sign * discr * grad[0] / slope,
-          p1.y - sign * discr * grad[1] / slope,
+            p1.x - sign * discr * grad[0] / slope,
+            p1.y - sign * discr * grad[1] / slope,
         );
 
         zcur = cov.get_value(p2.x, p2.y);
@@ -1716,22 +1727,19 @@ pub fn get_flowline(cov: &RasterCoverage, p: &Point2D,
             grad[1] = 0.5 * (grad[1] + grad2[1]);
 
             p2 = Point2D::new(
-                p1.x - sign * discr * grad[0] / (grad[0]*grad[0] + grad[1]*grad[1]).sqrt(),
-                p1.y - sign * discr * grad[1] / (grad[0]*grad[0] + grad[1]*grad[1]).sqrt(),
+                p1.x - sign * discr * grad[0] / (grad[0] * grad[0] + grad[1] * grad[1]).sqrt(),
+                p1.y - sign * discr * grad[1] / (grad[0] * grad[0] + grad[1] * grad[1]).sqrt(),
             );
 
             zcur = cov.get_value(p2.x, p2.y);
         }
 
         if (down && (zcur < zlim)) || (!down && (zcur > zlim)) {
-            let t = (zprev - zlim) / (zprev  - zcur);
-            let pend = Point2D::new(
-                (1.0 - t)*p1.x + t*p2.x,
-                (1.0 - t)*p1.y + t*p2.y
-            );
+            let t = (zprev - zlim) / (zprev - zcur);
+            let pend = Point2D::new((1.0 - t) * p1.x + t * p2.x, (1.0 - t) * p1.y + t * p2.y);
             points.push(pend);
             break;
-        } else if (down && (zcur < zprev)) || (!down && (zcur > zprev))  {
+        } else if (down && (zcur < zprev)) || (!down && (zcur > zprev)) {
             points.push(p2);
             p1 = p2;
             zprev = zcur;
@@ -1741,9 +1749,9 @@ pub fn get_flowline(cov: &RasterCoverage, p: &Point2D,
 
         let n = points.len();
         if n >= 3 {
-            if path_turn(points[n-3], points[n-2], points[n-1]) < defmin {
+            if path_turn(points[n - 3], points[n - 2], points[n - 1]) < defmin {
                 points.pop();
-                break
+                break;
             }
         }
     }
@@ -1752,10 +1760,25 @@ pub fn get_flowline(cov: &RasterCoverage, p: &Point2D,
 }
 
 // insertes flowlines recursively
-pub fn insert_flowlines(cov: &RasterCoverage, flowlines: &mut Vec<Vec<Point2D>>,
-                        n1: usize, n2: usize, k1: usize, k2:usize, depth: u8, distmin: f64,
-                        distmax: f64, discr: f64, zlim: f64, slopemin: f64, defmin: f64, down: bool) {
-    if depth == 0 { return }
+pub fn insert_flowlines(
+    cov: &RasterCoverage,
+    flowlines: &mut Vec<Vec<Point2D>>,
+    n1: usize,
+    n2: usize,
+    k1: usize,
+    k2: usize,
+    depth: u8,
+    distmin: f64,
+    distmax: f64,
+    discr: f64,
+    zlim: f64,
+    slopemin: f64,
+    defmin: f64,
+    down: bool,
+) {
+    if depth == 0 {
+        return;
+    }
 
     let mut p1: Point2D;
     let mut p2: Point2D;
@@ -1765,11 +1788,11 @@ pub fn insert_flowlines(cov: &RasterCoverage, flowlines: &mut Vec<Vec<Point2D>>,
     let idx: usize;
     let nlast: usize;
 
-    let n = cmp::min(flowlines[n1].len()-k1, flowlines[n2].len()-k2);
+    let n = cmp::min(flowlines[n1].len() - k1, flowlines[n2].len() - k2);
 
     for i in 0..n {
-        p1 = flowlines[n1][i+k1];
-        p2 = flowlines[n2][i+k2];
+        p1 = flowlines[n1][i + k1];
+        p2 = flowlines[n2][i + k2];
         dist = p1.distance(&p2);
 
         if dist >= distmax {
@@ -1777,49 +1800,78 @@ pub fn insert_flowlines(cov: &RasterCoverage, flowlines: &mut Vec<Vec<Point2D>>,
             flowline = get_flowline(cov, &p3, discr, zlim, slopemin, defmin, down);
 
             if flowline.len() > 1 {
-                idx = intersection_idx(&flowline, flowlines,distmin);
+                idx = intersection_idx(&flowline, flowlines, distmin);
                 flowline.truncate(idx);
 
                 if flowline.len() > 1 {
                     flowlines.push(flowline);
-                    nlast = flowlines.len()-1;
-                    insert_flowlines(cov, flowlines, n1, nlast, i+k1, 0,
-                                     depth-1, distmin, distmax, discr,
-                                     zlim, slopemin, defmin, down);
-                    insert_flowlines(cov, flowlines, n2, nlast, i+k2, 0,
-                                     depth-1, distmin, distmax, discr,
-                                     zlim, slopemin, defmin, down);
+                    nlast = flowlines.len() - 1;
+                    insert_flowlines(
+                        cov,
+                        flowlines,
+                        n1,
+                        nlast,
+                        i + k1,
+                        0,
+                        depth - 1,
+                        distmin,
+                        distmax,
+                        discr,
+                        zlim,
+                        slopemin,
+                        defmin,
+                        down,
+                    );
+                    insert_flowlines(
+                        cov,
+                        flowlines,
+                        n2,
+                        nlast,
+                        i + k2,
+                        0,
+                        depth - 1,
+                        distmin,
+                        distmax,
+                        discr,
+                        zlim,
+                        slopemin,
+                        defmin,
+                        down,
+                    );
                 }
             }
 
-            return
+            return;
         }
     }
 }
 
 // checks the distance to the previously generated flowlines
 pub fn intersection_idx(newline: &Vec<Point2D>, lines: &Vec<Vec<Point2D>>, dist: f64) -> usize {
-
     let mut imin = newline.len();
     for line in lines.iter().rev() {
-        let d1 = newline[0].distance(&newline[newline.len()-1]);
-        let d2 = line[0].distance(&line[line.len()-1]);
+        let d1 = newline[0].distance(&newline[newline.len() - 1]);
+        let d2 = line[0].distance(&line[line.len() - 1]);
 
-        let c1 = Point2D::midpoint(&newline[0], &newline[newline.len()-1]);
-        let c2 = Point2D::midpoint(&line[0], &line[line.len()-1]);
+        let c1 = Point2D::midpoint(&newline[0], &newline[newline.len() - 1]);
+        let c2 = Point2D::midpoint(&line[0], &line[line.len() - 1]);
 
         let d3 = c1.distance(&c2);
 
-        if d3 < (d1 + d2)/2.0 {
+        if d3 < (d1 + d2) / 2.0 {
             for i in 1..newline.len() {
                 for j in 1..line.len() {
                     if newline[i].distance(&line[j]) < dist {
                         imin = if i < imin { i } else { imin };
-                        if imin == 1 { return imin }
+                        if imin == 1 {
+                            return imin;
+                        }
                     }
-                    if is_intersection(&newline[i-1], &newline[i], &line[j-1], &line[j]) {
+                    if is_intersection(&newline[i - 1], &newline[i], &line[j - 1], &line[j]) {
                         imin = if i < imin { i } else { imin };
-                        if imin == 1 { return imin }
+                        if imin == 1 {
+                            return imin;
+                        }
                     }
                 }
             }
@@ -1829,10 +1881,10 @@ pub fn intersection_idx(newline: &Vec<Point2D>, lines: &Vec<Vec<Point2D>>, dist:
 }
 
 pub fn point_side(p1: &Point2D, p2: &Point2D, p3: &Point2D) -> bool {
-    (p3.x - p1.x)*(p2.y - p1.y) < (p3.y - p1.y)*(p2.x - p1.x)
+    (p3.x - p1.x) * (p2.y - p1.y) < (p3.y - p1.y) * (p2.x - p1.x)
 }
 
 pub fn is_intersection(p1: &Point2D, p2: &Point2D, p3: &Point2D, p4: &Point2D) -> bool {
-    (point_side(p1, p2, p3) != point_side(p1, p2, p4)) &&
-    (point_side(p3, p4, p1) != point_side(p3, p4, p2))
+    (point_side(p1, p2, p3) != point_side(p1, p2, p4))
+        && (point_side(p3, p4, p1) != point_side(p3, p4, p2))
 }

@@ -6,10 +6,6 @@ Last Modified: 03/09/2020
 License: MIT
 */
 
-use whitebox_raster::Raster;
-use whitebox_common::rendering::html::*;
-use whitebox_common::rendering::LineGraph;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -23,6 +19,10 @@ use std::process::Command;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::rendering::html::*;
+use whitebox_common::rendering::LineGraph;
+use whitebox_common::structures::Array2D;
+use whitebox_raster::Raster;
 
 /// This tool can be used to create a slope versus average elevation plot for one or more digital elevation models (DEMs).
 /// Similar to a hypsometric analysis (`HypsometricAnalysis`), the slope-elevation relation can reveal the basic
@@ -194,11 +194,18 @@ impl WhiteboxTool for SlopeVsElevationPlot {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

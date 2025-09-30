@@ -6,10 +6,7 @@ Last Modified: 03/09/2020
 License: MIT
 */
 
-use whitebox_raster::Raster;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
-use time::{Date, macros::time, OffsetDateTime, Time, UtcOffset};
 use num_cpus;
 use rayon::prelude::*;
 use std::env;
@@ -20,6 +17,9 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use time::{macros::time, Date, OffsetDateTime, Time, UtcOffset};
+use whitebox_common::structures::Array2D;
+use whitebox_raster::Raster;
 
 /// This tool calculates the proportion of time a location is within daylight. That is, it calculates the
 /// proportion of time, during a user-defined time frame, that a grid cell in an input digital elevation
@@ -460,11 +460,18 @@ impl WhiteboxTool for TimeInDaylight {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -750,16 +757,16 @@ impl WhiteboxTool for TimeInDaylight {
                                         // // All previous cells are nearer, and so if this isn't a higher
                                         // // cell than the current highest, it can't be the horizon cell.
                                         // if z > current_max_elev {
-                                            // current_max_elev = z;
+                                        // current_max_elev = z;
 
-                                            // Calculate the slope
-                                            slope = (z - current_elev) / offsets[i].5;
-                                            if slope > current_max_slope {
-                                                current_max_slope = slope;
-                                                if slope > early_stopping_slope {
-                                                    break; // we're unlikely to find a farther horizon cell.
-                                                }
+                                        // Calculate the slope
+                                        slope = (z - current_elev) / offsets[i].5;
+                                        if slope > current_max_slope {
+                                            current_max_slope = slope;
+                                            if slope > early_stopping_slope {
+                                                break; // we're unlikely to find a farther horizon cell.
                                             }
+                                        }
                                         // }
                                     }
 
@@ -921,7 +928,7 @@ fn generate_almanac(
         //         // .from_local_datatime(
         //         //     NaiveDate::from_yo_opt(2023, doy).unwrap().and_hms_opt(0, 0, 0).unwrap()
         //         // )
-            
+
         // } else {
         //     FixedOffset::east_opt((utc_offset * hour_sec) as i32).unwrap()
         //         .yo(2020, doy as u32)
@@ -932,13 +939,10 @@ fn generate_almanac(
         // };
 
         let midnight = Date::from_ordinal_date(2023, doy as u16)
-                            .unwrap()
-                            .with_hms(0, 0, 0)
-                            .unwrap()
-                            .assume_offset(
-                                UtcOffset::from_hms(utc_offset as i8, 0, 0)
-                                .unwrap()
-                            );
+            .unwrap()
+            .with_hms(0, 0, 0)
+            .unwrap()
+            .assume_offset(UtcOffset::from_hms(utc_offset as i8, 0, 0).unwrap());
 
         let mut diff: f64;
         let mut sunrise = false;
@@ -969,13 +973,10 @@ fn generate_almanac(
                     //         )
                     // };
                     let dt = Date::from_ordinal_date(2023, doy as u16)
-                            .unwrap()
-                            .with_hms(hr as u8, minute as u8, sec as u8)
-                            .unwrap()
-                            .assume_offset(
-                                UtcOffset::from_hms(utc_offset as i8, 0, 0)
-                                .unwrap()
-                            );
+                        .unwrap()
+                        .with_hms(hr as u8, minute as u8, sec as u8)
+                        .unwrap()
+                        .assume_offset(UtcOffset::from_hms(utc_offset as i8, 0, 0).unwrap());
                     // let unixtime = dt.timestamp() * 1000 + dt.timestamp_subsec_millis() as i64;
                     let unixtime = (dt.unix_timestamp_nanos() / 1000) as i64;
                     let pos = pos(unixtime, latitude, longitude);

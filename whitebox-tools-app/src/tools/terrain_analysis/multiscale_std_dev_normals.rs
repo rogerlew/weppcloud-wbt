@@ -6,10 +6,6 @@ Last Modified: 03/09/2020
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::rendering::html::*;
-use whitebox_common::rendering::LineGraph;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -23,6 +19,10 @@ use std::process::Command;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::rendering::html::*;
+use whitebox_common::rendering::LineGraph;
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 
 /// This tool can be used to map the spatial pattern of maximum spherical standard deviation
 /// (σ<sub>*s max*</sub>; `--out_mag`), as well as the scale at which maximum spherical standard deviation occurs
@@ -313,11 +313,18 @@ impl WhiteboxTool for MultiscaleStdDevNormals {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -437,10 +444,12 @@ impl WhiteboxTool for MultiscaleStdDevNormals {
         for s in min_scale..(min_scale + num_steps) {
             let midpoint = min_scale
                 + (((step * (s - min_scale)) as f32).powf(step_nonlinearity)).floor() as isize;
-            
+
             let filter_size = midpoint * 2 + 1;
             if filter_size > rows || filter_size > columns {
-                println!("Warning: Operation exited early as a tested scale exceeded the raster extent.");
+                println!(
+                    "Warning: Operation exited early as a tested scale exceeded the raster extent."
+                );
                 break;
             }
 
@@ -453,7 +462,7 @@ impl WhiteboxTool for MultiscaleStdDevNormals {
                     filter_size
                 );
             }
-            
+
             ////////////////////////////////////////
             // Smooth the DEM using Gaussian blur //
             ////////////////////////////////////////

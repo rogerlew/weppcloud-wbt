@@ -6,8 +6,6 @@ Last Modified: 03/09/2020
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -17,6 +15,8 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 
 /// This tool can be used to calculate the spherical standard deviation of the distribution of surface normals
 /// for an input digital elevation model (DEM; `--dem`). This is a measure of the angular dispersion of the surface
@@ -53,7 +53,7 @@ use std::thread;
 /// Hodgson, M. E., and Gaile, G. L. (1999). A cartographic modeling approach for surface orientation-related applications.
 /// *Photogrammetric Engineering and Remote Sensing*, 65(1), 85-95.
 ///
-/// Lindsay J. B., Newman* D. R., Francioni, A. 2019. Scale-optimized surface roughness for topographic analysis. *Geosciences*, 
+/// Lindsay J. B., Newman* D. R., Francioni, A. 2019. Scale-optimized surface roughness for topographic analysis. *Geosciences*,
 /// 9(7) 322. DOI: 10.3390/geosciences9070322.
 ///
 /// # See Also
@@ -216,11 +216,18 @@ impl WhiteboxTool for SphericalStdDevOfNormals {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

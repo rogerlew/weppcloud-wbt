@@ -75,7 +75,7 @@ impl fmt::Display for FieldData {
             FieldData::Text(value) => return write!(f, "{}", value),
             FieldData::Date(value) => return write!(f, "{}", value),
             FieldData::Bool(value) => return write!(f, "{}", value),
-            FieldData::Null => return write!(f, "null")
+            FieldData::Null => return write!(f, "null"),
         }
     }
 }

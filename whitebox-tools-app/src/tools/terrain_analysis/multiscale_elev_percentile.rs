@@ -6,8 +6,6 @@ Last Modified: 22/12/2019
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -18,6 +16,8 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 
 /// This tool calculates the most elevation percentile (EP) across a range of spatial scales.
 /// EP is a measure of local topographic position (LTP) and expresses the vertical
@@ -339,11 +339,18 @@ impl WhiteboxTool for MultiscaleElevationPercentile {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -446,7 +453,7 @@ impl WhiteboxTool for MultiscaleElevationPercentile {
                 + (((step * (s - min_scale)) as f32).powf(step_nonlinearity)).floor() as isize;
             let filter_size = midpoint * 2 + 1;
 
-            if filter_size > columns.max(rows) { 
+            if filter_size > columns.max(rows) {
                 if verbose {
                     println!("{}", &format!("Warning: The number of steps resulted in filter sizes that \nexceeded the raster extent. As a result, the simulation was cut \nshort after {} steps.", s - min_scale));
                 }

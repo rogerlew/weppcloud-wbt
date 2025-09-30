@@ -6,8 +6,6 @@ Last Modified: 12/10/2018
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -17,6 +15,8 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 
 /// This tool can be used to calculate the maximum deviation from mean elevation, *DEVmax* (Lindsay et al. 2015) for each
 /// grid cell in a digital elevation model (DEM) across a range specified spatial scales. *DEV*
@@ -271,11 +271,18 @@ impl WhiteboxTool for MaxElevationDeviation {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -370,14 +377,12 @@ impl WhiteboxTool for MaxElevationDeviation {
         let num_loops = (max_scale - min_scale) / step;
         let mut loop_num = 0;
         for midpoint in (min_scale..max_scale).step_by(step as usize) {
-
-            if midpoint*2+1 > columns.max(rows) { 
+            if midpoint * 2 + 1 > columns.max(rows) {
                 if verbose {
                     println!("{}", &format!("Warning: The number of steps resulted in filter sizes that \nexceeded the raster extent. As a result, the simulation was cut \nshort after {} steps.", loop_num));
                 }
                 break;
             }
-
 
             loop_num += 1;
             let (tx, rx) = mpsc::channel();

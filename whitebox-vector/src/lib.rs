@@ -15,7 +15,7 @@ pub mod shapefile;
 //     ShapefileAttributes,
 // };
 pub use crate::shapefile::attributes::*;
-pub use crate::shapefile::geometry::*;
 pub use crate::shapefile::geometry::ShapeType;
+pub use crate::shapefile::geometry::*;
 pub use crate::shapefile::Shapefile;
 // pub use whitebox_common::structures::Point2D;

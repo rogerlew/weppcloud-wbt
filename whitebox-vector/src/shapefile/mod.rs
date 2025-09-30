@@ -13,8 +13,6 @@ pub mod geometry;
 
 use self::attributes::*;
 use self::geometry::*;
-use whitebox_common::structures::Point2D;
-use whitebox_common::utils::{ByteOrderReader, Endianness};
 use byteorder::{BigEndian, LittleEndian, WriteBytesExt};
 use chrono::prelude::*;
 use std::f64;
@@ -25,10 +23,12 @@ use std::io::prelude::*;
 use std::io::{BufReader, BufWriter, Cursor, Error, ErrorKind};
 use std::path::Path;
 use std::str;
+use whitebox_common::structures::Point2D;
+use whitebox_common::utils::{ByteOrderReader, Endianness};
 
 #[derive(Debug, Default, Clone)]
 pub struct ShapefileHeader {
-    file_code: i32,            // BigEndian; value is 9994
+    file_code: i32, // BigEndian; value is 9994
     // unused1: i32,              // BigEndian
     // unused2: i32,              // BigEndian
     // unused3: i32,              // BigEndian
@@ -258,7 +258,7 @@ impl Shapefile {
         self.header.version = bor.read_i32()?;
         let st = bor.read_i32()?;
         self.header.shape_type = ShapeType::from_int(st); //bor.read_i32());
-        
+
         // bounding box
         self.header.x_min = bor.read_f64()?;
         self.header.y_min = bor.read_f64()?;
@@ -563,7 +563,7 @@ impl Shapefile {
                     self.projection.push_str(&format!("{}\n", line_unwrapped));
                 }
             }
-            Err(_) => {}, //println!("Warning: Projection file not located."),
+            Err(_) => {} //println!("Warning: Projection file not located."),
         }
 
         ///////////////////////////////

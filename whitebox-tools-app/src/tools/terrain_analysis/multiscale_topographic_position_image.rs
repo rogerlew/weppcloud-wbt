@@ -6,10 +6,8 @@ Last Modified: 30/01/2020
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
-use whitebox_common::structures::Array2D;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
@@ -17,6 +15,8 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 
 /// This tool creates a multiscale topographic position (MTP) image ([see here for an
 /// example](https://www.uoguelph.ca/~hydrogeo/pubs/UpdatedPosterMapSm.png)) from three DEV<sub>max</sub> rasters of differing
@@ -26,11 +26,11 @@ use std::thread;
 /// blue, green, and red colour components of the colour composite output (`--output`) raster. The image lightness value
 /// (`--lightness`) controls the overall brightness of the output image, as depending on the topography and scale ranges,
 /// these images can appear relatively dark. Higher values result in brighter, more colourful output images.
-/// 
+///
 /// The user may optionally specify a hillshade image. When specified, the hillshade will be used to provide a shaded-relief
 /// overlaid on top of the coloured multi-scale information, providing a very effective visualization. Any hillshade image
-/// may be used for this purpose, but we have found that multi-directional hillshade (`MultidirectionalHillshade`), and 
-/// specifically those derived using the 360-degree option, can be most effective for this application. However, 
+/// may be used for this purpose, but we have found that multi-directional hillshade (`MultidirectionalHillshade`), and
+/// specifically those derived using the 360-degree option, can be most effective for this application. However,
 /// experimentation is likely needed to find the optimal for each unique data set.
 ///
 /// The output images can take some training to interpret correctly and a detailed explanation can be found in Lindsay et al.
@@ -254,11 +254,18 @@ impl WhiteboxTool for MultiscaleTopographicPositionImage {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -291,7 +298,7 @@ impl WhiteboxTool for MultiscaleTopographicPositionImage {
 
         let rows = input_r.configs.rows as isize;
         let columns = input_r.configs.columns as isize;
-        
+
         if verbose {
             println!("Reading meso-scale DEV data...")
         };
@@ -346,8 +353,9 @@ impl WhiteboxTool for MultiscaleTopographicPositionImage {
             ));
         }
 
-        if hs_specified && (input_r.configs.rows as isize != hs.rows
-            || input_r.configs.columns as isize != hs.columns)
+        if hs_specified
+            && (input_r.configs.rows as isize != hs.rows
+                || input_r.configs.columns as isize != hs.columns)
         {
             return Err(Error::new(
                 ErrorKind::InvalidInput,

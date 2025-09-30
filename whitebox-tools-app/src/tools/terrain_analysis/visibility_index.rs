@@ -6,10 +6,7 @@ Last Modified: 12/10/2018
 License: MIT
 */
 
-use whitebox_raster::Raster;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
-use whitebox_common::utils::get_formatted_elapsed_time;
 use num_cpus;
 use std::env;
 use std::f64;
@@ -18,6 +15,9 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use whitebox_common::structures::Array2D;
+use whitebox_common::utils::get_formatted_elapsed_time;
+use whitebox_raster::Raster;
 
 /// This tool can be used to calculate a measure of landscape visibility based on the
 /// topography of an input digital elevation model (DEM). The user must specify the name of
@@ -224,11 +224,18 @@ impl WhiteboxTool for VisibilityIndex {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

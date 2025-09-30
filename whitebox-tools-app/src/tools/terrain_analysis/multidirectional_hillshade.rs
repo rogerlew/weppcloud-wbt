@@ -6,7 +6,6 @@ Last Modified: 03/09/2020
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -17,10 +16,8 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
-use whitebox_common::utils::{
-    haversine_distance,
-    vincenty_distance
-};
+use whitebox_common::utils::{haversine_distance, vincenty_distance};
+use whitebox_raster::*;
 
 /// This tool performs a hillshade operation (also called shaded relief) on an input digital elevation model (DEM)
 /// with multiple sources of illumination. The user must specify the  name of the input DEM (`--dem`) and the output
@@ -265,11 +262,18 @@ impl WhiteboxTool for MultidirectionalHillshade {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -328,11 +332,31 @@ impl WhiteboxTool for MultidirectionalHillshade {
                     let mut p: f64;
                     let mut q: f64;
                     let offsets = [
-                        [-2, -2], [-1, -2], [0, -2], [1, -2], [2, -2], 
-                        [-2, -1], [-1, -1], [0, -1], [1, -1], [2, -1], 
-                        [-2, 0], [-1, 0], [0, 0], [1, 0], [2, 0], 
-                        [-2, 1], [-1, 1], [0, 1], [1, 1], [2, 1], 
-                        [-2, 2], [-1, 2], [0, 2], [1, 2], [2, 2]
+                        [-2, -2],
+                        [-1, -2],
+                        [0, -2],
+                        [1, -2],
+                        [2, -2],
+                        [-2, -1],
+                        [-1, -1],
+                        [0, -1],
+                        [1, -1],
+                        [2, -1],
+                        [-2, 0],
+                        [-1, 0],
+                        [0, 0],
+                        [1, 0],
+                        [2, 0],
+                        [-2, 1],
+                        [-1, 1],
+                        [0, 1],
+                        [1, 1],
+                        [2, 1],
+                        [-2, 2],
+                        [-1, 2],
+                        [0, 2],
+                        [1, 2],
+                        [2, 2],
                     ];
                     let mut z = [0f64; 25];
                     let mut val: f64;
@@ -360,7 +384,7 @@ impl WhiteboxTool for MultidirectionalHillshade {
                             (360f64 - 90f64).to_radians(),
                         ]
                     };
-    
+
                     let weights = if multidirection360mode {
                         vec![
                             0.15f64, 0.125f64, 0.1f64, 0.05f64, 0.1f64, 0.125f64, 0.15f64, 0.20f64,
@@ -374,7 +398,8 @@ impl WhiteboxTool for MultidirectionalHillshade {
                             z12 = input.get_value(row, col);
                             if z12 != nodata {
                                 for n in 0..25 {
-                                    z[n] = input.get_value(row + offsets[n][1], col + offsets[n][0]);
+                                    z[n] =
+                                        input.get_value(row + offsets[n][1], col + offsets[n][0]);
                                     if z[n] != nodata {
                                         z[n] *= z_factor;
                                     } else {
@@ -382,17 +407,25 @@ impl WhiteboxTool for MultidirectionalHillshade {
                                     }
                                 }
 
-                                /* 
+                                /*
                                 The following equations have been taken from Florinsky (2016) Principles and Methods
-                                of Digital Terrain Modelling, Chapter 4, pg. 117. 
+                                of Digital Terrain Modelling, Chapter 4, pg. 117.
                                 */
-                                p = 1. / (420. * res) * (44. * (z[3] + z[23] - z[1] - z[21]) + 31. * (z[0] + z[20] - z[4] - z[24]
-                                + 2. * (z[8] + z[18] - z[6] - z[16])) + 17. * (z[14] - z[10] + 4. * (z[13] - z[11]))
-                                + 5. * (z[9] + z[19] - z[5] - z[15]));
+                                p = 1. / (420. * res)
+                                    * (44. * (z[3] + z[23] - z[1] - z[21])
+                                        + 31.
+                                            * (z[0] + z[20] - z[4] - z[24]
+                                                + 2. * (z[8] + z[18] - z[6] - z[16]))
+                                        + 17. * (z[14] - z[10] + 4. * (z[13] - z[11]))
+                                        + 5. * (z[9] + z[19] - z[5] - z[15]));
 
-                                q = 1. / (420. * res) * (44. * (z[5] + z[9] - z[15] - z[19]) + 31. * (z[20] + z[24] - z[0] - z[4]
-                                    + 2. * (z[6] + z[8] - z[16] - z[18])) + 17. * (z[2] - z[22] + 4. * (z[7] - z[17]))
-                                    + 5. * (z[1] + z[3] - z[21] - z[23]));
+                                q = 1. / (420. * res)
+                                    * (44. * (z[5] + z[9] - z[15] - z[19])
+                                        + 31.
+                                            * (z[20] + z[24] - z[0] - z[4]
+                                                + 2. * (z[6] + z[8] - z[16] - z[18]))
+                                        + 17. * (z[2] - z[22] + 4. * (z[7] - z[17]))
+                                        + 5. * (z[1] + z[3] - z[21] - z[23]));
 
                                 tan_slope = (p * p + q * q).sqrt();
                                 if tan_slope < 0.00017 {
@@ -424,7 +457,8 @@ impl WhiteboxTool for MultidirectionalHillshade {
                     }
                 });
             }
-        } else { // geographic coordinates
+        } else {
+            // geographic coordinates
 
             let phi1 = input.get_y_from_row(0);
             let lambda1 = input.get_x_from_column(0);
@@ -433,7 +467,7 @@ impl WhiteboxTool for MultidirectionalHillshade {
             let lambda2 = input.get_x_from_column(-1);
 
             let linear_res = vincenty_distance((phi1, lambda1), (phi2, lambda2));
-            let lr2 =  haversine_distance((phi1, lambda1), (phi2, lambda2)); 
+            let lr2 = haversine_distance((phi1, lambda1), (phi2, lambda2));
             let diff = 100. * (linear_res - lr2).abs() / linear_res;
             let use_haversine = diff < 0.5; // if the difference is less than 0.5%, use the faster haversine method to calculate distances.
 
@@ -454,9 +488,15 @@ impl WhiteboxTool for MultidirectionalHillshade {
                     let mut phi2: f64;
                     let mut lambda2: f64;
                     let offsets = [
-                        [-1, -1], [0, -1], [1, -1], 
-                        [-1, 0], [0, 0], [1, 0], 
-                        [-1, 1], [0, 1], [1, 1]
+                        [-1, -1],
+                        [0, -1],
+                        [1, -1],
+                        [-1, 0],
+                        [0, 0],
+                        [1, 0],
+                        [-1, 1],
+                        [0, 1],
+                        [1, 1],
                     ];
                     let mut z = [0f64; 25];
                     let mut val: f64;
@@ -484,7 +524,7 @@ impl WhiteboxTool for MultidirectionalHillshade {
                             (360f64 - 90f64).to_radians(),
                         ]
                     };
-    
+
                     let weights = if multidirection360mode {
                         vec![
                             0.15f64, 0.125f64, 0.1f64, 0.05f64, 0.1f64, 0.125f64, 0.15f64, 0.20f64,
@@ -498,7 +538,8 @@ impl WhiteboxTool for MultidirectionalHillshade {
                             z4 = input.get_value(row, col);
                             if z4 != nodata {
                                 for n in 0..9 {
-                                    z[n] = input.get_value(row + offsets[n][1], col + offsets[n][0]);
+                                    z[n] =
+                                        input.get_value(row + offsets[n][1], col + offsets[n][0]);
                                     if z[n] != nodata {
                                         z[n] *= z_factor;
                                     } else {
@@ -511,7 +552,7 @@ impl WhiteboxTool for MultidirectionalHillshade {
                                 lambda1 = input.get_x_from_column(col);
 
                                 phi2 = phi1;
-                                lambda2 = input.get_x_from_column(col-1);
+                                lambda2 = input.get_x_from_column(col - 1);
 
                                 b = if use_haversine {
                                     haversine_distance((phi1, lambda1), (phi2, lambda2))
@@ -519,7 +560,7 @@ impl WhiteboxTool for MultidirectionalHillshade {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                phi2 = input.get_y_from_row(row+1);
+                                phi2 = input.get_y_from_row(row + 1);
                                 lambda2 = lambda1;
 
                                 d = if use_haversine {
@@ -528,7 +569,7 @@ impl WhiteboxTool for MultidirectionalHillshade {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                phi2 = input.get_y_from_row(row-1);
+                                phi2 = input.get_y_from_row(row - 1);
                                 lambda2 = lambda1;
 
                                 e = if use_haversine {
@@ -537,11 +578,11 @@ impl WhiteboxTool for MultidirectionalHillshade {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                phi1 = input.get_y_from_row(row+1);
+                                phi1 = input.get_y_from_row(row + 1);
                                 lambda1 = input.get_x_from_column(col);
 
                                 phi2 = phi1;
-                                lambda2 = input.get_x_from_column(col-1);
+                                lambda2 = input.get_x_from_column(col - 1);
 
                                 a = if use_haversine {
                                     haversine_distance((phi1, lambda1), (phi2, lambda2))
@@ -549,11 +590,11 @@ impl WhiteboxTool for MultidirectionalHillshade {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                phi1 = input.get_y_from_row(row-1);
+                                phi1 = input.get_y_from_row(row - 1);
                                 lambda1 = input.get_x_from_column(col);
 
                                 phi2 = phi1;
-                                lambda2 = input.get_x_from_column(col-1);
+                                lambda2 = input.get_x_from_column(col - 1);
 
                                 c = if use_haversine {
                                     haversine_distance((phi1, lambda1), (phi2, lambda2))
@@ -561,22 +602,42 @@ impl WhiteboxTool for MultidirectionalHillshade {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                /* 
+                                /*
                                 The following equations have been taken from Florinsky (2016) Principles and Methods
                                 of Digital Terrain Modelling, Chapter 4, pg. 117.
                                 */
 
-                                p = (a * a * c * d * (d + e) * (z[2] - z[0]) + b * (a * a * d * d + c * c * e * e) * (z[5] - z[3]) + a * c * c * e * (d + e) * (z[8] - z[6]))
-                                / (2. * (a * a * c * c * (d + e).powi(2) + b * b * (a * a * d * d + c * c * e * e)));
+                                p = (a * a * c * d * (d + e) * (z[2] - z[0])
+                                    + b * (a * a * d * d + c * c * e * e) * (z[5] - z[3])
+                                    + a * c * c * e * (d + e) * (z[8] - z[6]))
+                                    / (2.
+                                        * (a * a * c * c * (d + e).powi(2)
+                                            + b * b * (a * a * d * d + c * c * e * e)));
 
-                                q = 1. / (3. * d * e * (d + e) * (a.powi(4) + b.powi(4) + c.powi(4))) 
-                                * ((d * d * (a.powi(4) + b.powi(4) + b * b * c * c) + c * c * e * e * (a * a - b * b)) * (z[0] + z[2])
-                                - (d * d * (a.powi(4) + c.powi(4) + b * b * c * c) - e * e * (a.powi(4) + c.powi(4) + a * a * b * b)) * (z[3] + z[5])
-                                - (e * e * (b.powi(4) + c.powi(4) + a * a * b * b) - a * a * d * d * (b * b - c * c)) * (z[6] + z[8])
-                                + d * d * (b.powi(4) * (z[1] - 3. * z[4]) + c.powi(4) * (3. * z[1] - z[4]) + (a.powi(4) - 2. * b * b * c * c) * (z[1] - z[4]))
-                                + e * e * (a.powi(4) * (z[4] - 3. * z[7]) + b.powi(4) * (3. * z[4] - z[7]) + (c.powi(4) - 2. * a * a * b * b) * (z[4] - z[7]))
-                                - 2. * (a * a * d * d * (b * b - c * c) * z[7] + c * c * e * e * (a * a - b * b) * z[1]));
-                                
+                                q = 1.
+                                    / (3. * d * e * (d + e) * (a.powi(4) + b.powi(4) + c.powi(4)))
+                                    * ((d * d * (a.powi(4) + b.powi(4) + b * b * c * c)
+                                        + c * c * e * e * (a * a - b * b))
+                                        * (z[0] + z[2])
+                                        - (d * d * (a.powi(4) + c.powi(4) + b * b * c * c)
+                                            - e * e * (a.powi(4) + c.powi(4) + a * a * b * b))
+                                            * (z[3] + z[5])
+                                        - (e * e * (b.powi(4) + c.powi(4) + a * a * b * b)
+                                            - a * a * d * d * (b * b - c * c))
+                                            * (z[6] + z[8])
+                                        + d * d
+                                            * (b.powi(4) * (z[1] - 3. * z[4])
+                                                + c.powi(4) * (3. * z[1] - z[4])
+                                                + (a.powi(4) - 2. * b * b * c * c)
+                                                    * (z[1] - z[4]))
+                                        + e * e
+                                            * (a.powi(4) * (z[4] - 3. * z[7])
+                                                + b.powi(4) * (3. * z[4] - z[7])
+                                                + (c.powi(4) - 2. * a * a * b * b)
+                                                    * (z[4] - z[7]))
+                                        - 2. * (a * a * d * d * (b * b - c * c) * z[7]
+                                            + c * c * e * e * (a * a - b * b) * z[1]));
+
                                 tan_slope = (p * p + q * q).sqrt();
                                 if tan_slope < 0.00017 {
                                     tan_slope = 0.00017;

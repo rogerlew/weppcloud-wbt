@@ -6,7 +6,6 @@ Last Modified: 15/01/2022
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -16,48 +15,45 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
-use whitebox_common::utils::{
-    get_formatted_elapsed_time, 
-    haversine_distance,
-    vincenty_distance
-};
+use whitebox_common::utils::{get_formatted_elapsed_time, haversine_distance, vincenty_distance};
+use whitebox_raster::*;
 
-/// This tool calculates the tangential (or horizontal) curvature, which is the curvature of an inclined 
+/// This tool calculates the tangential (or horizontal) curvature, which is the curvature of an inclined
 /// plane perpendicular to both the direction of flow and the surface (Gallant and Wilson, 2000). Alternatively,
-/// it could be described as the curvature of a normal section tangential to a contour line at a given 
+/// it could be described as the curvature of a normal section tangential to a contour line at a given
 /// point of the topographic surface (Florinsky, 2017). This variable has an unbounded range that can be
 /// either positive or negative. Positive values are indicative of flow divergence while negative tangential
-/// curvature values indicate flow convergence. Thus tangential curvature is similar to plan curvature, although the 
+/// curvature values indicate flow convergence. Thus tangential curvature is similar to plan curvature, although the
 /// literature suggests that the former is more numerically stable (Wilson, 2018). Tangential curvature is measured in units of m<sup>-1</sup>.
-/// 
+///
 /// ![](../../doc_img/TanCurvature.png)
-/// 
-/// The user must specify the name of the input digital elevation model (DEM) (`--dem`) and the output 
+///
+/// The user must specify the name of the input digital elevation model (DEM) (`--dem`) and the output
 /// raster (`--output`). The Z conversion factor (`--zfactor`) is only important when the vertical and horizontal units are not the
 /// same in the DEM. When this is the case, the algorithm will multiply each elevation in the DEM by the
 /// Z Conversion Factor. Curvature values are often very small and as such the user may opt to log-transform
 /// the output raster (`--log`). Transforming the values applies the equation by Shary et al. (2002):
-/// 
-/// *Θ*' = sign(*Θ*) ln(1 + 10<sup>*n*</sup>|*Θ*|) 
-/// 
+///
+/// *Θ*' = sign(*Θ*) ln(1 + 10<sup>*n*</sup>|*Θ*|)
+///
 /// where *Θ* is the parameter value and *n* is dependent on the grid cell size.
-/// 
-/// For DEMs in projected coordinate systems, the tool uses the 3rd-order bivariate 
-/// Taylor polynomial method described by Florinsky (2016). Based on a polynomial fit 
-/// of the elevations within the 5x5 neighbourhood surrounding each cell, this method is considered more 
+///
+/// For DEMs in projected coordinate systems, the tool uses the 3rd-order bivariate
+/// Taylor polynomial method described by Florinsky (2016). Based on a polynomial fit
+/// of the elevations within the 5x5 neighbourhood surrounding each cell, this method is considered more
 /// robust against outlier elevations (noise) than other methods. For DEMs in geographic coordinate systems
-/// (i.e. angular units), the tool uses the 3x3 polynomial fitting method for equal angle grids also 
-/// described by Florinsky (2016). 
+/// (i.e. angular units), the tool uses the 3x3 polynomial fitting method for equal angle grids also
+/// described by Florinsky (2016).
 ///
 /// # References
 /// Florinsky, I. (2016). Digital terrain analysis in soil science and geology. Academic Press.
-/// 
-/// Florinsky, I. V. (2017). An illustrated introduction to general geomorphometry. Progress in Physical 
+///
+/// Florinsky, I. V. (2017). An illustrated introduction to general geomorphometry. Progress in Physical
 /// Geography, 41(6), 723-752.
-/// 
-/// Shary P. A., Sharaya L. S. and Mitusov A. V. (2002) Fundamental quantitative methods of land surface analysis. 
+///
+/// Shary P. A., Sharaya L. S. and Mitusov A. V. (2002) Fundamental quantitative methods of land surface analysis.
 /// Geoderma 107: 1–32.
-/// 
+///
 /// Wilson, J. P. (2018). Environmental applications of digital terrain modeling. John Wiley & Sons.
 ///
 /// `PlanCurvature`, `ProfileCurvature`, `TotalCurvature`, `Slope`, `Aspect`
@@ -98,8 +94,7 @@ impl TangentialCurvature {
         parameters.push(ToolParameter {
             name: "Log-transform the output?".to_owned(),
             flags: vec!["--log".to_owned()],
-            description: "Display output values using a log-scale."
-                .to_owned(),
+            description: "Display output values using a log-scale.".to_owned(),
             parameter_type: ParameterType::Boolean,
             default_value: Some("false".to_string()),
             optional: true,
@@ -247,11 +242,18 @@ impl WhiteboxTool for TangentialCurvature {
         }
 
         if verbose {
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -276,7 +278,7 @@ impl WhiteboxTool for TangentialCurvature {
         let resx = input.configs.resolution_x;
         let resy = input.configs.resolution_y;
         let res = (resx + resy) / 2.;
-        
+
         let mut num_procs = num_cpus::get() as isize;
         if max_procs > 0 && max_procs < num_procs {
             num_procs = max_procs;
@@ -285,14 +287,14 @@ impl WhiteboxTool for TangentialCurvature {
         if !input.is_in_geographic_coordinates() {
             // Based on Florinsky (2016) pg. 246
             let log_multiplier = match res {
-                x if x >= 0. && x < 1. => { 10f64.powi(2) },
-                x if x >= 1. && x < 10. => { 10f64.powi(3) },
-                x if x >= 10. && x < 100. => { 10f64.powi(4) },
-                x if x >= 100. && x < 1000. => { 10f64.powi(5) },
-                x if x >= 1000. && x < 5000. => { 10f64.powi(6) },
-                x if x >= 5000. && x < 10000. => { 10f64.powi(7) },
-                x if x >= 10000. && x < 75000. => { 10f64.powi(8) },
-                _ => { 10f64.powi(9) },
+                x if x >= 0. && x < 1. => 10f64.powi(2),
+                x if x >= 1. && x < 10. => 10f64.powi(3),
+                x if x >= 10. && x < 100. => 10f64.powi(4),
+                x if x >= 100. && x < 1000. => 10f64.powi(5),
+                x if x >= 1000. && x < 5000. => 10f64.powi(6),
+                x if x >= 5000. && x < 10000. => 10f64.powi(7),
+                x if x >= 10000. && x < 75000. => 10f64.powi(8),
+                _ => 10f64.powi(9),
             };
 
             for tid in 0..num_procs {
@@ -307,11 +309,31 @@ impl WhiteboxTool for TangentialCurvature {
                     let mut t: f64;
                     let mut tan_curv: f64;
                     let offsets = [
-                        [-2, -2], [-1, -2], [0, -2], [1, -2], [2, -2], 
-                        [-2, -1], [-1, -1], [0, -1], [1, -1], [2, -1], 
-                        [-2, 0], [-1, 0], [0, 0], [1, 0], [2, 0], 
-                        [-2, 1], [-1, 1], [0, 1], [1, 1], [2, 1], 
-                        [-2, 2], [-1, 2], [0, 2], [1, 2], [2, 2]
+                        [-2, -2],
+                        [-1, -2],
+                        [0, -2],
+                        [1, -2],
+                        [2, -2],
+                        [-2, -1],
+                        [-1, -1],
+                        [0, -1],
+                        [1, -1],
+                        [2, -1],
+                        [-2, 0],
+                        [-1, 0],
+                        [0, 0],
+                        [1, 0],
+                        [2, 0],
+                        [-2, 1],
+                        [-1, 1],
+                        [0, 1],
+                        [1, 1],
+                        [2, 1],
+                        [-2, 2],
+                        [-1, 2],
+                        [0, 2],
+                        [1, 2],
+                        [2, 2],
                     ];
                     let mut z = [0f64; 25];
                     for row in (0..rows).filter(|r| r % num_procs == tid) {
@@ -320,7 +342,8 @@ impl WhiteboxTool for TangentialCurvature {
                             z12 = input.get_value(row, col);
                             if z12 != nodata {
                                 for n in 0..25 {
-                                    z[n] = input.get_value(row + offsets[n][1], col + offsets[n][0]);
+                                    z[n] =
+                                        input.get_value(row + offsets[n][1], col + offsets[n][0]);
                                     if z[n] != nodata {
                                         z[n] *= z_factor;
                                     } else {
@@ -328,7 +351,7 @@ impl WhiteboxTool for TangentialCurvature {
                                     }
                                 }
 
-                                /* 
+                                /*
                                 The following equations have been taken from Florinsky (2016) Principles and Methods
                                 of Digital Terrain Modelling, Chapter 4, pg. 117. Note that I believe Florinsky reversed
                                 the equations for q and p.
@@ -340,34 +363,90 @@ impl WhiteboxTool for TangentialCurvature {
                                 // 16, 17, 18, 19, 20
                                 // 21, 22, 23, 24, 25
 
-                                r = 1f64 / (35f64 * res * res) * (2. * (z[0] + z[4] + z[5] + z[9] + z[10] + z[14] + z[15] + z[19] + z[20] + z[24])
-                                - 2. * (z[2] + z[7] + z[12] + z[17] + z[22]) - z[1] - z[3] - z[6] - z[8]
-                                - z[11] - z[13] - z[16] - z[18] - z[21] - z[23]);
+                                r = 1f64 / (35f64 * res * res)
+                                    * (2.
+                                        * (z[0]
+                                            + z[4]
+                                            + z[5]
+                                            + z[9]
+                                            + z[10]
+                                            + z[14]
+                                            + z[15]
+                                            + z[19]
+                                            + z[20]
+                                            + z[24])
+                                        - 2. * (z[2] + z[7] + z[12] + z[17] + z[22])
+                                        - z[1]
+                                        - z[3]
+                                        - z[6]
+                                        - z[8]
+                                        - z[11]
+                                        - z[13]
+                                        - z[16]
+                                        - z[18]
+                                        - z[21]
+                                        - z[23]);
 
-                                t = 1f64 / (35f64 * res * res) * (2. * (z[0] + z[1] + z[2] + z[3] + z[4] + z[20] + z[21] + z[22] + z[23] + z[24])
-                                - 2. * (z[10] + z[11] + z[12] + z[13] + z[14]) - z[5] - z[6] - z[7] - z[8]
-                                - z[9] - z[15] - z[16] - z[17] - z[18] - z[19]);
+                                t = 1f64 / (35f64 * res * res)
+                                    * (2.
+                                        * (z[0]
+                                            + z[1]
+                                            + z[2]
+                                            + z[3]
+                                            + z[4]
+                                            + z[20]
+                                            + z[21]
+                                            + z[22]
+                                            + z[23]
+                                            + z[24])
+                                        - 2. * (z[10] + z[11] + z[12] + z[13] + z[14])
+                                        - z[5]
+                                        - z[6]
+                                        - z[7]
+                                        - z[8]
+                                        - z[9]
+                                        - z[15]
+                                        - z[16]
+                                        - z[17]
+                                        - z[18]
+                                        - z[19]);
 
-                                s = 1. / (100. * res * res) * (z[8] + z[16] - z[6] - z[18] + 4. * (z[4] + z[20] - z[0] - z[24])
-                                + 2. * (z[3] + z[9] + z[15] + z[21] - z[1] - z[5] - z[19] - z[23]));
+                                s = 1. / (100. * res * res)
+                                    * (z[8] + z[16] - z[6] - z[18]
+                                        + 4. * (z[4] + z[20] - z[0] - z[24])
+                                        + 2. * (z[3] + z[9] + z[15] + z[21]
+                                            - z[1]
+                                            - z[5]
+                                            - z[19]
+                                            - z[23]));
 
-                                p = 1. / (420. * res) * (44. * (z[3] + z[23] - z[1] - z[21]) + 31. * (z[0] + z[20] - z[4] - z[24]
-                                + 2. * (z[8] + z[18] - z[6] - z[16])) + 17. * (z[14] - z[10] + 4. * (z[13] - z[11]))
-                                + 5. * (z[9] + z[19] - z[5] - z[15]));
+                                p = 1. / (420. * res)
+                                    * (44. * (z[3] + z[23] - z[1] - z[21])
+                                        + 31.
+                                            * (z[0] + z[20] - z[4] - z[24]
+                                                + 2. * (z[8] + z[18] - z[6] - z[16]))
+                                        + 17. * (z[14] - z[10] + 4. * (z[13] - z[11]))
+                                        + 5. * (z[9] + z[19] - z[5] - z[15]));
 
-                                q = 1. / (420. * res) * (44. * (z[5] + z[9] - z[15] - z[19]) + 31. * (z[20] + z[24] - z[0] - z[4]
-                                    + 2. * (z[6] + z[8] - z[16] - z[18])) + 17. * (z[2] - z[22] + 4. * (z[7] - z[17]))
-                                    + 5. * (z[1] + z[3] - z[21] - z[23]));
+                                q = 1. / (420. * res)
+                                    * (44. * (z[5] + z[9] - z[15] - z[19])
+                                        + 31.
+                                            * (z[20] + z[24] - z[0] - z[4]
+                                                + 2. * (z[6] + z[8] - z[16] - z[18]))
+                                        + 17. * (z[2] - z[22] + 4. * (z[7] - z[17]))
+                                        + 5. * (z[1] + z[3] - z[21] - z[23]));
 
                                 if (p + q).abs() > 0. {
-                                    /* 
+                                    /*
                                     The following equation has been taken from Florinsky (2016) Principles and Methods
                                     of Digital Terrain Modelling, Chapter 2, pg. 18.
                                     */
-                                    tan_curv = -(q * q * r - 2. * p * q * s + p * p * t) / ((p * p + q * q) * (1. + p * p + q * q).sqrt());
+                                    tan_curv = -(q * q * r - 2. * p * q * s + p * p * t)
+                                        / ((p * p + q * q) * (1. + p * p + q * q).sqrt());
                                     if log_transform {
                                         // Based on Florinsky (2016) pg. 244 eq. 8.1
-                                        tan_curv = tan_curv.signum() * (1. + log_multiplier * tan_curv.abs()).ln();
+                                        tan_curv = tan_curv.signum()
+                                            * (1. + log_multiplier * tan_curv.abs()).ln();
                                     }
                                 } else {
                                     tan_curv = 0.;
@@ -380,7 +459,8 @@ impl WhiteboxTool for TangentialCurvature {
                     }
                 });
             }
-        } else { // geographic coordinates
+        } else {
+            // geographic coordinates
 
             let phi1 = input.get_y_from_row(0);
             let lambda1 = input.get_x_from_column(0);
@@ -389,20 +469,20 @@ impl WhiteboxTool for TangentialCurvature {
             let lambda2 = input.get_x_from_column(-1);
 
             let linear_res = vincenty_distance((phi1, lambda1), (phi2, lambda2));
-            let lr2 =  haversine_distance((phi1, lambda1), (phi2, lambda2)); 
+            let lr2 = haversine_distance((phi1, lambda1), (phi2, lambda2));
             let diff = 100. * (linear_res - lr2).abs() / linear_res;
             let use_haversine = diff < 0.5; // if the difference is less than 0.5%, use the faster haversine method to calculate distances.
-            
+
             // Based on Florinsky (2016) pg. 246
             let log_multiplier = match linear_res {
-                x if x >= 0. && x < 1. => { 10f64.powi(2) },
-                x if x >= 1. && x < 10. => { 10f64.powi(3) },
-                x if x >= 10. && x < 100. => { 10f64.powi(4) },
-                x if x >= 100. && x < 1000. => { 10f64.powi(5) },
-                x if x >= 1000. && x < 5000. => { 10f64.powi(6) },
-                x if x >= 5000. && x < 10000. => { 10f64.powi(7) },
-                x if x >= 10000. && x < 75000. => { 10f64.powi(8) },
-                _ => { 10f64.powi(9) },
+                x if x >= 0. && x < 1. => 10f64.powi(2),
+                x if x >= 1. && x < 10. => 10f64.powi(3),
+                x if x >= 10. && x < 100. => 10f64.powi(4),
+                x if x >= 100. && x < 1000. => 10f64.powi(5),
+                x if x >= 1000. && x < 5000. => 10f64.powi(6),
+                x if x >= 5000. && x < 10000. => 10f64.powi(7),
+                x if x >= 10000. && x < 75000. => 10f64.powi(8),
+                _ => 10f64.powi(9),
             };
 
             for tid in 0..num_procs {
@@ -426,9 +506,15 @@ impl WhiteboxTool for TangentialCurvature {
                     let mut lambda2: f64;
                     let mut tan_curv: f64;
                     let offsets = [
-                        [-1, -1], [0, -1], [1, -1], 
-                        [-1, 0], [0, 0], [1, 0], 
-                        [-1, 1], [0, 1], [1, 1]
+                        [-1, -1],
+                        [0, -1],
+                        [1, -1],
+                        [-1, 0],
+                        [0, 0],
+                        [1, 0],
+                        [-1, 1],
+                        [0, 1],
+                        [1, 1],
                     ];
                     let mut z = [0f64; 25];
                     for row in (0..rows).filter(|r| r % num_procs == tid) {
@@ -437,7 +523,8 @@ impl WhiteboxTool for TangentialCurvature {
                             z4 = input.get_value(row, col);
                             if z4 != nodata {
                                 for n in 0..9 {
-                                    z[n] = input.get_value(row + offsets[n][1], col + offsets[n][0]);
+                                    z[n] =
+                                        input.get_value(row + offsets[n][1], col + offsets[n][0]);
                                     if z[n] != nodata {
                                         z[n] *= z_factor;
                                     } else {
@@ -450,7 +537,7 @@ impl WhiteboxTool for TangentialCurvature {
                                 lambda1 = input.get_x_from_column(col);
 
                                 phi2 = phi1;
-                                lambda2 = input.get_x_from_column(col-1);
+                                lambda2 = input.get_x_from_column(col - 1);
 
                                 b = if use_haversine {
                                     haversine_distance((phi1, lambda1), (phi2, lambda2))
@@ -458,7 +545,7 @@ impl WhiteboxTool for TangentialCurvature {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                phi2 = input.get_y_from_row(row+1);
+                                phi2 = input.get_y_from_row(row + 1);
                                 lambda2 = lambda1;
 
                                 d = if use_haversine {
@@ -467,7 +554,7 @@ impl WhiteboxTool for TangentialCurvature {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                phi2 = input.get_y_from_row(row-1);
+                                phi2 = input.get_y_from_row(row - 1);
                                 lambda2 = lambda1;
 
                                 e = if use_haversine {
@@ -476,11 +563,11 @@ impl WhiteboxTool for TangentialCurvature {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                phi1 = input.get_y_from_row(row+1);
+                                phi1 = input.get_y_from_row(row + 1);
                                 lambda1 = input.get_x_from_column(col);
 
                                 phi2 = phi1;
-                                lambda2 = input.get_x_from_column(col-1);
+                                lambda2 = input.get_x_from_column(col - 1);
 
                                 a = if use_haversine {
                                     haversine_distance((phi1, lambda1), (phi2, lambda2))
@@ -488,11 +575,11 @@ impl WhiteboxTool for TangentialCurvature {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                phi1 = input.get_y_from_row(row-1);
+                                phi1 = input.get_y_from_row(row - 1);
                                 lambda1 = input.get_x_from_column(col);
 
                                 phi2 = phi1;
-                                lambda2 = input.get_x_from_column(col-1);
+                                lambda2 = input.get_x_from_column(col - 1);
 
                                 c = if use_haversine {
                                     haversine_distance((phi1, lambda1), (phi2, lambda2))
@@ -500,45 +587,85 @@ impl WhiteboxTool for TangentialCurvature {
                                     vincenty_distance((phi1, lambda1), (phi2, lambda2))
                                 };
 
-                                /* 
+                                /*
                                 The following equations have been taken from Florinsky (2016) Principles and Methods
                                 of Digital Terrain Modelling, Chapter 4, pg. 117.
                                 */
 
-                                r = (c * c * (z[0] + z[2] - 2. * z[1]) + b * b * (z[3] + z[5] - 2. * z[4]) + a * a * (z[6] + z[8] - 2. * z[7]))
-                                / (a.powi(4) + b.powi(4) + c.powi(4));
+                                r = (c * c * (z[0] + z[2] - 2. * z[1])
+                                    + b * b * (z[3] + z[5] - 2. * z[4])
+                                    + a * a * (z[6] + z[8] - 2. * z[7]))
+                                    / (a.powi(4) + b.powi(4) + c.powi(4));
 
-                                t = 2. / (3. * d * e * (d + e) * (a.powi(4) + b.powi(4) + c.powi(4)))
-                                * ((d * (a.powi(4) + b.powi(4) + b * b * c * c) - c * c * e * (a * a - b * b)) * (z[0] + z[2])
-                                - (d * (a.powi(4) + c.powi(4) + b * b * c * c) + e * (a.powi(4) + c.powi(4) + a * a * b * b)) * (z[3] + z[5])
-                                + (e * (b.powi(4) + c.powi(4) + a * a * b * b) + a * a * d * (b * b - c * c)) * (z[6] + z[8])
-                                + d * (b.powi(4) * (z[1] - 3. * z[4]) + c.powi(4) * (3. * z[1] - z[4]) + (a.powi(4) - 2. * b * b * c * c) * (z[1] - z[4]))
-                                + e * (a.powi(4) * (3. * z[7] - z[4]) + b.powi(4) * (z[7] - 3. * z[4]) + (c.powi(4) - 2. * a * a * b * b) * (z[7] - z[4]))
-                                - 2. * (a * a * d * (b * b - c * c) * z[7] - c * c * e * (a * a - b * b) * z[1]));
+                                t = 2.
+                                    / (3. * d * e * (d + e) * (a.powi(4) + b.powi(4) + c.powi(4)))
+                                    * ((d * (a.powi(4) + b.powi(4) + b * b * c * c)
+                                        - c * c * e * (a * a - b * b))
+                                        * (z[0] + z[2])
+                                        - (d * (a.powi(4) + c.powi(4) + b * b * c * c)
+                                            + e * (a.powi(4) + c.powi(4) + a * a * b * b))
+                                            * (z[3] + z[5])
+                                        + (e * (b.powi(4) + c.powi(4) + a * a * b * b)
+                                            + a * a * d * (b * b - c * c))
+                                            * (z[6] + z[8])
+                                        + d * (b.powi(4) * (z[1] - 3. * z[4])
+                                            + c.powi(4) * (3. * z[1] - z[4])
+                                            + (a.powi(4) - 2. * b * b * c * c) * (z[1] - z[4]))
+                                        + e * (a.powi(4) * (3. * z[7] - z[4])
+                                            + b.powi(4) * (z[7] - 3. * z[4])
+                                            + (c.powi(4) - 2. * a * a * b * b) * (z[7] - z[4]))
+                                        - 2. * (a * a * d * (b * b - c * c) * z[7]
+                                            - c * c * e * (a * a - b * b) * z[1]));
 
-                                s = (c * (a * a * (d + e) + b * b * e) * (z[2] - z[0]) - b * (a * a * d - c * c * e) * (z[3] - z[5]) + a * (c * c * (d + e) + b * b * d) * (z[6] - z[8]))
-                                / (2. * (a * a * c * c * (d + e).powi(2) + b * b * (a * a * d * d + c * c * e * e)));
+                                s = (c * (a * a * (d + e) + b * b * e) * (z[2] - z[0])
+                                    - b * (a * a * d - c * c * e) * (z[3] - z[5])
+                                    + a * (c * c * (d + e) + b * b * d) * (z[6] - z[8]))
+                                    / (2.
+                                        * (a * a * c * c * (d + e).powi(2)
+                                            + b * b * (a * a * d * d + c * c * e * e)));
 
-                                p = (a * a * c * d * (d + e) * (z[2] - z[0]) + b * (a * a * d * d + c * c * e * e) * (z[5] - z[3]) + a * c * c * e * (d + e) * (z[8] - z[6]))
-                                / (2. * (a * a * c * c * (d + e).powi(2) + b * b * (a * a * d * d + c * c * e * e)));
+                                p = (a * a * c * d * (d + e) * (z[2] - z[0])
+                                    + b * (a * a * d * d + c * c * e * e) * (z[5] - z[3])
+                                    + a * c * c * e * (d + e) * (z[8] - z[6]))
+                                    / (2.
+                                        * (a * a * c * c * (d + e).powi(2)
+                                            + b * b * (a * a * d * d + c * c * e * e)));
 
-                                q = 1. / (3. * d * e * (d + e) * (a.powi(4) + b.powi(4) + c.powi(4))) 
-                                * ((d * d * (a.powi(4) + b.powi(4) + b * b * c * c) + c * c * e * e * (a * a - b * b)) * (z[0] + z[2])
-                                - (d * d * (a.powi(4) + c.powi(4) + b * b * c * c) - e * e * (a.powi(4) + c.powi(4) + a * a * b * b)) * (z[3] + z[5])
-                                - (e * e * (b.powi(4) + c.powi(4) + a * a * b * b) - a * a * d * d * (b * b - c * c)) * (z[6] + z[8])
-                                + d * d * (b.powi(4) * (z[1] - 3. * z[4]) + c.powi(4) * (3. * z[1] - z[4]) + (a.powi(4) - 2. * b * b * c * c) * (z[1] - z[4]))
-                                + e * e * (a.powi(4) * (z[4] - 3. * z[7]) + b.powi(4) * (3. * z[4] - z[7]) + (c.powi(4) - 2. * a * a * b * b) * (z[4] - z[7]))
-                                - 2. * (a * a * d * d * (b * b - c * c) * z[7] + c * c * e * e * (a * a - b * b) * z[1]));
+                                q = 1.
+                                    / (3. * d * e * (d + e) * (a.powi(4) + b.powi(4) + c.powi(4)))
+                                    * ((d * d * (a.powi(4) + b.powi(4) + b * b * c * c)
+                                        + c * c * e * e * (a * a - b * b))
+                                        * (z[0] + z[2])
+                                        - (d * d * (a.powi(4) + c.powi(4) + b * b * c * c)
+                                            - e * e * (a.powi(4) + c.powi(4) + a * a * b * b))
+                                            * (z[3] + z[5])
+                                        - (e * e * (b.powi(4) + c.powi(4) + a * a * b * b)
+                                            - a * a * d * d * (b * b - c * c))
+                                            * (z[6] + z[8])
+                                        + d * d
+                                            * (b.powi(4) * (z[1] - 3. * z[4])
+                                                + c.powi(4) * (3. * z[1] - z[4])
+                                                + (a.powi(4) - 2. * b * b * c * c)
+                                                    * (z[1] - z[4]))
+                                        + e * e
+                                            * (a.powi(4) * (z[4] - 3. * z[7])
+                                                + b.powi(4) * (3. * z[4] - z[7])
+                                                + (c.powi(4) - 2. * a * a * b * b)
+                                                    * (z[4] - z[7]))
+                                        - 2. * (a * a * d * d * (b * b - c * c) * z[7]
+                                            + c * c * e * e * (a * a - b * b) * z[1]));
 
                                 if (p + q).abs() > 0. {
-                                    /* 
+                                    /*
                                     The following equation has been taken from Florinsky (2016) Principles and Methods
                                     of Digital Terrain Modelling, Chapter 2, pg. 18.
                                     */
-                                    tan_curv = -(q * q * r - 2. * p * q * s + p * p * t) / ((p * p + q * q) * (1. + p * p + q * q).sqrt());
+                                    tan_curv = -(q * q * r - 2. * p * q * s + p * p * t)
+                                        / ((p * p + q * q) * (1. + p * p + q * q).sqrt());
                                     if log_transform {
                                         // Based on Florinsky (2016) pg. 244 eq. 8.1
-                                        tan_curv = tan_curv.signum() * (1. + log_multiplier * tan_curv.abs()).ln();
+                                        tan_curv = tan_curv.signum()
+                                            * (1. + log_multiplier * tan_curv.abs()).ln();
                                     }
                                 } else {
                                     tan_curv = 0.;
@@ -567,20 +694,16 @@ impl WhiteboxTool for TangentialCurvature {
             }
         }
 
-        
         //////////////////////
         // Output the image //
         //////////////////////
         if verbose {
             println!("Saving data...")
         };
-        
+
         let elapsed_time = get_formatted_elapsed_time(start);
-        
-        output.add_metadata_entry(format!(
-            "Created by whitebox_tools\' {} tool",
-            tool_name
-        ));
+
+        output.add_metadata_entry(format!("Created by whitebox_tools\' {} tool", tool_name));
         output.add_metadata_entry(format!("Input file: {}", input_file));
         output.add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed_time));
 
