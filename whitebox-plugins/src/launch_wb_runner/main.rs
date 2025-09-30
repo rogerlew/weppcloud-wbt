@@ -1,13 +1,13 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 14/11/2022
 Last Modified: 14/11/2022
 License: MIT
 */
 use std::{
-    env, 
+    env,
     io::{Error, ErrorKind},
-    path, 
+    path,
     path::Path,
     process::Command,
     // thread,
@@ -16,7 +16,7 @@ use std::{
 /// This tool can be used to launch the Whitebox Runner application from within other Whitebox front-ends.
 /// The purpose of this tool is to make the Whitebox Runner more accessible from other Whitebox front-ends.
 /// However, note that you can also launch the Whitebox Runner simply by double-clicking on the executable
-/// file (`whitebox_runner.exe` on Windows, `whitebox_tools` on other systems) located within your WBT 
+/// file (`whitebox_runner.exe` on Windows, `whitebox_tools` on other systems) located within your WBT
 /// directory, containing your Whitebox installation.
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -120,17 +120,16 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     if exe.exists() {
         if !clear_app_state {
             // thread::spawn(move || {
-                let _output = Command::new(exe.to_str().unwrap_or(""))
-                    .output()
-                    .expect("Failed to execute process");
+            let _output = Command::new(exe.to_str().unwrap_or(""))
+                .output()
+                .expect("Failed to execute process");
             // });
-
         } else {
             // thread::spawn(move || {
-                let _output = Command::new(&exe)
-                    .args(["clear_state"])
-                    .output()
-                    .expect("Failed to execute process");
+            let _output = Command::new(&exe)
+                .args(["clear_state"])
+                .output()
+                .expect("Failed to execute process");
             // });
         }
     } else {

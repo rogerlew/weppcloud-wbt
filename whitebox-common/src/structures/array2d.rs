@@ -6,7 +6,6 @@ use std::io::Error;
 use std::io::ErrorKind;
 use std::ops::{AddAssign, Index, IndexMut, SubAssign};
 
-
 /// A simple in-memory 2-D raster data structure that is not connected to a file.
 /// Pixel values can contain any data type or structure that implements the Copy,
 /// AddAssign, and SubAssign traits.
@@ -182,7 +181,6 @@ where
     pub fn nodata(&self) -> T {
         self.nodata
     }
-
 }
 
 impl<T: Copy> Index<(isize, isize)> for Array2D<T>

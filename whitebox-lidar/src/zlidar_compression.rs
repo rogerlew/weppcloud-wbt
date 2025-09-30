@@ -7,5 +7,7 @@ pub enum ZlidarCompression {
 
 impl Default for ZlidarCompression {
     // fn default() -> Self { ZlidarCompression::None }
-    fn default() -> Self { ZlidarCompression::Brotli{ level: 5 } }
+    fn default() -> Self {
+        ZlidarCompression::Brotli { level: 5 }
+    }
 }

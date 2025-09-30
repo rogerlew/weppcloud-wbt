@@ -6,16 +6,16 @@ Last Modified: 14/02/2020
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
-use whitebox_vector::*;
+use geojson::{GeoJson, Geometry, Value};
 use std::env;
 use std::f64;
+use std::fs;
 use std::io::{Error, ErrorKind};
 use std::path;
-use std::fs;
-use geojson::{GeoJson, Geometry, Value};
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
+use whitebox_vector::*;
 
 /// This tool will perform a watershedding operation based on a group of input vector pour points (`--pour_pts`)
 ///   * **vector points** (`--pour_pts`) – Shapefile **or** GeoJSON ending in
@@ -24,10 +24,10 @@ use geojson::{GeoJson, Geometry, Value};
 ///
 /// «GeoJSON support: the file must contain Point or MultiPoint geometries.
 ///
-/// Watershedding is a procedure that identifies all of the cells upslope of a cell of interest (pour point) that are 
-/// connected to the pour point by a flow-path. The user must specify the name of a D8-derived flow pointer (flow direction) 
-/// raster (`--d8_pntr`), a vector pour point file (`--pour_pts`), and the output raster (`--output`). The pour points must 
-/// be of a Point ShapeType (i.e. Point, PointZ, PointM, MultiPoint, MultiPointZ, MultiPointM). Watersheds will be assigned 
+/// Watershedding is a procedure that identifies all of the cells upslope of a cell of interest (pour point) that are
+/// connected to the pour point by a flow-path. The user must specify the name of a D8-derived flow pointer (flow direction)
+/// raster (`--d8_pntr`), a vector pour point file (`--pour_pts`), and the output raster (`--output`). The pour points must
+/// be of a Point ShapeType (i.e. Point, PointZ, PointM, MultiPoint, MultiPointZ, MultiPointM). Watersheds will be assigned
 /// the input pour point FID value. The flow pointer raster must be generated using the D8 algorithm, `D8Pointer`.
 ///
 /// Pour point vectors can be attained by on-screen digitizing to designate these points-of-interest locations.
@@ -232,11 +232,18 @@ impl WhiteboxTool for Watershed {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -396,10 +403,12 @@ impl WhiteboxTool for Watershed {
                         }
                     }
                 }
-                _ => return Err(Error::new(
+                _ => {
+                    return Err(Error::new(
                         ErrorKind::InvalidInput,
                         "GeoJSON must be a FeatureCollection of Points or MultiPoints.",
-                )),
+                    ))
+                }
             }
             for row in 0..rows {
                 for col in 0..columns {
@@ -408,7 +417,11 @@ impl WhiteboxTool for Watershed {
                         flow_dir.set_value(
                             row,
                             col,
-                            if z > 0.0 { pntr_matches[z as usize] } else { -1i8 },
+                            if z > 0.0 {
+                                pntr_matches[z as usize]
+                            } else {
+                                -1i8
+                            },
                         );
                     } else {
                         output.set_value(row, col, nodata);
@@ -421,7 +434,7 @@ impl WhiteboxTool for Watershed {
                         old_progress = progress;
                     }
                 }
-            }     
+            }
         } else {
             // it's a raster
             let pourpts = Raster::new(&pourpts_file, "r")?;
@@ -469,7 +482,6 @@ impl WhiteboxTool for Watershed {
             for col in 0..columns {
                 // path down from this cell has not yet been identified
                 if output[(row, col)] == low_value {
-
                     // walk down to identify the outlet_id
                     flag = false;
                     x = col;

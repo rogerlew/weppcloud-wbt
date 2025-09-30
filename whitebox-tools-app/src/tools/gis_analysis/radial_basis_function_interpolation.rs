@@ -6,11 +6,7 @@ Last Modified: 10/12/2019
 License: MIT
 */
 
-use whitebox_common::algorithms::{convex_hull, point_in_poly};
-use whitebox_raster::*;
-use whitebox_common::structures::{Basis, Point2D, RadialBasisFunction};
 use crate::tools::*;
-use whitebox_vector::{FieldData, ShapeType, Shapefile};
 use kdtree::distance::squared_euclidean;
 use kdtree::KdTree;
 use nalgebra::DVector;
@@ -22,6 +18,10 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::algorithms::{convex_hull, point_in_poly};
+use whitebox_common::structures::{Basis, Point2D, RadialBasisFunction};
+use whitebox_raster::*;
+use whitebox_vector::{FieldData, ShapeType, Shapefile};
 
 /// This tool interpolates vector points into a raster surface using a radial basis function (RBF) scheme.
 pub struct RadialBasisFunctionInterpolation {
@@ -360,11 +360,18 @@ impl WhiteboxTool for RadialBasisFunctionInterpolation {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -566,7 +573,9 @@ impl WhiteboxTool for RadialBasisFunctionInterpolation {
                     for col in 0..columns {
                         x = west + (col as f64 + 0.5) * res_x;
                         y = north - (row as f64 + 0.5) * res_y;
-                        if !use_data_hull || use_data_hull && point_in_poly(&Point2D::new(x, y), &hull) {
+                        if !use_data_hull
+                            || use_data_hull && point_in_poly(&Point2D::new(x, y), &hull)
+                        {
                             let mut ret = tree.within(&[x, y], radius, &squared_euclidean).unwrap();
                             if ret.len() < min_points {
                                 ret = tree
@@ -585,7 +594,7 @@ impl WhiteboxTool for RadialBasisFunctionInterpolation {
                                     centers, vals, basis_func, poly_order,
                                 );
                                 z = rbf.eval(DVector::from_vec(vec![x, y]))[0];
-                                if (z - mid_point).abs() < range_threshold*5.0 {
+                                if (z - mid_point).abs() < range_threshold * 5.0 {
                                     // if the estimated value is well outside of the range of values in the input points, don't output it.
                                     data[col as usize] = z;
                                 }

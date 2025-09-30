@@ -9,6 +9,6 @@ pub struct Point3D {
 impl Point3D {
     /// Creates a new Point3D,
     pub fn new(x: f64, y: f64, z: f64) -> Point3D {
-        Point3D {x: x, y: y, z: z}
+        Point3D { x: x, y: y, z: z }
     }
 }

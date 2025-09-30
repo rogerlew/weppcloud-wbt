@@ -6,8 +6,6 @@ Last Modified: 12/10/2018
 License: MIT
 */
 
-use whitebox_lidar::*;
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -17,20 +15,22 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_lidar::*;
+use whitebox_raster::*;
 
 /// This tool can be used to add red-green-blue (RGB) colour values to the points contained within an
-/// input LAS file (`--in_lidar`), based on the pixel values of an overlapping input colour image (`--in_image`). 
+/// input LAS file (`--in_lidar`), based on the pixel values of an overlapping input colour image (`--in_image`).
 /// Ideally, the image has been acquired at the same time as the LiDAR point cloud. If this is not the case, one may
 /// expect that transient objects (e.g. cars) in both input data sets will be incorrectly coloured. The
-/// input image should overlap in extent with the LiDAR data set and the two data sets should share the same 
+/// input image should overlap in extent with the LiDAR data set and the two data sets should share the same
 /// projection. You may use the `LidarTileFootprint` tool to determine the spatial extent of the LAS file.
 ///
 /// ![](../../doc_img/LidarColourize3.png)
-/// 
+///
 /// ![](../../doc_img/LidarColourize1.png)
-/// 
+///
 /// ![](../../doc_img/LidarColourize2.png)
-/// 
+///
 /// # See Also
 /// `ColourizeBasedOnClass`, `ColourizeBasedOnPointReturns`, `LidarTileFootprint`
 pub struct LidarColourize {
@@ -188,11 +188,18 @@ impl WhiteboxTool for LidarColourize {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -240,7 +247,9 @@ impl WhiteboxTool for LidarColourize {
                 let (mut row, mut col): (isize, isize);
                 let mut value: f64;
                 let nodata = in_image.configs.nodata;
-                for i in (0..n_points).filter(|point_num| point_num % num_procs as usize == tid as usize) {
+                for i in
+                    (0..n_points).filter(|point_num| point_num % num_procs as usize == tid as usize)
+                {
                     // let p: PointData = in_lidar.get_point_info(i);
                     let p = in_lidar.get_transformed_coords(i);
                     row = in_image.get_row_from_y(p.y);

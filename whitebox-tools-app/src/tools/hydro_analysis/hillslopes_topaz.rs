@@ -4,18 +4,19 @@ Authors: Dr. Roger Lew
 Created: 09/06/2025
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::Array2D;
-use whitebox_common::algorithms::calculate_rotation_degrees;
-use whitebox_vector::*;
 use crate::tools::*;
+use geojson::{GeoJson, Geometry, Value};
+use std::collections::{HashMap, VecDeque};
 use std::env;
 use std::f64;
 use std::fs::File;
 use std::io::{self, Error, ErrorKind, Write};
 use std::path;
-use std::collections::VecDeque;
-use geojson::{GeoJson, Geometry, Value};
+use std::time::Instant;
+use whitebox_common::algorithms::calculate_rotation_degrees;
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
+use whitebox_vector::*;
 
 /// This tool will identify the hillslopes associated with a user-specified stream network for a single catchment. Hillslopes
 /// include the catchment areas draining to the left and right sides of each stream link in the network as well
@@ -23,10 +24,10 @@ use geojson::{GeoJson, Geometry, Value};
 /// except that sub-basins do not distinguish between the right-bank and left-bank catchment areas of stream links.
 /// The `Subbasins` tool simply assigns a unique identifier to each stream link in a stream network. Each hillslope
 /// output by this tool is assigned a unique, positive identifier  value. All grid cells in the output raster that
-/// coincide with a stream cell are assigned a non-zero idenitifier. 
+/// coincide with a stream cell are assigned a non-zero idenitifier.
 ///
-/// The tool implements the TOPAZ-style channel and hillslope IDs with channels ending with "4" starting with 24, and hillslopes 
-/// ending with 1 ("top"), 2 ("left"), or 3 ("right"). 
+/// The tool implements the TOPAZ-style channel and hillslope IDs with channels ending with "4" starting with 24, and hillslopes
+/// ending with 1 ("top"), 2 ("left"), or 3 ("right").
 ///
 /// The user must specify the name of a flow pointer
 /// (flow direction) raster (`--d8_pntr`), a streams raster (`--streams`), and the output raster (`--output`).
@@ -45,19 +46,19 @@ use geojson::{GeoJson, Geometry, Value};
 struct Link {
     id: i32,
     topaz_id: i32,
-    ds: (isize, isize),     // Downstream end coordinates
-    us: (isize, isize),     // Upstream end coordinates
-    inflow0_id: i32,        // Link index of first inflow
-    inflow1_id: i32,        // Link index of second inflow
-    inflow2_id: i32,        // Link index of third inflow
-    length_m: f64,          // Channel length in meters
-    ds_z: f64,              // Elevation at downstream end
-    us_z: f64,              // Elevation at upstream end
-    drop_m: f64,            // Elevation drop along channel
-    order: u8,              // Stream order
-    areaup: f64,            // Area upstream of the link in square meters
-    is_headwater: bool,     // True for headwater links
-    is_outlet: bool,        // True for outlet link
+    ds: (isize, isize),        // Downstream end coordinates
+    us: (isize, isize),        // Upstream end coordinates
+    inflow0_id: i32,           // Link index of first inflow
+    inflow1_id: i32,           // Link index of second inflow
+    inflow2_id: i32,           // Link index of third inflow
+    length_m: f64,             // Channel length in meters
+    ds_z: f64,                 // Elevation at downstream end
+    us_z: f64,                 // Elevation at upstream end
+    drop_m: f64,               // Elevation drop along channel
+    order: u8,                 // Stream order
+    areaup: f64,               // Area upstream of the link in square meters
+    is_headwater: bool,        // True for headwater links
+    is_outlet: bool,           // True for outlet link
     path: Vec<(isize, isize)>, // Cells in the channel path from top to bottom
 }
 
@@ -86,38 +87,38 @@ impl Link {
 
 fn write_links_to_tsv(links: &[Link], file_path: &str) -> io::Result<()> {
     let mut file = File::create(file_path)?;
-    
+
     // Write header
     writeln!(
         &mut file,
         "id\ttopaz_id\tds_x\tds_y\tus_x\tus_y\tinflow0_id\tinflow1_id\tinflow2_id\tlength_m\tds_z\tus_z\tdrop_m\torder\tareaup\tis_headwater\tis_outlet"
     )?;
-    
+
     // Write each link
     for link in links {
         writeln!(
             &mut file,
             "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.3}\t{:.3}\t{:.3}\t{:.3}\t{}\t{:.3}\t{}\t{}",
-                link.id,
-                link.topaz_id,
-                link.ds.0,
-                link.ds.1,
-                link.us.0,
-                link.us.1,
-                link.inflow0_id,
-                link.inflow1_id,
-                link.inflow2_id,
-                link.length_m,
-                link.ds_z,
-                link.us_z,
-                link.drop_m,
-                link.order,
-                link.areaup,
-                link.is_headwater,
-                link.is_outlet
-            )?;
+            link.id,
+            link.topaz_id,
+            link.ds.0,
+            link.ds.1,
+            link.us.0,
+            link.us.1,
+            link.inflow0_id,
+            link.inflow1_id,
+            link.inflow2_id,
+            link.length_m,
+            link.ds_z,
+            link.us_z,
+            link.drop_m,
+            link.order,
+            link.areaup,
+            link.is_headwater,
+            link.is_outlet
+        )?;
     }
-    
+
     Ok(())
 }
 
@@ -133,7 +134,8 @@ impl HillslopesTopaz {
     pub fn new() -> HillslopesTopaz {
         let name = "HillslopesTopaz".to_string();
         let toolbox = "Hydrological Analysis".to_string();
-        let description = "Implements TOPAZ-style channel & hillslope IDs for a single watershed".to_string();
+        let description =
+            "Implements TOPAZ-style channel & hillslope IDs for a single watershed".to_string();
 
         let mut parameters = vec![];
         parameters.push(ToolParameter {
@@ -163,7 +165,6 @@ impl HillslopesTopaz {
             optional: false,
         });
 
-
         parameters.push(ToolParameter {
             name: "Input Pour Points (Outlet) File".to_owned(),
             flags: vec!["--pour_pts".to_owned()],
@@ -187,19 +188,21 @@ impl HillslopesTopaz {
         parameters.push(ToolParameter {
             name: "Input Channel Junctions File".to_owned(),
             flags: vec!["--chnjnt".to_owned()],
-            description: "Input channel junctions raster file (0=headwater, 1=mid-link, 2=junction).".to_owned(),
+            description:
+                "Input channel junctions raster file (0=headwater, 1=mid-link, 2=junction)."
+                    .to_owned(),
             parameter_type: ParameterType::ExistingFile(ParameterFileType::Raster),
             default_value: None,
             optional: false,
         });
 
         parameters.push(ToolParameter {
-            name: "Input Stream Order File (Optional)".to_owned(),
+            name: "Input Stream Order File".to_owned(),
             flags: vec!["--order".to_owned()],
-            description: "Input stream order raster file (optional but recommended).".to_owned(),
+            description: "Input stream order raster file.".to_owned(),
             parameter_type: ParameterType::ExistingFile(ParameterFileType::Raster),
             default_value: None,
-            optional: true,
+            optional: false,
         });
 
         parameters.push(ToolParameter {
@@ -243,18 +246,25 @@ impl HillslopesTopaz {
             example_usage: usage,
         }
     }
-    
+
     /// Locate pour point from vector or raster input
-    fn locate_pour_point(&self, pourpts_file: &str, pntr: &Raster) -> Result<(isize, isize), Error> {
+    fn locate_pour_point(
+        &self,
+        pourpts_file: &str,
+        pntr: &Raster,
+    ) -> Result<(isize, isize), Error> {
         let mut pour_point = (-1, -1);
         let mut count = 0;
-        
+
         if pourpts_file.to_lowercase().ends_with(".shp") {
             let pourpts = Shapefile::read(pourpts_file)?;
             if pourpts.header.shape_type.base_shape_type() != ShapeType::Point {
-                return Err(Error::new(ErrorKind::InvalidInput, "Pour points must be point type"));
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    "Pour points must be point type",
+                ));
             }
-            
+
             for i in 0..pourpts.num_records {
                 let record = pourpts.get_record(i);
                 let row = pntr.get_row_from_y(record.points[0].y);
@@ -262,12 +272,14 @@ impl HillslopesTopaz {
                 pour_point = (row, col);
                 count += 1;
             }
-        } 
-        else if pourpts_file.to_lowercase().ends_with(".geojson") || 
-                pourpts_file.to_lowercase().ends_with(".json") {
+        } else if pourpts_file.to_lowercase().ends_with(".geojson")
+            || pourpts_file.to_lowercase().ends_with(".json")
+        {
             let geojson_str = std::fs::read_to_string(pourpts_file)?;
-            let gj: GeoJson = geojson_str.parse().map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
-            
+            let gj: GeoJson = geojson_str
+                .parse()
+                .map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
+
             if let GeoJson::FeatureCollection(fc) = gj {
                 for feature in fc.features {
                     if let Some(Geometry { value, .. }) = feature.geometry {
@@ -293,27 +305,37 @@ impl HillslopesTopaz {
                     }
                 }
             }
-        } 
-        else { // Raster
+        } else {
+            // Raster
             let pourpts = Raster::new(pourpts_file, "r")?;
-            if pourpts.configs.rows != pntr.configs.rows || pourpts.configs.columns != pntr.configs.columns {
-                return Err(Error::new(ErrorKind::InvalidInput, "Pour points raster must match DEM dimensions"));
+            if pourpts.configs.rows != pntr.configs.rows
+                || pourpts.configs.columns != pntr.configs.columns
+            {
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    "Pour points raster must match DEM dimensions",
+                ));
             }
-            
+
             for row in 0..pntr.configs.rows as isize {
                 for col in 0..pntr.configs.columns as isize {
-                    if pourpts.get_value(row, col) > 0.0 && pourpts.get_value(row, col) != pourpts.configs.nodata {
+                    if pourpts.get_value(row, col) > 0.0
+                        && pourpts.get_value(row, col) != pourpts.configs.nodata
+                    {
                         pour_point = (row, col);
                         count += 1;
                     }
                 }
             }
         }
-        
+
         if count == 0 {
             Err(Error::new(ErrorKind::InvalidInput, "No pour points found"))
         } else if count > 1 {
-            Err(Error::new(ErrorKind::InvalidInput, "Exactly one pour point required"))
+            Err(Error::new(
+                ErrorKind::InvalidInput,
+                "Exactly one pour point required",
+            ))
         } else {
             Ok(pour_point)
         }
@@ -354,8 +376,6 @@ impl WhiteboxTool for HillslopesTopaz {
         _working_directory: &'a str,
         verbose: bool,
     ) -> Result<(), Error> {
-
-
         let start0 = Instant::now();
 
         // Parse command line arguments
@@ -369,7 +389,7 @@ impl WhiteboxTool for HillslopesTopaz {
         let mut subwta_file = String::new();
         let mut netw_file = String::new();
         let mut esri_style = false;
-        
+
         if args.len() == 0 {
             return Err(Error::new(
                 ErrorKind::InvalidInput,
@@ -449,11 +469,18 @@ impl WhiteboxTool for HillslopesTopaz {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -470,7 +497,7 @@ impl WhiteboxTool for HillslopesTopaz {
 
         if verbose {
             println!("Reading {} file.", d8_file);
-        }   
+        }
         let d8_pntr = Raster::new(&d8_file, "r")?;
 
         if verbose {
@@ -485,23 +512,31 @@ impl WhiteboxTool for HillslopesTopaz {
             println!("Reading {} file.", chnjnt_file);
         }
         let chnjnt = Raster::new(&chnjnt_file, "r")?;
+        if order_file.is_empty() {
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "Stream order raster must be specified using the --order flag.",
+            ));
+        }
         if verbose {
             println!("Reading {} file.", order_file);
         }
         let order = Raster::new(&order_file, "r")?;
-        
+
         let start = Instant::now();
 
         if verbose {
             println!("Checking grid alignment.");
         }
 
-
         // Validate grid alignment
         if !rasters_share_geometry(&[&dem, &d8_pntr, &streams, &watershed, &chnjnt]) {
-            return Err(Error::new(ErrorKind::InvalidInput, "Input rasters must share geometry"));
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "Input rasters must share geometry",
+            ));
         }
-        
+
         // Validate chnjnt values
         if verbose {
             println!("Checking channel junction map for 3 or more inflows.");
@@ -513,7 +548,10 @@ impl WhiteboxTool for HillslopesTopaz {
                 // Limit the number of inflows to 3 or fewer
                 // this is a requiremnent for WEPP watershed model
                 if val != chnjnt.configs.nodata && val > 3.0 {
-                    return Err(Error::new(ErrorKind::InvalidInput, "chnjnt values must be 0, 1, 2, or 3"));
+                    return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        "chnjnt values must be 0, 1, 2, or 3",
+                    ));
                 }
             }
         }
@@ -523,12 +561,12 @@ impl WhiteboxTool for HillslopesTopaz {
         let _nodata = dem.configs.nodata;
         let streams_nodata = streams.configs.nodata;
         let cellsize_x = dem.configs.resolution_x;
-        let cellsize_y = dem.configs.resolution_y;
+        let cellsize_y = dem.configs.resolution_y.abs();
         let diag_cellsize = (cellsize_x * cellsize_x + cellsize_y * cellsize_y).sqrt();
 
         let dx = [1, 1, 1, 0, -1, -1, -1, 0];
         let dy = [-1, 0, 1, 1, 1, 0, -1, -1];
-        
+
         // Create a mapping from the pointer values to cells offsets.
         // This may seem wasteful, using only 8 of 129 values in the array,
         // but the mapping method is far faster than calculating z.ln() / ln(2.0).
@@ -583,12 +621,19 @@ impl WhiteboxTool for HillslopesTopaz {
             println!("Locating pour point.");
         }
         let pour_point = self.locate_pour_point(&pourpts_file, &dem)?;
-        if streams.get_value(pour_point.0, pour_point.1) <= 0.0 || 
-           streams.get_value(pour_point.0, pour_point.1) == streams_nodata {
-            return Err(Error::new(ErrorKind::InvalidInput, "Pour point must be on a stream cell"));
+        if streams.get_value(pour_point.0, pour_point.1) <= 0.0
+            || streams.get_value(pour_point.0, pour_point.1) == streams_nodata
+        {
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "Pour point must be on a stream cell",
+            ));
         }
         if watershed.get_value(pour_point.0, pour_point.1) <= 0.0 {
-            return Err(Error::new(ErrorKind::InvalidInput, "Pour point must be within watershed"));
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "Pour point must be within watershed",
+            ));
         }
 
         // Initialize output raster
@@ -596,7 +641,7 @@ impl WhiteboxTool for HillslopesTopaz {
         if verbose {
             println!("Initializing output raster.");
         }
-        
+
         let mut subwta = Raster::initialize_using_file(&subwta_file, &d8_pntr);
         subwta.configs.data_type = DataType::F32;
         subwta.configs.palette = "qual.plt".to_string();
@@ -607,7 +652,10 @@ impl WhiteboxTool for HillslopesTopaz {
 
         if verbose {
             let elapsed = start0.elapsed();
-            println!("Phase 0: Initialization including input data read in {:.2?}.", elapsed);
+            println!(
+                "Phase 0: Initialization including input data read in {:.2?}.",
+                elapsed
+            );
         }
 
         // Phase 1: Build links
@@ -646,12 +694,12 @@ impl WhiteboxTool for HillslopesTopaz {
                     "Headwater cell is already part of a link",
                 ));
             }
-            
+
             let mut link = Link::new();
             link.id = links.len() as i32; // Assign current link ID
-            link.us = hw;  // set the upstream location
+            link.us = hw; // set the upstream location
             link.is_headwater = true;
-            
+
             let mut current = hw;
             loop {
                 // push current cell to the link path
@@ -663,7 +711,6 @@ impl WhiteboxTool for HillslopesTopaz {
 
                 // Check if we're joining an existing link
                 if link_id_grid[current] != -1 {
-
                     // validate it is a junction
                     if chnjnt[current] < 2.0 {
                         return Err(Error::new(
@@ -679,7 +726,7 @@ impl WhiteboxTool for HillslopesTopaz {
                 // Mark cell as part of this link
                 // we would have broken out of the loop if if current was already part of a link
                 link_id_grid[current] = link.id;
-                
+
                 // Check if we've reached the outlet
                 if current == pour_point {
                     link.ds = current;
@@ -687,12 +734,12 @@ impl WhiteboxTool for HillslopesTopaz {
                     links.push(link);
                     break;
                 }
-                
+
                 // Check if we've reached a junction
                 if current != hw && chnjnt[current] >= 2.0 {
                     link.ds = current;
                     links.push(link);
-                    
+
                     // we now this hasn't been visited. create a new link and continue walking downstream.
                     // we would have returned if link_id_grid[current] != -1
                     link = Link::new();
@@ -701,14 +748,14 @@ impl WhiteboxTool for HillslopesTopaz {
                     link.path.push(current);
                     link.is_headwater = false; // this is not a headwater link
                 }
-                
+
                 // Move downstream
                 let pntr_val = d8_pntr.get_value(current.0, current.1);
                 let dir = pntr_val as usize;
                 let c = pntr_matches[dir];
                 let row_n = current.0 + dy[c];
                 let col_n = current.1 + dx[c];
-                
+
                 // Check bounds
                 if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
                     return Err(Error::new(
@@ -716,7 +763,7 @@ impl WhiteboxTool for HillslopesTopaz {
                         "Pointer direction leads outside raster bounds",
                     ));
                 }
-                
+
                 // Check if next cell is in watershed
                 if watershed[(row_n, col_n)] != 1.0 {
                     return Err(Error::new(
@@ -724,14 +771,18 @@ impl WhiteboxTool for HillslopesTopaz {
                         "Pointer direction leads outside watershed",
                     ));
                 }
-                
-                current = (row_n, col_n);                
+
+                current = (row_n, col_n);
             }
         }
 
         if verbose {
             let elapsed = start1.elapsed();
-            println!("Phase 1: Identified {} links in {:.2?}.", links.len(), elapsed);
+            println!(
+                "Phase 1: Identified {} links in {:.2?}.",
+                links.len(),
+                elapsed
+            );
         }
 
         // Phase 2: Now that we have all links, establish their relationships
@@ -745,7 +796,7 @@ impl WhiteboxTool for HillslopesTopaz {
             }
 
             let us_end = links[i].us;
-            
+
             // Find links that flow into this one
             let mut inflows = Vec::new();
             for j in 0..links.len() {
@@ -760,7 +811,7 @@ impl WhiteboxTool for HillslopesTopaz {
                     ));
                 }
             }
-            
+
             // Assign inflow IDs (up to 2)
             if inflows.len() > 0 {
                 links[i].inflow0_id = inflows[0];
@@ -775,13 +826,12 @@ impl WhiteboxTool for HillslopesTopaz {
 
         // Calculate link lengths and drops
         for link in &mut links {
-
             // Calculate length
             let mut length = 0.0;
             for i in 1..link.path.len() {
                 let (r1, c1) = link.path[i - 1];
                 let (r2, c2) = link.path[i];
-                
+
                 if r1 == r2 || c1 == c2 {
                     length += if r1 == r2 { cellsize_x } else { cellsize_y };
                 } else {
@@ -789,21 +839,24 @@ impl WhiteboxTool for HillslopesTopaz {
                 }
             }
             link.length_m = length;
-            
+
             // Calculate elevation drop
             link.ds_z = dem.get_value(link.ds.0, link.ds.1);
             link.us_z = dem.get_value(link.us.0, link.us.1);
             link.drop_m = link.us_z - link.ds_z;
-            
+
             // Set stream order if provided
             link.order = order.get_value(link.us.0, link.us.1) as u8;
         }
 
         if verbose {
             let elapsed = start2.elapsed();
-            println!("Phase 2: Established link relationships in {:.2?}.", elapsed);
+            println!(
+                "Phase 2: Established link relationships in {:.2?}.",
+                elapsed
+            );
         }
-        
+
         // Phase 3: Assign TOPAZ IDs (bottom-up traversal)
         let start3 = Instant::now();
         if verbose {
@@ -813,7 +866,7 @@ impl WhiteboxTool for HillslopesTopaz {
                               // channel ids always end with 4 staring with 24
 
         let mut outlet_idx: i32 = -1; // Index of the outlet link
-        for i in 1..links.len() {
+        for i in 0..links.len() {
             if links[i].is_outlet {
                 outlet_idx = i as i32;
                 links[i].topaz_id = next_id;
@@ -847,22 +900,27 @@ impl WhiteboxTool for HillslopesTopaz {
             // because the ids are assigned as links.len()
             let inflow0_id = links[link_idx].inflow0_id as usize;
             let inflow1_id = links[link_idx].inflow1_id as usize;
-            
+
             let inflow0_angle = calculate_rotation_degrees(
-                links[link_idx].ds.0 as f64, -links[link_idx].ds.1 as f64,     // a
-                links[link_idx].us.0 as f64, -links[link_idx].us.1 as f64,     // o
-                links[inflow0_id].us.0 as f64, -links[inflow0_id].us.1 as f64, // b
+                links[link_idx].ds.0 as f64,
+                -links[link_idx].ds.1 as f64, // a
+                links[link_idx].us.0 as f64,
+                -links[link_idx].us.1 as f64, // o
+                links[inflow0_id].us.0 as f64,
+                -links[inflow0_id].us.1 as f64, // b
             );
 
             let inflow1_angle = calculate_rotation_degrees(
-                links[link_idx].ds.0 as f64, -links[link_idx].ds.1 as f64,     // a
-                links[link_idx].us.0 as f64, -links[link_idx].us.1 as f64,     // o
-                links[inflow1_id].us.0 as f64, -links[inflow1_id].us.1 as f64, // b
+                links[link_idx].ds.0 as f64,
+                -links[link_idx].ds.1 as f64, // a
+                links[link_idx].us.0 as f64,
+                -links[link_idx].us.1 as f64, // o
+                links[inflow1_id].us.0 as f64,
+                -links[inflow1_id].us.1 as f64, // b
             );
 
             // no third inflow
-            if links[link_idx].inflow2_id == -1
-            {
+            if links[link_idx].inflow2_id == -1 {
                 // determien clockwise rotations of the inflows.
                 // The lesser is numbered first
                 // queue pops from the front, push the index in the
@@ -870,7 +928,7 @@ impl WhiteboxTool for HillslopesTopaz {
                 if inflow0_angle < inflow1_angle {
                     links[inflow0_id].topaz_id = next_id;
                     queue.push_back(inflow0_id as usize);
-                    next_id += 10;  // channels are enumerated by 10s
+                    next_id += 10; // channels are enumerated by 10s
                     links[inflow1_id].topaz_id = next_id;
                     queue.push_back(inflow1_id as usize);
                     next_id += 10;
@@ -886,11 +944,14 @@ impl WhiteboxTool for HillslopesTopaz {
                 // handle thrid inflow
                 // aiming for maintainability here over succinctness
                 let inflow2_id = links[link_idx].inflow2_id as usize;
-                
+
                 let inflow2_angle = calculate_rotation_degrees(
-                    links[link_idx].ds.0 as f64, -links[link_idx].ds.1 as f64,     // a
-                    links[link_idx].us.0 as f64, -links[link_idx].us.1 as f64,     // o
-                    links[inflow2_id].us.0 as f64, -links[inflow2_id].us.1 as f64, // b
+                    links[link_idx].ds.0 as f64,
+                    -links[link_idx].ds.1 as f64, // a
+                    links[link_idx].us.0 as f64,
+                    -links[link_idx].us.1 as f64, // o
+                    links[inflow2_id].us.0 as f64,
+                    -links[inflow2_id].us.1 as f64, // b
                 );
 
                 // Determine clockwise rotations of the inflows.
@@ -946,12 +1007,14 @@ impl WhiteboxTool for HillslopesTopaz {
 
         if verbose {
             let elapsed = start4.elapsed();
-            println!("Phase 4: Stamped channels in output raster in {:.2?}.", elapsed);
+            println!(
+                "Phase 4: Stamped channels in output raster in {:.2?}.",
+                elapsed
+            );
         }
-        
+
         // Phase 5: flood fill hillslope values
         let start5 = Instant::now();
-
 
         let mut subwta_counts = HashMap::new();
         if verbose {
@@ -961,14 +1024,14 @@ impl WhiteboxTool for HillslopesTopaz {
             for col in 0..columns {
                 // check if not in watershed
                 if watershed[(row, col)] != 1.0 {
-                    continue; 
+                    continue;
                 }
-                
+
                 // check if already labeled
                 if subwta[(row, col)] != low_value {
                     continue;
                 }
-                
+
                 // flood fill from this cell
                 let mut current = (row, col);
                 let mut found_topaz_id = 0.0;
@@ -978,23 +1041,28 @@ impl WhiteboxTool for HillslopesTopaz {
                     let c = pntr_matches[dir];
                     let row_n = current.0 + dy[c];
                     let col_n = current.1 + dx[c];
-                    
+
                     // Check bounds
                     if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
                         break; // Out of bounds
                     }
-                    
+
                     // Check if next cell is in watershed
                     if watershed[(row_n, col_n)] != 1.0 {
                         break; // left the watershed
                     }
-                    
+
                     // Check for hillslope cell (ID-3)
                     if subwta[(row_n, col_n)] != low_value {
                         if subwta[(row_n, col_n)] <= 0.0 {
                             return Err(Error::new(
                                 ErrorKind::InvalidInput,
-                                format!("Invalid hillslope ID {} at ({}, {})", subwta[(row_n, col_n)], row_n, col_n),
+                                format!(
+                                    "Invalid hillslope ID {} at ({}, {})",
+                                    subwta[(row_n, col_n)],
+                                    row_n,
+                                    col_n
+                                ),
                             ));
                         }
 
@@ -1007,7 +1075,7 @@ impl WhiteboxTool for HillslopesTopaz {
                             found_topaz_id = subwta[(row_n, col_n)] - 3.0;
 
                         // we know this is a channel cell that isn't a headwater pour point
-                        } else { 
+                        } else {
                             let topaz_id = subwta[(row_n, col_n)];
 
                             let dir_val = d8_pntr.get_value(row_n, col_n);
@@ -1034,13 +1102,17 @@ impl WhiteboxTool for HillslopesTopaz {
                                 // ends with 3
                                 found_topaz_id = topaz_id - 1.0;
                             } else {
-                                // the hillslope drains in the same direction as the channel cell. 
+                                // the hillslope drains in the same direction as the channel cell.
                                 // The cross product is ambiguous and can't be used to determine the side of the flow.
                                 // So we need to look at the flow direciton of the upstream channel to determine the side of the hillslope
                                 for i in 0..8 {
                                     let row_nn = row_n + dy[i];
                                     let col_nn = col_n + dx[i];
-                                    if row_nn < 0 || row_nn >= rows || col_nn < 0 || col_nn >= columns {
+                                    if row_nn < 0
+                                        || row_nn >= rows
+                                        || col_nn < 0
+                                        || col_nn >= columns
+                                    {
                                         continue; // out of bounds
                                     }
                                     let dir_val = d8_pntr.get_value(row_nn, col_nn);
@@ -1049,11 +1121,11 @@ impl WhiteboxTool for HillslopesTopaz {
 
                                     let up_chn_candidate_row = row_nn + dy[c_up];
                                     let up_chn_candidate_col = col_nn + dx[c_up];
-                                    
-                                    if up_chn_candidate_row == row_n && 
-                                    up_chn_candidate_col == col_n && 
-                                    chnjnt.get_value(row_nn, col_nn) > 0.0 {
-                                                    
+
+                                    if up_chn_candidate_row == row_n
+                                        && up_chn_candidate_col == col_n
+                                        && chnjnt.get_value(row_nn, col_nn) > 0.0
+                                    {
                                         // direction of the flow down channel from the upstream channel cell
                                         let ux = dx[c_up] as f64;
                                         let uy = dy[c_up] as f64;
@@ -1072,7 +1144,7 @@ impl WhiteboxTool for HillslopesTopaz {
                                     }
                                 }
                             }
-                        } 
+                        }
                     }
                     current = (row_n, col_n);
                 }
@@ -1102,7 +1174,6 @@ impl WhiteboxTool for HillslopesTopaz {
             println!("Phase 5: Flood filled hillslope values in {:.2?}.", elapsed);
         }
 
-
         // Phase 6: Calculate up area for each link
         let start6 = Instant::now();
         if verbose {
@@ -1126,7 +1197,6 @@ impl WhiteboxTool for HillslopesTopaz {
             let elapsed = start6.elapsed();
             println!("Phase 6: Calculated area for each link in {:.2?}.", elapsed);
         }
-
 
         // Write netw.tsv
         let start6 = Instant::now();
@@ -1175,17 +1245,18 @@ fn rasters_share_geometry(rasters: &[&Raster]) -> bool {
     if rasters.is_empty() {
         return true;
     }
-    
+
     let base = &rasters[0].configs;
     for raster in rasters.iter().skip(1) {
-        if raster.configs.rows != base.rows ||
-           raster.configs.columns != base.columns ||
-           raster.configs.north != base.north ||
-           raster.configs.south != base.south ||
-           raster.configs.east != base.east ||
-           raster.configs.west != base.west ||
-           raster.configs.resolution_x != base.resolution_x ||
-           raster.configs.resolution_y != base.resolution_y {
+        if raster.configs.rows != base.rows
+            || raster.configs.columns != base.columns
+            || raster.configs.north != base.north
+            || raster.configs.south != base.south
+            || raster.configs.east != base.east
+            || raster.configs.west != base.west
+            || raster.configs.resolution_x != base.resolution_x
+            || raster.configs.resolution_y != base.resolution_y
+        {
             return false;
         }
     }

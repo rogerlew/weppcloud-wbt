@@ -7,7 +7,6 @@ License: MIT
 */
 
 use self::statrs::distribution::{ContinuousCDF, Normal};
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
 use statrs;
@@ -22,6 +21,7 @@ use std::process::Command;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_raster::*;
 
 /// Spatial autocorrelation describes the extent to which a variable is either dispersed or clustered through space.
 /// In the case of a raster image, spatial autocorrelation refers to the similarity in the values of nearby grid
@@ -230,11 +230,18 @@ impl WhiteboxTool for ImageAutocorrelation {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

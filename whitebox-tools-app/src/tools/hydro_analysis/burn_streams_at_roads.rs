@@ -6,14 +6,14 @@ Last Modified: 29/12/2019
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::{Array2D, BoundingBox};
 use crate::tools::*;
-use whitebox_vector::{ShapeType, Shapefile};
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::structures::{Array2D, BoundingBox};
+use whitebox_raster::*;
+use whitebox_vector::{ShapeType, Shapefile};
 
 /// This tool decrements (lowers) the elevations of pixels within an input digital elevation model (DEM) (`--dem`)
 /// along an input vector stream network (`--streams`) at the sites of road (`--roads`) intersections. In addition
@@ -28,7 +28,7 @@ use std::path;
 /// ![](../../doc_img/BreachStreamsAtRoads.png)
 ///
 /// # Reference
-/// Lindsay JB. 2016. [The practice of DEM stream burning revisited](https://onlinelibrary.wiley.com/doi/abs/10.1002/esp.3888). 
+/// Lindsay JB. 2016. [The practice of DEM stream burning revisited](https://onlinelibrary.wiley.com/doi/abs/10.1002/esp.3888).
 /// Earth Surface Processes and Landforms, 41(5): 658–668. DOI: 10.1002/esp.3888
 ///
 /// # See Also
@@ -227,11 +227,18 @@ impl WhiteboxTool for BurnStreamsAtRoads {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

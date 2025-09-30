@@ -1,50 +1,50 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 05/03/2023
 Last Modified: 05/03/2023
 License: MIT
 */
 
+use num_cpus;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
-use std::time::Instant;
-use whitebox_lidar::*;
-use whitebox_raster::*;
-use whitebox_common::structures::Point3D;
-use whitebox_common::utils::get_formatted_elapsed_time;
-use num_cpus;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use std::time::Instant;
+use whitebox_common::structures::Point3D;
+use whitebox_common::utils::get_formatted_elapsed_time;
+use whitebox_lidar::*;
+use whitebox_raster::*;
 
 /// This tool can be used to normalize a LiDAR point cloud. A normalized point cloud is one for which the point z-values
-/// represent height above the ground surface rather than raw elevation values. Thus, a point that falls on the ground 
-/// surface will have a z-value of zero and vegetation points, and points associated with other off-terrain objects, 
+/// represent height above the ground surface rather than raw elevation values. Thus, a point that falls on the ground
+/// surface will have a z-value of zero and vegetation points, and points associated with other off-terrain objects,
 /// have positive, non-zero z-values. Point cloud normalization is an essential pre-processing method for many forms of
-/// LiDAR data analysis, including the characterization of many forestry related metrics and individual tree mapping 
-/// (`IndividualTreeDetection`). 
-/// 
+/// LiDAR data analysis, including the characterization of many forestry related metrics and individual tree mapping
+/// (`IndividualTreeDetection`).
+///
 /// This tool works by measuring the elevation difference of each point in an input LiDAR file (`--input`) and the elevation
 /// of an input raster digital terrain model (`--dtm`). A DTM is a bare-earth digital elevation model. Typically, the input
 /// DTM is creating using the same input LiDAR data by interpolating the ground surface using only ground-classified points.
-/// If the LiDAR point cloud does not contain ground-point classifications, you may wish to apply the `LidarGroundPointFilter` 
-/// or `ClassifyLidar`tools before interpolating the DTM. While ground-point classification works well to identify the ground 
-/// surface beneath vegetation cover, building points are sometimes left  It may also be necessary to remove other off-terrain 
+/// If the LiDAR point cloud does not contain ground-point classifications, you may wish to apply the `LidarGroundPointFilter`
+/// or `ClassifyLidar`tools before interpolating the DTM. While ground-point classification works well to identify the ground
+/// surface beneath vegetation cover, building points are sometimes left  It may also be necessary to remove other off-terrain
 /// objects like buildings. The `RemoveOffTerrainObjects` tool can be useful for this purpose, creating a final bare-earth DTM.
 /// This tool outputs a normalized LiDAR point cloud (`--output`). If the `--no_negatives` parameter is true, any points that fall
 /// beneath the surface elevation defined by the DTM, will have their z-value set to zero.
-/// 
-/// Note that the `LidarTophatTransform` tool similarly can be used to produce a type of normalized point cloud, although it 
+///
+/// Note that the `LidarTophatTransform` tool similarly can be used to produce a type of normalized point cloud, although it
 /// does not require an input raster DTM. Rather, it attempts to model the ground surface within the point cloud by identifying
 /// the lowest points within local neighbourhoods surrounding each point in the cloud. While this approach can produce satisfactory
-/// results in some cases, the `NormalizeLidar` tool likely works better under more rugged topography and in areas with 
+/// results in some cases, the `NormalizeLidar` tool likely works better under more rugged topography and in areas with
 /// extensive building coverage, and provides greater control over the definition of the ground surface.
-/// 
+///
 /// ![](../../doc_img/NormalizeLidar.png)
-/// 
+///
 /// # See Also
 /// `LidarTophatTransform`, `IndividualTreeDetection`, `LidarGroundPointFilter`, `ClassifyLidar`
 fn main() {
@@ -182,15 +182,22 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let start = Instant::now();
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
-    
+
     if !input_file.contains(&sep) && !input_file.contains("/") {
         input_file = format!("{}{}", working_directory, input_file);
     }
@@ -207,7 +214,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
     let dtm = Arc::new(Raster::new(&dtm_file, "r")?);
     let nodata = dtm.configs.nodata;
-    
+
     let (tx, rx) = mpsc::channel();
     for tid in 0..num_procs as usize {
         let input = input.clone();
@@ -282,7 +289,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         let pr = input.get_record(point_num);
         match pr {
             LidarPointRecord::PointRecord0 { mut point_data } => {
-                point_data.z = ((residuals[point_num] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                point_data.z = ((residuals[point_num] - input.header.z_offset)
+                    / input.header.z_scale_factor) as i32;
                 pr2 = LidarPointRecord::PointRecord0 {
                     point_data: point_data,
                 };
@@ -291,7 +299,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 mut point_data,
                 gps_data,
             } => {
-                point_data.z = ((residuals[point_num] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                point_data.z = ((residuals[point_num] - input.header.z_offset)
+                    / input.header.z_scale_factor) as i32;
                 pr2 = LidarPointRecord::PointRecord1 {
                     point_data: point_data,
                     gps_data: gps_data,
@@ -301,7 +310,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 mut point_data,
                 colour_data,
             } => {
-                point_data.z = ((residuals[point_num] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                point_data.z = ((residuals[point_num] - input.header.z_offset)
+                    / input.header.z_scale_factor) as i32;
                 pr2 = LidarPointRecord::PointRecord2 {
                     point_data: point_data,
                     colour_data: colour_data,
@@ -312,7 +322,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 gps_data,
                 colour_data,
             } => {
-                point_data.z = ((residuals[point_num] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                point_data.z = ((residuals[point_num] - input.header.z_offset)
+                    / input.header.z_scale_factor) as i32;
                 pr2 = LidarPointRecord::PointRecord3 {
                     point_data: point_data,
                     gps_data: gps_data,
@@ -324,7 +335,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 gps_data,
                 wave_packet,
             } => {
-                point_data.z = ((residuals[point_num] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                point_data.z = ((residuals[point_num] - input.header.z_offset)
+                    / input.header.z_scale_factor) as i32;
                 pr2 = LidarPointRecord::PointRecord4 {
                     point_data: point_data,
                     gps_data: gps_data,
@@ -337,7 +349,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 colour_data,
                 wave_packet,
             } => {
-                point_data.z = ((residuals[point_num] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                point_data.z = ((residuals[point_num] - input.header.z_offset)
+                    / input.header.z_scale_factor) as i32;
                 pr2 = LidarPointRecord::PointRecord5 {
                     point_data: point_data,
                     gps_data: gps_data,
@@ -349,7 +362,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 mut point_data,
                 gps_data,
             } => {
-                point_data.z = ((residuals[point_num] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                point_data.z = ((residuals[point_num] - input.header.z_offset)
+                    / input.header.z_scale_factor) as i32;
                 pr2 = LidarPointRecord::PointRecord6 {
                     point_data: point_data,
                     gps_data: gps_data,
@@ -360,7 +374,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 gps_data,
                 colour_data,
             } => {
-                point_data.z = ((residuals[point_num] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                point_data.z = ((residuals[point_num] - input.header.z_offset)
+                    / input.header.z_scale_factor) as i32;
                 pr2 = LidarPointRecord::PointRecord7 {
                     point_data: point_data,
                     gps_data: gps_data,
@@ -372,7 +387,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 gps_data,
                 colour_data,
             } => {
-                point_data.z = ((residuals[point_num] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                point_data.z = ((residuals[point_num] - input.header.z_offset)
+                    / input.header.z_scale_factor) as i32;
                 pr2 = LidarPointRecord::PointRecord8 {
                     point_data: point_data,
                     gps_data: gps_data,
@@ -384,7 +400,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 gps_data,
                 wave_packet,
             } => {
-                point_data.z = ((residuals[point_num] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                point_data.z = ((residuals[point_num] - input.header.z_offset)
+                    / input.header.z_scale_factor) as i32;
                 pr2 = LidarPointRecord::PointRecord9 {
                     point_data: point_data,
                     gps_data: gps_data,
@@ -397,7 +414,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 colour_data,
                 wave_packet,
             } => {
-                point_data.z = ((residuals[point_num] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                point_data.z = ((residuals[point_num] - input.header.z_offset)
+                    / input.header.z_scale_factor) as i32;
                 pr2 = LidarPointRecord::PointRecord10 {
                     point_data: point_data,
                     gps_data: gps_data,
@@ -434,10 +452,9 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         Err(e) => println!("error while writing: {:?}", e),
     };
 
-
     if configurations.verbose_mode {
         println!("Elapsed Time (excluding I/O): {}", elapsed_time);
     }
-        
+
     Ok(())
 }

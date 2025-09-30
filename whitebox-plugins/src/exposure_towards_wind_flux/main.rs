@@ -1,4 +1,4 @@
-/* 
+/*
 Authors: Whitebox Geospatial Inc. (c)
 Developer: Dr. John Lindsay
 Created: 20/07/2021
@@ -7,32 +7,32 @@ License: Whitebox Geospatial Inc. License Agreement
 */
 
 use std::env;
-use std::f64;
 use std::f32::consts::PI;
+use std::f64;
 // use std::fs;
+use num_cpus;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
-use std::time::Instant;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
-use whitebox_common::utils::{ get_formatted_elapsed_time, wrapped_print };
+use std::time::Instant;
 use whitebox_common::structures::Array2D;
+use whitebox_common::utils::{get_formatted_elapsed_time, wrapped_print};
 use whitebox_raster::*;
-use num_cpus;
 
-/// This tool creates a new raster in which each grid cell is assigned the exposure of the land-surface to 
-/// a hypothetical wind flux. It can be conceptualized as the angle between a plane orthogonal to the wind 
-/// and a plane that represents the local topography at a grid cell (Bohner and Antonic, 2007). The user must specify 
+/// This tool creates a new raster in which each grid cell is assigned the exposure of the land-surface to
+/// a hypothetical wind flux. It can be conceptualized as the angle between a plane orthogonal to the wind
+/// and a plane that represents the local topography at a grid cell (Bohner and Antonic, 2007). The user must specify
 /// the names of the input digital elevation model (`--dem`) and output file (`--output`), as well as the
 /// dominant wind azimuth (`--azimuth`) and a maximum search distance (`--max_dist`) used to calclate the horizon
-/// angle. Notice that the specified azimuth represents a regional average wind direction. 
+/// angle. Notice that the specified azimuth represents a regional average wind direction.
 ///
-/// Exposure towards the sloped wind flux essentially combines the relative terrain aspect and the maximum upwind 
-/// slope (i.e. horizon angle). This terrain attribute accounts for land-surface orientation, relative to the wind, 
-/// and shadowing effects of distant topographic features but does not account for deflection of the wind by 
-/// topography. This tool should not be used on very extensive areas over which Earth's curvature must be taken into 
+/// Exposure towards the sloped wind flux essentially combines the relative terrain aspect and the maximum upwind
+/// slope (i.e. horizon angle). This terrain attribute accounts for land-surface orientation, relative to the wind,
+/// and shadowing effects of distant topographic features but does not account for deflection of the wind by
+/// topography. This tool should not be used on very extensive areas over which Earth's curvature must be taken into
 /// account. DEMs in projected coordinate systems are preferred.
 ///
 /// **Algorithm Description:**
@@ -42,33 +42,32 @@ use num_cpus;
 /// > cos(*E*) = cos(*S*) sin(*H*) + sin(*S*) cos(*H*) cos(*Az* - *A*)
 ///
 ///
-/// Where, *E* is angle between a plane defining the local terrain and a plane orthogonal to the wind flux, *S* 
-/// is the terrain slope, *A* is the terrain aspect, *Az* is the azimuth of the wind flux, and *H* is the horizon 
+/// Where, *E* is angle between a plane defining the local terrain and a plane orthogonal to the wind flux, *S*
+/// is the terrain slope, *A* is the terrain aspect, *Az* is the azimuth of the wind flux, and *H* is the horizon
 /// angle of the wind flux, which is zero when only the horizontal component of the wind flux is accounted for.
 ///
-/// Exposure images are best displayed using a greyscale or bipolar palette to distinguish between the positive 
+/// Exposure images are best displayed using a greyscale or bipolar palette to distinguish between the positive
 /// and negative values that are present in the output.
 ///
 /// # References
-/// Antonić, O., & Legović, T. 1999. Estimating the direction of an unknown air pollution source using a digital 
+/// Antonić, O., & Legović, T. 1999. Estimating the direction of an unknown air pollution source using a digital
 /// elevation model and a sample of deposition. *Ecological modelling*, 124(1), 85-95.
 ///
-/// Böhner, J., & Antonić, O. 2009. Land-surface parameters specific to topo-climatology. Developments in Soil 
+/// Böhner, J., & Antonić, O. 2009. Land-surface parameters specific to topo-climatology. Developments in Soil
 /// Science, 33, 195-226.
 ///
 /// # See Also
 /// `RelativeAspect`
 fn main() {
-
     let args: Vec<String> = env::args().collect();
 
     if args[1].trim() == "run" {
         match run(&args) {
-            Ok(_) => {}, 
+            Ok(_) => {}
             Err(e) => panic!("{:?}", e),
         }
     }
-    
+
     if args.len() <= 1 || args[1].trim() == "help" {
         // print help
         help();
@@ -78,7 +77,6 @@ fn main() {
         // print version information
         version();
     }
-    
 }
 
 fn help() {
@@ -115,8 +113,8 @@ fn help() {
     Note: Use of this tool requires a valid license. To obtain a license,
     contact Whitebox Geospatial Inc. (support@whiteboxgeo.com).
     "#
-            .replace("*", &sep)
-            .replace("EXE_NAME", exe_name);
+    .replace("*", &sep)
+    .replace("EXE_NAME", exe_name);
     println!("{}", s);
 }
 
@@ -221,11 +219,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -287,7 +292,9 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let z_factor_array = Arc::new(z_factor_array);
 
     if max_dist <= 5f32 * cell_size_x {
-        panic!("The maximum search distance parameter (--max_dist) must be larger than 5 x cell size.");
+        panic!(
+            "The maximum search distance parameter (--max_dist) must be larger than 5 x cell size."
+        );
     }
 
     // The longest that max_dist ever needs to be is the raster diagonal length.
@@ -301,7 +308,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let input = inputf64.get_data_as_f32_array2d();
 
     drop(inputf64);
-
 
     ////////////////////////////////////
     // Calculate the slope and aspect //
@@ -339,9 +345,11 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                         if fx == 0f32 {
                             fx = 0.00001;
                         }
-                        
+
                         fy = (n[6] - n[4] + 2.0 * (n[7] - n[3]) + n[0] - n[2]) / eight_grid_res;
-                        aspect_data[col as usize] = (180f32 - ((fy / fx).atan()).to_degrees() + 90f32 * (fx / (fx).abs())) as f32;
+                        aspect_data[col as usize] = (180f32 - ((fy / fx).atan()).to_degrees()
+                            + 90f32 * (fx / (fx).abs()))
+                            as f32;
                         slope_data[col as usize] = (fx * fx + fy * fy).sqrt().atan() as f32;
                     }
                 }
@@ -533,7 +541,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         }
     }
 
-
     //////////////////////////////////////////
     // Calculate exposure towards wind flux //
     //////////////////////////////////////////
@@ -562,7 +569,9 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                         slope_val = slope.get_value(row, col);
                         ha_val = horizon_angle.get_value(row, col).max(0f32);
                         // cosγW =sinφ·cosβ+cosφ·sinβ·cosαr
-                        val = (ha_val.sin() * slope_val.cos() + ha_val.cos() * slope_val.sin() * relative_aspect.cos()) as f64;
+                        val = (ha_val.sin() * slope_val.cos()
+                            + ha_val.cos() * slope_val.sin() * relative_aspect.cos())
+                            as f64;
                         data[col as usize] = val;
                     }
                 }
@@ -602,17 +611,13 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
     drop(input);
 
-    
     //////////////////////
     // Output the image //
     //////////////////////
 
     let elapsed_time = get_formatted_elapsed_time(start);
     output.configs.palette = "grey.plt".to_string();
-    output.add_metadata_entry(format!(
-        "Created by whitebox_tools\' {} tool",
-        tool_name
-    ));
+    output.add_metadata_entry(format!("Created by whitebox_tools\' {} tool", tool_name));
     output.add_metadata_entry(format!("Input file: {}", input_file));
     output.add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed_time));
 

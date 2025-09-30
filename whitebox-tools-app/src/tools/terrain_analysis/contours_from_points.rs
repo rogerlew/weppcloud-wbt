@@ -6,17 +6,17 @@ Last Modified: 24/06/2021
 License: MIT
 */
 
-use whitebox_common::algorithms::triangulate;
-use whitebox_common::structures::Point2D;
 use crate::tools::*;
-use whitebox_vector::ShapefileGeometry;
-use whitebox_vector::*;
 use kdtree::distance::squared_euclidean;
 use kdtree::KdTree;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::algorithms::triangulate;
+use whitebox_common::structures::Point2D;
+use whitebox_vector::ShapefileGeometry;
+use whitebox_vector::*;
 const EPSILON: f64 = std::f64::EPSILON;
 
 /// This tool creates a contour coverage from a set of input points (`--input`). The user must specify the contour
@@ -316,11 +316,18 @@ impl WhiteboxTool for ContoursFromPoints {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -593,7 +600,7 @@ impl WhiteboxTool for ContoursFromPoints {
                     &squared_euclidean,
                 )
                 .unwrap();
-            
+
             num_neighbours = 0;
             for a in 0..ret.len() {
                 node = *ret[a].1;
@@ -611,7 +618,7 @@ impl WhiteboxTool for ContoursFromPoints {
                     unvisited[other_node] = false;
                 }
             }
-                
+
             if verbose {
                 progress = (100.0_f64 * i as f64 / (num_points - 1) as f64) as usize;
                 if progress != old_progress {
@@ -621,7 +628,7 @@ impl WhiteboxTool for ContoursFromPoints {
             }
         }
 
-        // Deal with spurs. This occurs where you have a line with no neighbours on one 
+        // Deal with spurs. This occurs where you have a line with no neighbours on one
         // side and an intersection with a contour line on the other. I'm not sure why they
         // occur.
         for i in 0..num_points {
@@ -705,7 +712,7 @@ impl WhiteboxTool for ContoursFromPoints {
                                     break;
                                 }
                             }
-                            
+
                             // let mut found_nodes = Vec::with_capacity(ret.len());
                             // for a in 0..ret.len() {
                             //     other_node = *ret[a].1;
@@ -872,7 +879,8 @@ impl WhiteboxTool for ContoursFromPoints {
                 num_line_points = line_points.len();
                 if num_line_points > 1 {
                     if num_line_points > filter_size && filter_size > 0 {
-                        let closed = line_points[0].distance(&line_points[num_line_points - 1]) <= 1000.0 * precision;
+                        let closed = line_points[0].distance(&line_points[num_line_points - 1])
+                            <= 1000.0 * precision;
                         for a in 0..num_line_points {
                             x = 0f64;
                             y = 0f64;
@@ -888,7 +896,7 @@ impl WhiteboxTool for ContoursFromPoints {
                                 if closed && point_id >= num_line_points as isize {
                                     // wrap around
                                     point_id -= num_line_points as isize - 1;
-                                } else if point_id >= num_line_points as isize{
+                                } else if point_id >= num_line_points as isize {
                                     point_id = num_line_points as isize - 1;
                                 }
                                 x += line_points[point_id as usize].x;

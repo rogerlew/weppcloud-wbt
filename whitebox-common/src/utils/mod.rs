@@ -36,7 +36,7 @@ pub fn wrapped_print(val: &str, width: usize) {
                 s1 = s2.to_string();
             }
         }
-        if i < split_val1.len()-1 {
+        if i < split_val1.len() - 1 {
             println!("{}\n", s1);
         } else {
             println!("{}", s1);
@@ -59,7 +59,7 @@ pub fn wrapped_text(val: &str, width: usize) -> String {
                 s1 = s2.to_string();
             }
         }
-        if i < split_val1.len()-1 {
+        if i < split_val1.len() - 1 {
             ret.push_str(&format!("{}\n", s1));
         } else {
             ret.push_str(&s1);
@@ -69,7 +69,7 @@ pub fn wrapped_text(val: &str, width: usize) -> String {
 }
 
 // Derived from: https://stackoverflow.com/questions/176137/java-convert-lat-lon-to-utm
-// Testing shows that this produces UTM coordinates that are within a few centimeters of 
+// Testing shows that this produces UTM coordinates that are within a few centimeters of
 // other lat/long-UTM conversion libraries.
 pub fn deg_to_utm(latitude: f64, longitude: f64) -> (f64, f64, isize, char) {
     let zone = (longitude / 6.0 + 31.0).floor();
@@ -121,13 +121,38 @@ pub fn deg_to_utm(latitude: f64, longitude: f64) -> (f64, f64, isize, char) {
     let val2 = (lon - val1).sin();
     let val3 = lat.cos();
     let val4 = (2.0 * lat).sin();
-    let easting = 0.5 * ((1.0 + val3 * val2) / (1.0 - val3 * val2)).ln() * 0.9996 * 6399593.62 / (1.0 + 0.0820944379 * 0.0820944379 * val3 * val3).sqrt() * (1.0 + 0.0820944379 * 0.0820944379 / 2.0 * (0.5 * ((1.0 + val3 * val2) / (1.0 - val3 * val2)).ln()).powi(2) * val3 * val3 / 3.0) + 500000.0;
-    let mut northing = ((lat.tan() / (lon-val1).cos()).atan() - lat) * 0.9996 * 6399593.625 / (1.0 + 0.006739496742 * val3 * val3).sqrt() * (1.0 + 0.006739496742 / 2.0 * (0.5 * ((1.0 + val3 * (lon - val1).sin()) / (1.0 - val3 * (lon - val1).sin())).ln()).powi(2) * val3 * val3) + 0.9996 * 6399593.625 * (lat - 0.005054622556 * (lat + val4 / 2.0) + 4.258201531e-05 * (3.0 * (lat + val4 / 2.0) + val4 * val3 * val3) / 4.0 - 1.674057895e-07 * (5.0 * (3.0 * (lat + val4 / 2.0) + val4 * val3 * val3)/4.0 + val4 * val3 * val3 * val3 * val3) / 3.0);
-    
+    let easting = 0.5 * ((1.0 + val3 * val2) / (1.0 - val3 * val2)).ln() * 0.9996 * 6399593.62
+        / (1.0 + 0.0820944379 * 0.0820944379 * val3 * val3).sqrt()
+        * (1.0
+            + 0.0820944379 * 0.0820944379 / 2.0
+                * (0.5 * ((1.0 + val3 * val2) / (1.0 - val3 * val2)).ln()).powi(2)
+                * val3
+                * val3
+                / 3.0)
+        + 500000.0;
+    let mut northing = ((lat.tan() / (lon - val1).cos()).atan() - lat) * 0.9996 * 6399593.625
+        / (1.0 + 0.006739496742 * val3 * val3).sqrt()
+        * (1.0
+            + 0.006739496742 / 2.0
+                * (0.5
+                    * ((1.0 + val3 * (lon - val1).sin()) / (1.0 - val3 * (lon - val1).sin()))
+                        .ln())
+                .powi(2)
+                * val3
+                * val3)
+        + 0.9996
+            * 6399593.625
+            * (lat - 0.005054622556 * (lat + val4 / 2.0)
+                + 4.258201531e-05 * (3.0 * (lat + val4 / 2.0) + val4 * val3 * val3) / 4.0
+                - 1.674057895e-07
+                    * (5.0 * (3.0 * (lat + val4 / 2.0) + val4 * val3 * val3) / 4.0
+                        + val4 * val3 * val3 * val3 * val3)
+                    / 3.0);
+
     if letter < 'M' {
         northing += 10000000.0;
     }
-    
+
     (easting, northing, zone as isize, letter)
 }
 
@@ -191,22 +216,25 @@ pub fn utm_to_deg(zone: isize, letter: char, easting: f64, northing: f64) -> (f6
                                         (1.0 + 0.006739496742
                                             * f64::powi(f64::cos(north / 6366197.724 / 0.9996), 2)),
                                     ))
-                                * (1.0 - 0.006739496742
-                                    * f64::powi(
-                                        (easting - 500000.0)
-                                            / (0.9996 * 6399593.625
-                                                / f64::sqrt(
-                                                    (1.0 + 0.006739496742
-                                                        * f64::powi(
-                                                            f64::cos(north / 6366197.724 / 0.9996),
-                                                            2,
-                                                        )),
-                                                )),
-                                        2,
-                                    )
-                                    / 2.0
-                                    * f64::powi(f64::cos(north / 6366197.724 / 0.9996), 2)
-                                    / 3.0),
+                                * (1.0
+                                    - 0.006739496742
+                                        * f64::powi(
+                                            (easting - 500000.0)
+                                                / (0.9996 * 6399593.625
+                                                    / f64::sqrt(
+                                                        (1.0 + 0.006739496742
+                                                            * f64::powi(
+                                                                f64::cos(
+                                                                    north / 6366197.724 / 0.9996,
+                                                                ),
+                                                                2,
+                                                            )),
+                                                    )),
+                                            2,
+                                        )
+                                        / 2.0
+                                        * f64::powi(f64::cos(north / 6366197.724 / 0.9996), 2)
+                                        / 3.0),
                         )) / 2.0
                             / f64::cos(
                                 (north
@@ -215,22 +243,12 @@ pub fn utm_to_deg(zone: isize, letter: char, easting: f64, northing: f64) -> (f6
                                         * (north / 6366197.724 / 0.9996
                                             - 0.006739496742 * 3.0 / 4.0
                                                 * (north / 6366197.724 / 0.9996
-                                                    + f64::sin(2.0 * north / 6366197.724 / 0.9996)
-                                                        / 2.0)
-                                            + f64::powi(0.006739496742 * 3.0 / 4.0, 2) * 5.0 / 3.0
+                                                    + f64::sin(
+                                                        2.0 * north / 6366197.724 / 0.9996,
+                                                    ) / 2.0)
+                                            + f64::powi(0.006739496742 * 3.0 / 4.0, 2) * 5.0
+                                                / 3.0
                                                 * (3.0
-                                                    * (north / 6366197.724 / 0.9996
-                                                        + f64::sin(
-                                                            2.0 * north / 6366197.724 / 0.9996,
-                                                        ) / 2.0)
-                                                    + f64::sin(2.0 * north / 6366197.724 / 0.9996)
-                                                        * f64::powi(
-                                                            f64::cos(north / 6366197.724 / 0.9996),
-                                                            2,
-                                                        ))
-                                                / 4.0
-                                            - f64::powi(0.006739496742 * 3.0 / 4.0, 3) * 35.0 / 27.0
-                                                * (5.0 * (3.0
                                                     * (north / 6366197.724 / 0.9996
                                                         + f64::sin(
                                                             2.0 * north / 6366197.724 / 0.9996,
@@ -241,16 +259,31 @@ pub fn utm_to_deg(zone: isize, letter: char, easting: f64, northing: f64) -> (f6
                                                         f64::cos(north / 6366197.724 / 0.9996),
                                                         2,
                                                     ))
-                                                    / 4.0
-                                                    + f64::sin(2.0 * north / 6366197.724 / 0.9996)
-                                                        * f64::powi(
-                                                            f64::cos(north / 6366197.724 / 0.9996),
-                                                            2,
-                                                        )
-                                                        * f64::powi(
+                                                / 4.0
+                                            - f64::powi(0.006739496742 * 3.0 / 4.0, 3) * 35.0
+                                                / 27.0
+                                                * (5.0
+                                                    * (3.0
+                                                        * (north / 6366197.724 / 0.9996
+                                                            + f64::sin(
+                                                                2.0 * north / 6366197.724 / 0.9996,
+                                                            ) / 2.0)
+                                                        + f64::sin(
+                                                            2.0 * north / 6366197.724 / 0.9996,
+                                                        ) * f64::powi(
                                                             f64::cos(north / 6366197.724 / 0.9996),
                                                             2,
                                                         ))
+                                                    / 4.0
+                                                    + f64::sin(
+                                                        2.0 * north / 6366197.724 / 0.9996,
+                                                    ) * f64::powi(
+                                                        f64::cos(north / 6366197.724 / 0.9996),
+                                                        2,
+                                                    ) * f64::powi(
+                                                        f64::cos(north / 6366197.724 / 0.9996),
+                                                        2,
+                                                    ))
                                                 / 3.0))
                                     / (0.9996 * 6399593.625
                                         / f64::sqrt(
@@ -302,15 +335,17 @@ pub fn utm_to_deg(zone: isize, letter: char, easting: f64, northing: f64) -> (f6
                                                 ))
                                         / 4.0
                                     - f64::powi(0.006739496742 * 3.0 / 4.0, 3) * 35.0 / 27.0
-                                        * (5.0 * (3.0
-                                            * (north / 6366197.724 / 0.9996
+                                        * (5.0
+                                            * (3.0
+                                                * (north / 6366197.724 / 0.9996
+                                                    + f64::sin(
+                                                        2.0 * north / 6366197.724 / 0.9996,
+                                                    ) / 2.0)
                                                 + f64::sin(2.0 * north / 6366197.724 / 0.9996)
-                                                    / 2.0)
-                                            + f64::sin(2.0 * north / 6366197.724 / 0.9996)
-                                                * f64::powi(
-                                                    f64::cos(north / 6366197.724 / 0.9996),
-                                                    2,
-                                                ))
+                                                    * f64::powi(
+                                                        f64::cos(north / 6366197.724 / 0.9996),
+                                                        2,
+                                                    ))
                                             / 4.0
                                             + f64::sin(2.0 * north / 6366197.724 / 0.9996)
                                                 * f64::powi(
@@ -421,13 +456,15 @@ pub fn utm_to_deg(zone: isize, letter: char, easting: f64, northing: f64) -> (f6
                                                     ))
                                             / 4.0
                                         - f64::powi(0.006739496742 * 3.0 / 4.0, 3) * 35.0 / 27.0
-                                            * (5.0 * (3.0
-                                                * (north / 6366197.724 / 0.9996
+                                            * (5.0
+                                                * (3.0
+                                                    * (north / 6366197.724 / 0.9996
+                                                        + f64::sin(
+                                                            2.0 * north / 6366197.724 / 0.9996,
+                                                        ) / 2.0)
                                                     + f64::sin(
                                                         2.0 * north / 6366197.724 / 0.9996,
-                                                    ) / 2.0)
-                                                + f64::sin(2.0 * north / 6366197.724 / 0.9996)
-                                                    * f64::powi(
+                                                    ) * f64::powi(
                                                         f64::cos(north / 6366197.724 / 0.9996),
                                                         2,
                                                     ))
@@ -478,7 +515,8 @@ pub fn utm_to_deg(zone: isize, letter: char, easting: f64, northing: f64) -> (f6
                                 + f64::powi(0.006739496742 * 3.0 / 4.0, 2) * 5.0 / 3.0
                                     * (3.0
                                         * (north / 6366197.724 / 0.9996
-                                            + f64::sin(2.0 * north / 6366197.724 / 0.9996) / 2.0)
+                                            + f64::sin(2.0 * north / 6366197.724 / 0.9996)
+                                                / 2.0)
                                         + f64::sin(2.0 * north / 6366197.724 / 0.9996)
                                             * f64::powi(
                                                 f64::cos(north / 6366197.724 / 0.9996),
@@ -486,14 +524,16 @@ pub fn utm_to_deg(zone: isize, letter: char, easting: f64, northing: f64) -> (f6
                                             ))
                                     / 4.0
                                 - f64::powi(0.006739496742 * 3.0 / 4.0, 3) * 35.0 / 27.0
-                                    * (5.0 * (3.0
-                                        * (north / 6366197.724 / 0.9996
-                                            + f64::sin(2.0 * north / 6366197.724 / 0.9996) / 2.0)
-                                        + f64::sin(2.0 * north / 6366197.724 / 0.9996)
-                                            * f64::powi(
-                                                f64::cos(north / 6366197.724 / 0.9996),
-                                                2,
-                                            ))
+                                    * (5.0
+                                        * (3.0
+                                            * (north / 6366197.724 / 0.9996
+                                                + f64::sin(2.0 * north / 6366197.724 / 0.9996)
+                                                    / 2.0)
+                                            + f64::sin(2.0 * north / 6366197.724 / 0.9996)
+                                                * f64::powi(
+                                                    f64::cos(north / 6366197.724 / 0.9996),
+                                                    2,
+                                                ))
                                         / 4.0
                                         + f64::sin(2.0 * north / 6366197.724 / 0.9996)
                                             * f64::powi(
@@ -592,11 +632,16 @@ pub fn utm_to_deg(zone: isize, letter: char, easting: f64, northing: f64) -> (f6
                                         * f64::powi(f64::cos(north / 6366197.724 / 0.9996), 2))
                                 / 4.0
                             - f64::powi(0.006739496742 * 3.0 / 4.0, 3) * 35.0 / 27.0
-                                * (5.0 * (3.0
-                                    * (north / 6366197.724 / 0.9996
-                                        + f64::sin(2.0 * north / 6366197.724 / 0.9996) / 2.0)
-                                    + f64::sin(2.0 * north / 6366197.724 / 0.9996)
-                                        * f64::powi(f64::cos(north / 6366197.724 / 0.9996), 2))
+                                * (5.0
+                                    * (3.0
+                                        * (north / 6366197.724 / 0.9996
+                                            + f64::sin(2.0 * north / 6366197.724 / 0.9996)
+                                                / 2.0)
+                                        + f64::sin(2.0 * north / 6366197.724 / 0.9996)
+                                            * f64::powi(
+                                                f64::cos(north / 6366197.724 / 0.9996),
+                                                2,
+                                            ))
                                     / 4.0
                                     + f64::sin(2.0 * north / 6366197.724 / 0.9996)
                                         * f64::powi(f64::cos(north / 6366197.724 / 0.9996), 2)
@@ -634,11 +679,8 @@ pub fn utm_to_deg(zone: isize, letter: char, easting: f64, northing: f64) -> (f6
 }
 
 // Compute the distance between two points (start and end) based on Vincenty's Inverse formula.
-pub fn vincenty_distance(
-    start: (f64, f64), 
-    end: (f64, f64)
-) -> f64 {
-    // WGS-84 geocentric datum parameters. This is an assumption but it would be better if we 
+pub fn vincenty_distance(start: (f64, f64), end: (f64, f64)) -> f64 {
+    // WGS-84 geocentric datum parameters. This is an assumption but it would be better if we
     // could actually retrieve the ellipsoid from the CRS for more accuracy.
     let a: f64 = 6378137.0; // Semi-major axis
     let b: f64 = 6356752.314245; // Semi-minor axis

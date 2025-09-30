@@ -6,24 +6,24 @@ Last Modified: 01/01/2021
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::Array2D;
-use whitebox_common::rendering::html::*;
-use whitebox_common::rendering::LineGraph;
-use whitebox_vector::{ShapeType, Shapefile};
 use std::env;
 use std::f64;
 use std::f64::consts::PI;
+use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufWriter;
-use std::fs::File;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
 use std::time::Instant;
+use whitebox_common::rendering::html::*;
+use whitebox_common::rendering::LineGraph;
+use whitebox_common::structures::Array2D;
 use whitebox_common::utils::get_formatted_elapsed_time;
+use whitebox_raster::*;
+use whitebox_vector::{ShapeType, Shapefile};
 
 /// This tool uses the fast Gaussian approximation algorithm to produce scaled land-surface parameter (LSP)
 /// measurements from an input DEM (`--dem`). The algorithm iterates over scales
@@ -58,7 +58,7 @@ use whitebox_common::utils::get_formatted_elapsed_time;
 /// Newman, D. R., Lindsay, J. B., & Cockburn, J. M. H. (2018). Measuring Hyperscale Topographic
 /// Anisotropy as a Continuous Landscape Property. *Geosciences*, 8(278).
 /// https://doi.org/10.3390/geosciences8080278
-/// 
+///
 /// Riley, S. J., DeGloria, S. D., and Elliot, R. (1999). Index that quantifies topographic
 /// heterogeneity.*Intermountain Journal of Sciences*, 5(1-4), 23-27.
 ///
@@ -235,30 +235,37 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
 
     let lsp_func = match &lsp_fmt.to_uppercase()[0..2] {
-        "AN" => fn_anisotropy, // ANISOTROPYLTP
-        "AS" => fn_aspect, // ASPECT
-        "DM" => fn_dme, // DME
-        "DI" => fn_dme, // DIFFERENCEMEANELEVATION
-        "EA" => fn_eastness, // EASTNESS
-        "EL" => fn_elevation, // ELEVATION
-        "HI" => fn_hillshade, // HILLSHADE
-        "ME" => fn_mean_curvature, // MEANCURVATURE
-        "NO" => fn_northness, // NORTHNESS
-        "PL" => fn_plan_curvature, // PLANCURVATURE
-        "PR" => fn_prof_curvature, // PROFILECURVATURE
-        "RU" => fn_ruggedness, // RUGGEDNESS
-        "SL" => fn_slope, // SLOPE
-        "TA" => fn_tan_curvature, // TANCURVATURE
+        "AN" => fn_anisotropy,      // ANISOTROPYLTP
+        "AS" => fn_aspect,          // ASPECT
+        "DM" => fn_dme,             // DME
+        "DI" => fn_dme,             // DIFFERENCEMEANELEVATION
+        "EA" => fn_eastness,        // EASTNESS
+        "EL" => fn_elevation,       // ELEVATION
+        "HI" => fn_hillshade,       // HILLSHADE
+        "ME" => fn_mean_curvature,  // MEANCURVATURE
+        "NO" => fn_northness,       // NORTHNESS
+        "PL" => fn_plan_curvature,  // PLANCURVATURE
+        "PR" => fn_prof_curvature,  // PROFILECURVATURE
+        "RU" => fn_ruggedness,      // RUGGEDNESS
+        "SL" => fn_slope,           // SLOPE
+        "TA" => fn_tan_curvature,   // TANCURVATURE
         "TO" => fn_total_curvature, // TOTALCURVATURE
         _ => {
             eprintln!("Warning: Invalid LSP. Defaulting to Elevation.");
@@ -373,7 +380,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             }
 
             if configurations.verbose_mode {
-                progress = (100.0_f64 * record_num as f64 / (points.num_records - 1) as f64) as usize;
+                progress =
+                    (100.0_f64 * record_num as f64 / (points.num_records - 1) as f64) as usize;
                 if progress != old_progress {
                     println!("Finding site row/column values: {}%", progress);
                     old_progress = progress;
@@ -461,12 +469,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 if configurations.verbose_mode {
                     progress = (100f32 * row as f32 / (rows - 1) as f32) as usize;
                     if progress != old_progress {
-                        println!("Loop {} of {}. Smoothing progress: {}%",s+1, num_steps, progress);
+                        println!(
+                            "Loop {} of {}. Smoothing progress: {}%",
+                            s + 1,
+                            num_steps,
+                            progress
+                        );
                         old_progress = progress;
                     }
                 }
             }
-        } else if sigma < 3f64 { // perform standard gaussian
+        } else if sigma < 3f64 {
+            // perform standard gaussian
             let recip_root_2_pi_times_sigma_d = 1f64 / ((2f64 * PI).sqrt() * sigma);
             let two_sigma_sqr_d = 2f64 * sigma * sigma;
 
@@ -475,8 +489,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             let mut weight: f64;
             // probably faster to just do +/-3*sigma for 99% coverage
             for i in 0..250 {
-                weight =
-                    recip_root_2_pi_times_sigma_d * (-1f64 * ((i * i) as f64) / two_sigma_sqr_d).exp();
+                weight = recip_root_2_pi_times_sigma_d
+                    * (-1f64 * ((i * i) as f64) / two_sigma_sqr_d).exp();
                 if weight <= 0.001 {
                     filter_size = i * 2 + 1;
                     break;
@@ -539,7 +553,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                                 z_final = 0f64;
                                 for a in 0..num_pixels_in_filter {
                                     w = weights[a as usize];
-                                    zn = inp.get_value(row + dy[a as usize], col + dx[a as usize]) as f64;
+                                    zn = inp.get_value(row + dy[a as usize], col + dx[a as usize])
+                                        as f64;
                                     if zn != nodata {
                                         sum += w;
                                         z_final += w * zn;
@@ -559,22 +574,32 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 if configurations.verbose_mode {
                     progress = (100f32 * row as f32 / (rows - 1) as f32) as usize;
                     if progress != old_progress {
-                        println!("Loop {} of {}. Smoothing progress: {}%",s+1, num_steps, progress);
+                        println!(
+                            "Loop {} of {}. Smoothing progress: {}%",
+                            s + 1,
+                            num_steps,
+                            progress
+                        );
                         old_progress = progress;
                     }
                 }
             }
-        } else { //perform fast gaussian
+        } else {
+            //perform fast gaussian
             let n = 6;
             let w_ideal = (12f64 * sigma * sigma / n as f64 + 1f64).sqrt();
             let mut wl = w_ideal.floor() as isize;
-            if wl % 2 == 0 { wl -= 1; } // must be an odd integer
+            if wl % 2 == 0 {
+                wl -= 1;
+            } // must be an odd integer
             let wu = wl + 2;
             filter_size = wu;
-            let m =
-                ((12f64 * sigma * sigma - (n * wl * wl) as f64 - (4 * n * wl) as f64 - (3 * n) as f64)
-                    / (-4 * wl - 4) as f64)
-                    .round() as isize;
+            let m = ((12f64 * sigma * sigma
+                - (n * wl * wl) as f64
+                - (4 * n * wl) as f64
+                - (3 * n) as f64)
+                / (-4 * wl - 4) as f64)
+                .round() as isize;
 
             sigma_actual =
                 (((m * wl * wl) as f64 + ((n - m) as f64) * (wu * wu) as f64 - n as f64) / 12f64)
@@ -591,7 +616,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 let midpoint = if iteration_num <= m {
                     (wl as f64 / 2f64).floor() as isize
                 } else {
-                        (wu as f64 / 2f64).floor() as isize
+                    (wu as f64 / 2f64).floor() as isize
                 };
 
                 if iteration_num > 0 {
@@ -632,15 +657,14 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                                 x2 = columns - 1;
                             }
 
-                            num_cells = integral_n.get_value(y2,x2)
-                                + integral_n.get_value(y1,x1)
-                                - integral_n.get_value(y1,x2)
-                                - integral_n.get_value(y2,x1);
+                            num_cells = integral_n.get_value(y2, x2) + integral_n.get_value(y1, x1)
+                                - integral_n.get_value(y1, x2)
+                                - integral_n.get_value(y2, x1);
                             if num_cells > 0 {
-                                sum = integral_mod.get_value(y2,x2)
-                                    + integral_mod.get_value(y1,x1)
-                                    - integral_mod.get_value(y1,x2)
-                                    - integral_mod.get_value(y2,x1);
+                                sum = integral_mod.get_value(y2, x2)
+                                    + integral_mod.get_value(y1, x1)
+                                    - integral_mod.get_value(y1, x2)
+                                    - integral_mod.get_value(y2, x1);
                                 smoothed_elev.set_value(row, col, sum / num_cells as f64);
                             } else {
                                 // should never reach this point
@@ -653,9 +677,11 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             // Memory requirements: 5.5x -> integral_mod drops out of scope
         }
         sigma_prev = sigma_actual;
-        let buffer = if sigma < 3f64 { // not fast gaussian, no buffer
+        let buffer = if sigma < 3f64 {
+            // not fast gaussian, no buffer
             0isize
-        } else { // is fast gaussian, buffer by upper window lenght
+        } else {
+            // is fast gaussian, buffer by upper window lenght
             filter_size + 1 // (filter_size as f64 / 2f64).floor() as isize + 1
         };
 
@@ -684,22 +710,27 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                     }
                     z_factor_array = vec![z_factor; rows as usize];
                 }
-                for row in (buffer..(rows-buffer)).filter(|r| r % num_procs == tid) {
+                for row in (buffer..(rows - buffer)).filter(|r| r % num_procs == tid) {
                     let mut data = vec![nodata; columns as usize];
                     let mut n_part = 0;
                     let mut s_part = 0f64;
                     let mut sq_part = 0f64;
-                    for col in buffer..(columns-buffer) { // avoid including edge effect in LSP calculation
+                    for col in buffer..(columns - buffer) {
+                        // avoid including edge effect in LSP calculation
                         is_valid = true;
                         val = nodata;
                         n[8] = inp.get_value(row, col);
                         if n[8] != nodata {
                             n[8] *= z_factor_array[row as usize];
                             for c in 0..8 {
-                                if sigma >= 3f64 && inp.get_value(row + (d_y[c] * buffer), col + (d_x[c] * buffer)) == nodata {
+                                if sigma >= 3f64
+                                    && inp
+                                        .get_value(row + (d_y[c] * buffer), col + (d_x[c] * buffer))
+                                        == nodata
+                                {
                                     // inp from fast gaussian and has nodata within midpoint
                                     is_valid = false;
-                                    break
+                                    break;
                                 }
                                 n[c] = inp.get_value(row + d_y[c], col + d_x[c]);
                                 if n[c] != nodata {
@@ -718,8 +749,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                                 sq_part += val * val;
                                 data[col as usize] = val
                             } // else do nothing
-
-
                         }
                     }
                     tx1.send((row, data, n_part, s_part, sq_part)).unwrap();
@@ -727,22 +756,26 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             });
         }
 
-
-
         let mut num = 0;
         let mut sum = 0f64;
         let mut sumsqr = 0f64;
-        for r in 0..rows-(2 * buffer) {
-            let (row, data, n_part, s_part, sq_part) = rx.recv().expect("Error receiving data from thread.");
+        for r in 0..rows - (2 * buffer) {
+            let (row, data, n_part, s_part, sq_part) =
+                rx.recv().expect("Error receiving data from thread.");
             lsp_data.set_row_data(row, data);
             num += n_part;
             sum += s_part;
             sumsqr += sq_part;
 
             if configurations.verbose_mode {
-                progress = (100f64 * r as f64 / (rows - (2*buffer)) as f64) as usize;
+                progress = (100f64 * r as f64 / (rows - (2 * buffer)) as f64) as usize;
                 if progress != old_progress {
-                    println!("Loop {} of {}. Analysis progress: {}%",s+1, num_steps, progress);
+                    println!(
+                        "Loop {} of {}. Analysis progress: {}%",
+                        s + 1,
+                        num_steps,
+                        progress
+                    );
                     old_progress = progress;
                 }
             }
@@ -757,8 +790,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             if signature_sites.len() > 0 {
                 let (mut lsp_val, mut zlsp, mut zmax): (f64, f64, f64);
                 let mut tmp_zsc = Array2D::new(rows, columns, nodata32, nodata32)?; // Memory requirements: 5x
-                for row in buffer..rows-buffer {
-                    for col in buffer..columns-buffer {
+                for row in buffer..rows - buffer {
+                    for col in buffer..columns - buffer {
                         lsp_val = lsp_data.get_value(row, col);
                         if lsp_val != nodata {
                             if lsp_func == fn_aspect {
@@ -788,11 +821,12 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                     ydata[site_sig].push(lsp_data.get_value(target_row, target_col));
                     zdata[site_sig].push(tmp_zsc.get_value(target_row, target_col) as f64);
                 }
-            // tmp_zsc drops from memory -> Memory requirements: 4.5x
-        } else { // no shapefile given
+                // tmp_zsc drops from memory -> Memory requirements: 4.5x
+            } else {
+                // no shapefile given
                 let (mut lsp_val, mut zlsp, mut zmax): (f64, f64, f64);
-                for row in buffer..rows-buffer {
-                    for col in buffer..columns-buffer {
+                for row in buffer..rows - buffer {
+                    for col in buffer..columns - buffer {
                         lsp_val = lsp_data.get_value(row, col);
                         if lsp_val != nodata {
                             if lsp_func == fn_aspect {
@@ -924,12 +958,9 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     // Update output configs
-    let mut lsp_raster =
-        Raster::initialize_from_array2d(&output_file, &configs, &output_lsp);
+    let mut lsp_raster = Raster::initialize_from_array2d(&output_file, &configs, &output_lsp);
     drop(output_lsp);
-    lsp_raster.add_metadata_entry(format!(
-        "Created by whitebox_tools\' {} tool", tool_name
-    ));
+    lsp_raster.add_metadata_entry(format!("Created by whitebox_tools\' {} tool", tool_name));
     lsp_raster.add_metadata_entry(format!("Input file: {}", input_file));
     lsp_raster.add_metadata_entry(format!("Initial sigma: {}", sigma_i));
     lsp_raster.add_metadata_entry(format!("Step size: {}", step));
@@ -945,13 +976,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     };
     drop(lsp_raster);
 
-    let mut scl_raster =
-        Raster::initialize_from_array2d(&output_scale_file, &configs, &output_scl);
+    let mut scl_raster = Raster::initialize_from_array2d(&output_scale_file, &configs, &output_scl);
     drop(output_scl);
     scl_raster.configs.data_type = DataType::F32;
-    scl_raster.add_metadata_entry(format!(
-        "Created by whitebox_tools\' {} tool", tool_name
-    ));
+    scl_raster.add_metadata_entry(format!("Created by whitebox_tools\' {} tool", tool_name));
     scl_raster.add_metadata_entry(format!("Input file: {}", input_file));
     scl_raster.add_metadata_entry(format!("Initial sigma: {}", sigma_i));
     scl_raster.add_metadata_entry(format!("Step size: {}", step));
@@ -970,9 +998,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let mut zsc_raster =
         Raster::initialize_from_array2d(&output_zscore_file, &configs, &output_zsc);
     drop(output_zsc);
-    zsc_raster.add_metadata_entry(format!(
-        "Created by whitebox_tools\' {} tool", tool_name
-    ));
+    zsc_raster.add_metadata_entry(format!("Created by whitebox_tools\' {} tool", tool_name));
     zsc_raster.add_metadata_entry(format!("Input file: {}", input_file));
     zsc_raster.add_metadata_entry(format!("Initial sigma: {}", sigma_i));
     zsc_raster.add_metadata_entry(format!("Step size: {}", step));
@@ -989,7 +1015,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
     if configurations.verbose_mode {
         println!("Output files written.");
-        println!("{}",&format!("Elapsed Time (excluding I/O): {}", elapsed_time));
+        println!(
+            "{}",
+            &format!("Elapsed Time (excluding I/O): {}", elapsed_time)
+        );
     }
 
     Ok(())
@@ -1001,7 +1030,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 // 4 | 3 | 2 //
 ///////////////
 
-fn fn_anisotropy(n: [f64; 9], _r:f64, nodata:f64) -> f64 {
+fn fn_anisotropy(n: [f64; 9], _r: f64, nodata: f64) -> f64 {
     let (full_delta, ns_delta, ew_delta, nesw_delta, nwse_delta): (f64, f64, f64, f64, f64);
     let (mut nn, mut s) = (0usize, 0f64);
     for i in 0..n.len() {
@@ -1013,41 +1042,53 @@ fn fn_anisotropy(n: [f64; 9], _r:f64, nodata:f64) -> f64 {
     if nn > 0 {
         full_delta = n[8] - (s / (nn as f64));
         // N-S pane
-        s = n[8] + (n[7] * (n[7]!=nodata) as usize as f64) + (n[3] * (n[3]!=nodata) as usize as f64);
-        nn = 1 + (1 * (n[7]!=nodata) as usize) + (1 * (n[3]!=nodata) as usize);
+        s = n[8]
+            + (n[7] * (n[7] != nodata) as usize as f64)
+            + (n[3] * (n[3] != nodata) as usize as f64);
+        nn = 1 + (1 * (n[7] != nodata) as usize) + (1 * (n[3] != nodata) as usize);
         ns_delta = n[8] - (s / (nn as f64)) - full_delta;
         // E-W pane
-        s = n[8] + (n[5] * (n[5]!=nodata) as usize as f64) + (n[1] * (n[1]!=nodata) as usize as f64);
-        nn = 1 + (1 * (n[5]!=nodata) as usize) + (1 * (n[1]!=nodata) as usize);
+        s = n[8]
+            + (n[5] * (n[5] != nodata) as usize as f64)
+            + (n[1] * (n[1] != nodata) as usize as f64);
+        nn = 1 + (1 * (n[5] != nodata) as usize) + (1 * (n[1] != nodata) as usize);
         ew_delta = n[8] - (s / (nn as f64)) - full_delta;
         // NE-SW pane
-        s = n[8] + (n[0] * (n[0]!=nodata) as usize as f64) + (n[4] * (n[4]!=nodata) as usize as f64);
-        nn = 1 + (1 * (n[0]!=nodata) as usize) + (1 * (n[4]!=nodata) as usize);
+        s = n[8]
+            + (n[0] * (n[0] != nodata) as usize as f64)
+            + (n[4] * (n[4] != nodata) as usize as f64);
+        nn = 1 + (1 * (n[0] != nodata) as usize) + (1 * (n[4] != nodata) as usize);
         nesw_delta = n[8] - (s / (nn as f64)) - full_delta;
         // NW-SE pane
-        s = n[8] + (n[6] * (n[6]!=nodata) as usize as f64) + (n[2] * (n[2]!=nodata) as usize as f64);
-        nn = 1 + (1 * (n[6]!=nodata) as usize) + (1 * (n[2]!=nodata) as usize);
+        s = n[8]
+            + (n[6] * (n[6] != nodata) as usize as f64)
+            + (n[2] * (n[2] != nodata) as usize as f64);
+        nn = 1 + (1 * (n[6] != nodata) as usize) + (1 * (n[2] != nodata) as usize);
         nwse_delta = n[8] - (s / (nn as f64)) - full_delta;
 
         //final value
-        (((ns_delta*ns_delta) + (ew_delta*ew_delta) + (nesw_delta*nesw_delta) + (nwse_delta*nwse_delta)) / 4f64).sqrt()
-
+        (((ns_delta * ns_delta)
+            + (ew_delta * ew_delta)
+            + (nesw_delta * nesw_delta)
+            + (nwse_delta * nwse_delta))
+            / 4f64)
+            .sqrt()
     } else {
         nodata
     }
 }
 
-fn fn_aspect(n: [f64; 9], r: f64, nodata:f64) -> f64 {
+fn fn_aspect(n: [f64; 9], r: f64, nodata: f64) -> f64 {
     let eight_grid_res = r * 8f64;
     let mut fx = (n[2] - n[4] + 2f64 * (n[1] - n[5]) + n[0] - n[6]) / eight_grid_res;
     let fy = (n[6] - n[4] + 2f64 * (n[7] - n[3]) + n[0] - n[2]) / eight_grid_res;
 
-    if fx + fy != 0f64 { // slope is greater than zero
+    if fx + fy != 0f64 {
+        // slope is greater than zero
         if fx == 0f64 {
             fx = 0.00001f64;
         }
-        180f64 - ((fy / fx).atan()).to_degrees()
-            + 90f64 * (fx / (fx).abs())
+        180f64 - ((fy / fx).atan()).to_degrees() + 90f64 * (fx / (fx).abs())
     } else {
         nodata
     }
@@ -1101,7 +1142,7 @@ fn fn_hillshade(n: [f64; 9], r: f64, _nodata: f64) -> f64 {
     v.round()
 }
 
-fn fn_mean_curvature(n: [f64;9], r: f64, _nodata: f64) -> f64 {
+fn fn_mean_curvature(n: [f64; 9], r: f64, _nodata: f64) -> f64 {
     let cell_size_times2 = r * 2f64;
     let cell_size_sqrd = r * r;
     let four_times_cell_size_sqrd = cell_size_sqrd * 4f64;
@@ -1116,15 +1157,13 @@ fn fn_mean_curvature(n: [f64;9], r: f64, _nodata: f64) -> f64 {
     let q = p + 1f64;
     if p > 0f64 {
         (((zxx * zx2 + 2f64 * zxy * zx * zy + zyy * zy2) / (p * q.powf(1.5f64))) * 100f64)
-        +
-        (((zxx * zy2 - 2.0f64 * zxy * zx * zy + zyy * zx2) / (p * q.sqrt())) * 100f64)
-        / 2f64
+            + (((zxx * zy2 - 2.0f64 * zxy * zx * zy + zyy * zx2) / (p * q.sqrt())) * 100f64) / 2f64
     } else {
         0f64
     }
 }
 
-fn fn_northness(n: [f64; 9], r: f64, nodata:f64) -> f64 {
+fn fn_northness(n: [f64; 9], r: f64, nodata: f64) -> f64 {
     let a = fn_aspect(n, r, nodata);
     if a != nodata {
         a.to_radians().cos()
@@ -1146,8 +1185,7 @@ fn fn_plan_curvature(n: [f64; 9], r: f64, _nodata: f64) -> f64 {
     let zy2 = zy * zy;
     let p = zx2 + zy2;
     if p > 0f64 {
-        ((zxx * zy2 - 2f64 * zxy * zx * zy + zyy * zx2)
-            / p.powf(1.5f64)) * 100f64
+        ((zxx * zy2 - 2f64 * zxy * zx * zy + zyy * zx2) / p.powf(1.5f64)) * 100f64
     } else {
         0f64
     }
@@ -1167,8 +1205,7 @@ fn fn_prof_curvature(n: [f64; 9], r: f64, _nodata: f64) -> f64 {
     let p = zx2 + zy2;
     let q = p + 1f64;
     if p > 0f64 {
-        ((zxx * zx2 + 2f64 * zxy * zx * zy + zyy * zy2)
-                / (p * q.powf(1.5f64))) * 100f64
+        ((zxx * zx2 + 2f64 * zxy * zx * zy + zyy * zy2) / (p * q.powf(1.5f64))) * 100f64
     } else {
         0f64
     }
@@ -1211,8 +1248,7 @@ fn fn_tan_curvature(n: [f64; 9], r: f64, _nodata: f64) -> f64 {
     let p = zx2 + zy2;
     let q = p + 1f64;
     if p > 0f64 {
-        ((zxx * zy2 + 2f64 * zxy * zx * zy + zyy * zx2)
-            / (p * q.sqrt())) * 100f64
+        ((zxx * zy2 + 2f64 * zxy * zx * zy + zyy * zx2) / (p * q.sqrt())) * 100f64
     } else {
         0f64
     }
@@ -1227,11 +1263,11 @@ fn fn_total_curvature(n: [f64; 9], r: f64, _nodata: f64) -> f64 {
     (zxx * zxx + 2.0f64 * zxy * zxy + zyy * zyy) * 100f64
 }
 
-fn degrees_diff(a1:f64, a2:f64) -> f64 {
-    let dmin = (a1-a2).min(a2-a1);
-    dmin.abs().min((dmin+360f64).abs())
+fn degrees_diff(a1: f64, a2: f64) -> f64 {
+    let dmin = (a1 - a2).min(a2 - a1);
+    dmin.abs().min((dmin + 360f64).abs())
 }
 
-fn get_y_from_row(north:f64, res_y:f64, row: isize) -> f64 {
+fn get_y_from_row(north: f64, res_y: f64, row: isize) -> f64 {
     north - (res_y / 2f64) - (row as f64 * res_y)
 }

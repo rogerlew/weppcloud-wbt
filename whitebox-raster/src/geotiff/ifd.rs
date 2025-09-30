@@ -1,7 +1,7 @@
 use super::geokeys;
-use whitebox_common::utils::{ByteOrderReader, Endianness};
 use std::fmt;
 use std::io::Cursor;
+use whitebox_common::utils::{ByteOrderReader, Endianness};
 
 #[derive(Default, Clone, Debug)]
 pub struct Ifd {

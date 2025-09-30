@@ -7,6 +7,8 @@ This fork diverges from the upstream WhiteboxTools distribution in the following
 - `HillslopesTopaz` (hydro_analysis/hillslopes_topaz.rs)
   - Implements Garbrecht & Martz TOPAZ-style stream and hillslope identifiers for a single watershed, emitting channel metadata tables (`netw.tsv`, `netw_props.tsv`) and left/right/top hillslope rasters needed by WEPPcloud.
   - Includes numerous performance optimizations (e.g., combined flood-fill phases, cached upstream areas) and additional output attributes such as `areaup` for each link.
+- `FindOutlet` (hydro_analysis/find_outlet.rs)
+  - Derives a single stream outlet pour point GeoJSON by tracing D8 flow from interior candidates, embedding diagnostics needed by downstream WEPPcloud steps.
 - `StreamJunctionIdentifier` (stream_network_analysis/stream_junctions.rs)
   - Counts inflowing tributaries for every stream pixel, producing junction maps that WEPPcloud uses to locate confluences, outlets, and pseudo-gauges.
 - `PruneStrahlerStreamOrder` (stream_network_analysis/prune_strahler_order.rs)
@@ -21,6 +23,8 @@ This fork diverges from the upstream WhiteboxTools distribution in the following
 - CLI/runtime updates
   - Command-line entry point now propagates errors (`main.rs` returns `Result`), enabling backtraces from scripted environments.
   - Python wrapper enhancements provide optional `raise_on_error` semantics, custom exceptions, environment propagation, and richer error reporting for all tools.
+- General code cleanup
+  - Tightened tool documentation, aligned specs/readmes with new diagnostics, and refreshed error messaging to keep automated workflows resilient.
 
 
 

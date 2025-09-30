@@ -6,15 +6,15 @@ Last Modified: 03/03/2020
 License: MIT
 */
 
-use whitebox_common::algorithms::{minimum_bounding_box, MinimizationCriterion};
-use whitebox_common::structures::Point2D;
 use crate::tools::*;
-use whitebox_vector::ShapefileGeometry;
-use whitebox_vector::*;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::algorithms::{minimum_bounding_box, MinimizationCriterion};
+use whitebox_common::structures::Point2D;
+use whitebox_vector::ShapefileGeometry;
+use whitebox_vector::*;
 
 /// This tool can be used to map the short axis of polygon features. The short axis is the
 /// shorter of the two primary axes of the minimum bounding box (MBB), i.e. the smallest box
@@ -34,8 +34,7 @@ impl PolygonShortAxis {
         // public constructor
         let name = "PolygonShortAxis".to_string();
         let toolbox = "GIS Analysis".to_string();
-        let description =
-            "Used to map the short axis of polygon features.".to_string();
+        let description = "Used to map the short axis of polygon features.".to_string();
 
         let mut parameters = vec![];
         parameters.push(ToolParameter {
@@ -173,11 +172,18 @@ impl WhiteboxTool for PolygonShortAxis {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

@@ -6,12 +6,12 @@ Last Modified: 27/08/2021
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_raster::*;
 use whitebox_vector::Shapefile;
 
 /// This tool can be used to create a new raster with the same coordinates and dimensions
@@ -211,11 +211,18 @@ impl WhiteboxTool for NewRasterFromBase {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -286,7 +293,6 @@ impl WhiteboxTool for NewRasterFromBase {
             output.configs.nodata = nodata;
             output.reinitialize_values(out_val);
         }
-
 
         if data_type.to_lowercase().contains("i") {
             output.configs.data_type = DataType::I16;

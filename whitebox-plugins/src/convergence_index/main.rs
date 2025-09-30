@@ -1,62 +1,58 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 08/05/2024
 Last Modified: 08/05/2024
 License: MIT
 */
 
+use num_cpus;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
-use std::time::Instant;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
-use num_cpus;
-use whitebox_common::utils::{
-    get_formatted_elapsed_time, 
-    haversine_distance,
-    vincenty_distance
-};
+use std::time::Instant;
+use whitebox_common::utils::{get_formatted_elapsed_time, haversine_distance, vincenty_distance};
 use whitebox_raster::*;
 
 /// This tool calculates the convergence index (<it>C</it>), described by Koethe and Lehmeier (1996) and Kiss (2004), for each grid cell
 /// in an input digital elevation model (DEM). The convergence index measures the average amount by which the aspect value
-/// of each of the eight neighbours in a 3x3 kernel deviates from an aspect aligned with the direction towards 
+/// of each of the eight neighbours in a 3x3 kernel deviates from an aspect aligned with the direction towards
 /// the center cell. As such the index measures the degree to which the surrounding topography converges on the center cell.
-/// 
-/// <it>C</it> = 1 / 8 &Sigma;|&Phi; - Az<sub>0</sub>| - 90 
-/// 
+///
+/// <it>C</it> = 1 / 8 &Sigma;|&Phi; - Az<sub>0</sub>| - 90
+///
 /// Where &Phi; is the aspect of a neighbour of the center cell and Az<sub>0</sub> is the azimuth
-/// from the neighbour directed towards the center cell. Note, -90 < <it>C</it> < 90, where highly convergent areas have 
-/// values near -90 and highly divergent areas have values near 90. Therefore, in actuality, <it>C</it> is more properly 
+/// from the neighbour directed towards the center cell. Note, -90 < <it>C</it> < 90, where highly convergent areas have
+/// values near -90 and highly divergent areas have values near 90. Therefore, in actuality, <it>C</it> is more properly
 /// an index of divergence rather than a convergence index, despite its name.
-/// 
+///
 /// ![](../../../doc_img/ConvergenceIndex.png)
-/// 
-/// The user must specify the name of the input DEM (`dem`) and the 
-/// output raster (`output`). The Z conversion factor (`zfactor`) is only important when the vertical and 
-/// horizontal units are not the same in the DEM, and the DEM is in a projected coordinate system. When this is the case, the algorithm will multiply each elevation 
-/// in the DEM by the Z Conversion Factor to perform the unit conversion. 
-/// 
+///
+/// The user must specify the name of the input DEM (`dem`) and the
+/// output raster (`output`). The Z conversion factor (`zfactor`) is only important when the vertical and
+/// horizontal units are not the same in the DEM, and the DEM is in a projected coordinate system. When this is the case, the algorithm will multiply each elevation
+/// in the DEM by the Z Conversion Factor to perform the unit conversion.
+///
 /// For DEMs in projected coordinate systems, the tool uses the 3rd-order bivariate
 /// Taylor polynomial method described by Florinsky (2016). Based on a polynomial fit
 /// of the elevations within the 5x5 neighbourhood surrounding each cell, this method is considered more
 /// robust against outlier elevations (noise) than other methods. For DEMs in geographic coordinate systems
 /// (i.e. angular units), the tool uses the 3x3 polynomial fitting method for equal angle grids also
 /// described by Florinsky (2016).
-/// 
+///
 /// # Reference
 /// Florinsky, I. (2016). Digital terrain analysis in soil science and geology. Academic Press.
-/// 
-/// Kiss, R. (2004). Determination of drainage network in digital elevation models, utilities and 
+///
+/// Kiss, R. (2004). Determination of drainage network in digital elevation models, utilities and
 /// limitations. Journal of Hungarian geomathematics, 2, 17-29.
-/// 
-/// Koethe, R. and Lehmeier, F. (1996): SARA - System zur Automatischen Relief-Analyse. User Manual, 
+///
+/// Koethe, R. and Lehmeier, F. (1996): SARA - System zur Automatischen Relief-Analyse. User Manual,
 /// 2. Edition [Dept. of Geography, University of Goettingen, unpublished]
-/// 
+///
 /// # See Also
 /// `Aspect`
 fn main() {
@@ -144,7 +140,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let mut dem_file = String::new();
     let mut output_file: String = String::new();
     let mut z_factor = 1f64;
-    
+
     if args.len() <= 1 {
         return Err(Error::new(
             ErrorKind::InvalidInput,
@@ -189,11 +185,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -242,11 +245,31 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 let mut sign_q: f64;
                 const PI: f64 = std::f64::consts::PI;
                 let offsets = [
-                    [-2, -2], [-1, -2], [0, -2], [1, -2], [2, -2], 
-                    [-2, -1], [-1, -1], [0, -1], [1, -1], [2, -1], 
-                    [-2, 0], [-1, 0], [0, 0], [1, 0], [2, 0], 
-                    [-2, 1], [-1, 1], [0, 1], [1, 1], [2, 1], 
-                    [-2, 2], [-1, 2], [0, 2], [1, 2], [2, 2]
+                    [-2, -2],
+                    [-1, -2],
+                    [0, -2],
+                    [1, -2],
+                    [2, -2],
+                    [-2, -1],
+                    [-1, -1],
+                    [0, -1],
+                    [1, -1],
+                    [2, -1],
+                    [-2, 0],
+                    [-1, 0],
+                    [0, 0],
+                    [1, 0],
+                    [2, 0],
+                    [-2, 1],
+                    [-1, 1],
+                    [0, 1],
+                    [1, 1],
+                    [2, 1],
+                    [-2, 2],
+                    [-1, 2],
+                    [0, 2],
+                    [1, 2],
+                    [2, 2],
                 ];
                 let mut z = [0f64; 25];
                 for row in (0..rows).filter(|r| r % num_procs == tid) {
@@ -263,23 +286,34 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                                 }
                             }
 
-                            /* 
+                            /*
                             The following equations have been taken from Florinsky (2016) Principles and Methods
                             of Digital Terrain Modelling, Chapter 4, pg. 117.
                             */
-                            p = 1. / (420. * res) * (44. * (z[3] + z[23] - z[1] - z[21]) + 31. * (z[0] + z[20] - z[4] - z[24]
-                                + 2. * (z[8] + z[18] - z[6] - z[16])) + 17. * (z[14] - z[10] + 4. * (z[13] - z[11]))
-                                + 5. * (z[9] + z[19] - z[5] - z[15]));
+                            p = 1. / (420. * res)
+                                * (44. * (z[3] + z[23] - z[1] - z[21])
+                                    + 31.
+                                        * (z[0] + z[20] - z[4] - z[24]
+                                            + 2. * (z[8] + z[18] - z[6] - z[16]))
+                                    + 17. * (z[14] - z[10] + 4. * (z[13] - z[11]))
+                                    + 5. * (z[9] + z[19] - z[5] - z[15]));
 
-                            q = 1. / (420. * res) * (44. * (z[5] + z[9] - z[15] - z[19]) + 31. * (z[20] + z[24] - z[0] - z[4]
-                                + 2. * (z[6] + z[8] - z[16] - z[18])) + 17. * (z[2] - z[22] + 4. * (z[7] - z[17]))
-                                + 5. * (z[1] + z[3] - z[21] - z[23]));
+                            q = 1. / (420. * res)
+                                * (44. * (z[5] + z[9] - z[15] - z[19])
+                                    + 31.
+                                        * (z[20] + z[24] - z[0] - z[4]
+                                            + 2. * (z[6] + z[8] - z[16] - z[18]))
+                                    + 17. * (z[2] - z[22] + 4. * (z[7] - z[17]))
+                                    + 5. * (z[1] + z[3] - z[21] - z[23]));
 
-                            if p != 0f64 { // slope is greater than zero
+                            if p != 0f64 {
+                                // slope is greater than zero
                                 // data[col as usize] = 180f64 - (q / p).atan().to_degrees() + 90f64 * (p / p.abs());
                                 sign_p = if p != 0. { p.signum() } else { 0. };
                                 sign_q = if q != 0. { q.signum() } else { 0. };
-                                data[col as usize] = -90.*(1. - sign_q)*(1. - sign_p.abs()) + 180.*(1. + sign_p) - 180. / PI * sign_p * (-q / (p*p + q*q).sqrt()).acos();
+                                data[col as usize] = -90. * (1. - sign_q) * (1. - sign_p.abs())
+                                    + 180. * (1. + sign_p)
+                                    - 180. / PI * sign_p * (-q / (p * p + q * q).sqrt()).acos();
                             } else {
                                 data[col as usize] = -1f64; // undefined for flat surfaces
                             }
@@ -290,7 +324,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 }
             });
         }
-    } else { // geographic coordinates
+    } else {
+        // geographic coordinates
 
         let phi1 = input.get_y_from_row(0);
         let lambda1 = input.get_x_from_column(0);
@@ -299,7 +334,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         let lambda2 = input.get_x_from_column(-1);
 
         let linear_res = vincenty_distance((phi1, lambda1), (phi2, lambda2));
-        let lr2 =  haversine_distance((phi1, lambda1), (phi2, lambda2)); 
+        let lr2 = haversine_distance((phi1, lambda1), (phi2, lambda2));
         let diff = 100. * (linear_res - lr2).abs() / linear_res;
         let use_haversine = diff < 0.5; // if the difference is less than 0.5%, use the faster haversine method to calculate distances.
 
@@ -320,9 +355,15 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 let mut phi2: f64;
                 let mut lambda2: f64;
                 let offsets = [
-                    [-1, -1], [0, -1], [1, -1], 
-                    [-1, 0], [0, 0], [1, 0], 
-                    [-1, 1], [0, 1], [1, 1]
+                    [-1, -1],
+                    [0, -1],
+                    [1, -1],
+                    [-1, 0],
+                    [0, 0],
+                    [1, 0],
+                    [-1, 1],
+                    [0, 1],
+                    [1, 1],
                 ];
                 let mut z = [0f64; 25];
                 for row in (0..rows).filter(|r| r % num_procs == tid) {
@@ -344,7 +385,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                             lambda1 = input.get_x_from_column(col);
 
                             phi2 = phi1;
-                            lambda2 = input.get_x_from_column(col-1);
+                            lambda2 = input.get_x_from_column(col - 1);
 
                             b = if use_haversine {
                                 haversine_distance((phi1, lambda1), (phi2, lambda2))
@@ -352,7 +393,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                                 vincenty_distance((phi1, lambda1), (phi2, lambda2))
                             };
 
-                            phi2 = input.get_y_from_row(row+1);
+                            phi2 = input.get_y_from_row(row + 1);
                             lambda2 = lambda1;
 
                             d = if use_haversine {
@@ -361,7 +402,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                                 vincenty_distance((phi1, lambda1), (phi2, lambda2))
                             };
 
-                            phi2 = input.get_y_from_row(row-1);
+                            phi2 = input.get_y_from_row(row - 1);
                             lambda2 = lambda1;
 
                             e = if use_haversine {
@@ -370,11 +411,11 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                                 vincenty_distance((phi1, lambda1), (phi2, lambda2))
                             };
 
-                            phi1 = input.get_y_from_row(row+1);
+                            phi1 = input.get_y_from_row(row + 1);
                             lambda1 = input.get_x_from_column(col);
 
                             phi2 = phi1;
-                            lambda2 = input.get_x_from_column(col-1);
+                            lambda2 = input.get_x_from_column(col - 1);
 
                             a = if use_haversine {
                                 haversine_distance((phi1, lambda1), (phi2, lambda2))
@@ -382,11 +423,11 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                                 vincenty_distance((phi1, lambda1), (phi2, lambda2))
                             };
 
-                            phi1 = input.get_y_from_row(row-1);
+                            phi1 = input.get_y_from_row(row - 1);
                             lambda1 = input.get_x_from_column(col);
 
                             phi2 = phi1;
-                            lambda2 = input.get_x_from_column(col-1);
+                            lambda2 = input.get_x_from_column(col - 1);
 
                             c = if use_haversine {
                                 haversine_distance((phi1, lambda1), (phi2, lambda2))
@@ -394,24 +435,43 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                                 vincenty_distance((phi1, lambda1), (phi2, lambda2))
                             };
 
-                            /* 
+                            /*
                             The following equations have been taken from Florinsky (2016) Principles and Methods
                             of Digital Terrain Modelling, Chapter 4, pg. 117.
                             */
 
-                            p = (a * a * c * d * (d + e) * (z[2] - z[0]) + b * (a * a * d * d + c * c * e * e) * (z[5] - z[3]) + a * c * c * e * (d + e) * (z[8] - z[6]))
-                            / (2. * (a * a * c * c * (d + e).powi(2) + b * b * (a * a * d * d + c * c * e * e)));
+                            p = (a * a * c * d * (d + e) * (z[2] - z[0])
+                                + b * (a * a * d * d + c * c * e * e) * (z[5] - z[3])
+                                + a * c * c * e * (d + e) * (z[8] - z[6]))
+                                / (2.
+                                    * (a * a * c * c * (d + e).powi(2)
+                                        + b * b * (a * a * d * d + c * c * e * e)));
 
-                            q = 1. / (3. * d * e * (d + e) * (a.powi(4) + b.powi(4) + c.powi(4))) 
-                            * ((d * d * (a.powi(4) + b.powi(4) + b * b * c * c) + c * c * e * e * (a * a - b * b)) * (z[0] + z[2])
-                            - (d * d * (a.powi(4) + c.powi(4) + b * b * c * c) - e * e * (a.powi(4) + c.powi(4) + a * a * b * b)) * (z[3] + z[5])
-                            - (e * e * (b.powi(4) + c.powi(4) + a * a * b * b) - a * a * d * d * (b * b - c * c)) * (z[6] + z[8])
-                            + d * d * (b.powi(4) * (z[1] - 3. * z[4]) + c.powi(4) * (3. * z[1] - z[4]) + (a.powi(4) - 2. * b * b * c * c) * (z[1] - z[4]))
-                            + e * e * (a.powi(4) * (z[4] - 3. * z[7]) + b.powi(4) * (3. * z[4] - z[7]) + (c.powi(4) - 2. * a * a * b * b) * (z[4] - z[7]))
-                            - 2. * (a * a * d * d * (b * b - c * c) * z[7] + c * c * e * e * (a * a - b * b) * z[1]));
-                            
-                            if p != 0f64 { // slope is greater than zero
-                                data[col as usize] = 180f64 - (q / p).atan().to_degrees() + 90f64 * (p / p.abs());
+                            q = 1. / (3. * d * e * (d + e) * (a.powi(4) + b.powi(4) + c.powi(4)))
+                                * ((d * d * (a.powi(4) + b.powi(4) + b * b * c * c)
+                                    + c * c * e * e * (a * a - b * b))
+                                    * (z[0] + z[2])
+                                    - (d * d * (a.powi(4) + c.powi(4) + b * b * c * c)
+                                        - e * e * (a.powi(4) + c.powi(4) + a * a * b * b))
+                                        * (z[3] + z[5])
+                                    - (e * e * (b.powi(4) + c.powi(4) + a * a * b * b)
+                                        - a * a * d * d * (b * b - c * c))
+                                        * (z[6] + z[8])
+                                    + d * d
+                                        * (b.powi(4) * (z[1] - 3. * z[4])
+                                            + c.powi(4) * (3. * z[1] - z[4])
+                                            + (a.powi(4) - 2. * b * b * c * c) * (z[1] - z[4]))
+                                    + e * e
+                                        * (a.powi(4) * (z[4] - 3. * z[7])
+                                            + b.powi(4) * (3. * z[4] - z[7])
+                                            + (c.powi(4) - 2. * a * a * b * b) * (z[4] - z[7]))
+                                    - 2. * (a * a * d * d * (b * b - c * c) * z[7]
+                                        + c * c * e * e * (a * a - b * b) * z[1]));
+
+                            if p != 0f64 {
+                                // slope is greater than zero
+                                data[col as usize] =
+                                    180f64 - (q / p).atan().to_degrees() + 90f64 * (p / p.abs());
                             } else {
                                 data[col as usize] = -1f64; // undefined for flat surfaces
                             }
@@ -425,7 +485,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     let mut aspect = Raster::initialize_using_file(&"aspect.tif", &input);
-    
+
     for row in 0..rows {
         let (r, data) = rx.recv().expect("Error receiving data from thread.");
         aspect.set_row_data(r, data);
@@ -450,16 +510,17 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             let mut relative_aspect: f64;
             let mut num_neighbours: f64;
             let offsets = [
-                [-1, -1], [0, -1], [1, -1], 
-                [-1, 0],           [1, 0], 
-                [-1, 1],  [0, 1],  [1, 1]
+                [-1, -1],
+                [0, -1],
+                [1, -1],
+                [-1, 0],
+                [1, 0],
+                [-1, 1],
+                [0, 1],
+                [1, 1],
             ];
-            let azimuth = [
-                135f64, 180f64, 225f64, 
-                90f64,          270f64, 
-                45f64,  0f64,   315f64
-            ];
-            
+            let azimuth = [135f64, 180f64, 225f64, 90f64, 270f64, 45f64, 0f64, 315f64];
+
             for row in (0..rows).filter(|r| r % num_procs == tid) {
                 let mut data = vec![nodata; columns as usize];
                 for col in 0..columns {

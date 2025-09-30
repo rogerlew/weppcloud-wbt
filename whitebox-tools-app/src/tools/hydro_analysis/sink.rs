@@ -9,8 +9,6 @@ Note: the previous iteration of this tool did not include the outlet cell itself
 This iteration of the tool does include outlets.
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
 use std::cmp::Ordering;
 use std::cmp::Ordering::Equal;
@@ -23,6 +21,8 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 
 /// This tool identifies each sink (i.e. topographic depression) in a raster digital elevation model (DEM). A
 /// sink, or depression, is a bowl-like landscape feature, which is characterized by interior drainage. Each
@@ -178,11 +178,18 @@ impl WhiteboxTool for Sink {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

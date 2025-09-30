@@ -1,11 +1,7 @@
 //! Based on rbf-interp, a library for multidimensional interpolation.
 //! by Raph Levien (raphlinus)
 //! https://github.com/linebender/rbf-interp/blob/master/src/lib.rs
-use nalgebra::{
-    DMatrix, 
-    DVector, 
-    SVD
-};
+use nalgebra::{DMatrix, DVector, SVD};
 
 #[derive(Clone, Copy)]
 pub enum Basis {

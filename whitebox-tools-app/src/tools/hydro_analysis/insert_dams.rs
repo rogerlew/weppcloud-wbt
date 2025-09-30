@@ -6,13 +6,13 @@ Last Modified: 20/02/2020
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
-use whitebox_vector::*;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_raster::*;
+use whitebox_vector::*;
 
 /// This tool can be used to insert dams at one or more user-specified points (`--dam_pts`), and of a maximum length
 /// (`--damlength`), within an input digital elevation model (DEM) (`--dem`). This tool can be thought of as providing
@@ -205,11 +205,18 @@ impl WhiteboxTool for InsertDams {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

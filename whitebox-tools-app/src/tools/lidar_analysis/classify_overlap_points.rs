@@ -18,51 +18,51 @@ When the LAS encoder is updated to output v 1.4 LAS files, the overlap flag shou
 designate overlapping points in 'classify' mode rather than class 12.
 */
 
-use kd_tree::{KdPoint, KdTree};
-use whitebox_lidar::*;
-use whitebox_common::structures::Point3D;
 use crate::tools::*;
+use kd_tree::{KdPoint, KdTree};
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::structures::Point3D;
+use whitebox_lidar::*;
 
-/// This tool can be used to flag points within an input LiDAR file (`--input`) that overlap with other 
-/// nearby points from different flightlines, i.e. to identify overlap points. The flightline associated 
+/// This tool can be used to flag points within an input LiDAR file (`--input`) that overlap with other
+/// nearby points from different flightlines, i.e. to identify overlap points. The flightline associated
 /// with a LiDAR point is assumed to be contained within the point's `Point Source ID` (PSID) property.
-/// If the PSID property is not set, or has been lost, users may with to apply the `RecoverFlightlineInfo` 
+/// If the PSID property is not set, or has been lost, users may with to apply the `RecoverFlightlineInfo`
 /// tool prior to running `FlightlineOverlap`.
-/// 
+///
 /// Areas of multiple flightline overlap tend to have point densities that are far greater than areas
-/// of single flightlines. This can produce suboptimal results for applications that assume regular point 
+/// of single flightlines. This can produce suboptimal results for applications that assume regular point
 /// distribution, e.g. in point classification operations.
-/// 
-/// The tool works by applying a square grid over the extent of the input LiDAR file. The grid cell size is 
-/// determined by the user-defined `--resolution` parameter.  Grid cells containing multiple PSIDs, i.e. 
-/// with more than one flightline, are then identified. Overlap points within these grid cells can then be 
+///
+/// The tool works by applying a square grid over the extent of the input LiDAR file. The grid cell size is
+/// determined by the user-defined `--resolution` parameter.  Grid cells containing multiple PSIDs, i.e.
+/// with more than one flightline, are then identified. Overlap points within these grid cells can then be
 /// flagged on the basis of a user-defined `--criterion`. The flagging options include the following:
-/// 
+///
 /// | Criterion | Overlap Point Definition |
 /// |:-|:-|
 /// | `max scan angle` | All points that share the PSID of the point with the maximum absolute scan angle |
 /// | `not min point source ID` | All points with a different PSID to that of the point with the lowest PSID |
 /// | `not min time` | All points with a different PSID to that of the point with the minimum GPS time |
 /// | `multiple point source IDs` | All points in grid cells with multiple PSIDs, i.e. all overlap points. |
-/// 
-/// Note that the `max scan angle` criterion may not be appropriate when more than two flightlines overlap, 
-/// since it will result in only flagging points from one of the multiple flightlines. 
-/// 
+///
+/// Note that the `max scan angle` criterion may not be appropriate when more than two flightlines overlap,
+/// since it will result in only flagging points from one of the multiple flightlines.
+///
 /// It is important to set the `--resolution` parameter appropriately, as setting this value too high will
 /// yield the filtering of points in non-overlap areas, and setting the resolution to low will result in
 /// fewer than expected points being flagged. An appropriate resolution size value may require experimentation,
 /// however a value that is 2-3 times the nominal point spacing has been previously recommended. The nominal
 /// point spacing can be determined using the `LidarInfo` tool.
-/// 
-/// By default, all flagged overlap points are reclassified in the output LiDAR file (`--output`) to class 
-/// 12. Alternatively, if the user specifies the `--filter` parameter, then each overlap point will be 
+///
+/// By default, all flagged overlap points are reclassified in the output LiDAR file (`--output`) to class
+/// 12. Alternatively, if the user specifies the `--filter` parameter, then each overlap point will be
 /// excluded from the output file. Classified overlap points may also be filtered from LiDAR point clouds
 /// using the `FilterLidar` tool.
-/// 
+///
 /// Note that this tool is intended to be applied to LiDAR tile data containing points that have been merged
 /// from multiple overlapping flightlines. It is commonly the case that airborne LiDAR data from each of the
 /// flightlines from a survey are merged and then tiled into 1 km<sup>2</sup> tiles, which are the target
@@ -273,7 +273,9 @@ impl WhiteboxTool for ClassifyOverlapPoints {
                     based_on_min_pt_src_id = false;
                     based_on_min_time = false;
                     based_on_all_overlapping_pts = false;
-                } else if criterion.contains("min point source id") || criterion.contains("min pt_src_id") {
+                } else if criterion.contains("min point source id")
+                    || criterion.contains("min pt_src_id")
+                {
                     based_on_scan_angle = false;
                     based_on_min_pt_src_id = true;
                     based_on_min_time = false;
@@ -283,7 +285,8 @@ impl WhiteboxTool for ClassifyOverlapPoints {
                     based_on_min_pt_src_id = false;
                     based_on_min_time = true;
                     based_on_all_overlapping_pts = false;
-                } else { // multiple point source IDs -- i.e. all points in overlap areas
+                } else {
+                    // multiple point source IDs -- i.e. all points in overlap areas
                     based_on_scan_angle = false;
                     based_on_min_pt_src_id = false;
                     based_on_min_time = false;
@@ -312,11 +315,18 @@ impl WhiteboxTool for ClassifyOverlapPoints {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -342,7 +352,10 @@ impl WhiteboxTool for ClassifyOverlapPoints {
         for i in 0..n_points {
             if !input[i].withheld() {
                 p = input.get_transformed_coords(i);
-                points.push( TreeItem { point: [p.x, p.y ], id: i } );
+                points.push(TreeItem {
+                    point: [p.x, p.y],
+                    id: i,
+                });
             }
         }
         // build the tree
@@ -385,8 +398,7 @@ impl WhiteboxTool for ClassifyOverlapPoints {
                     for i in 0..ret.len() {
                         x_n = ret[i].point[0];
                         y_n = ret[i].point[1];
-                        if (x_n - x).powi(2) <= half_res_sqrd
-                            && (y_n - y).powi(2) <= half_res_sqrd
+                        if (x_n - x).powi(2) <= half_res_sqrd && (y_n - y).powi(2) <= half_res_sqrd
                         {
                             // it falls within the grid cell
                             point_nums.push(ret[i].id);
@@ -416,8 +428,8 @@ impl WhiteboxTool for ClassifyOverlapPoints {
                                 min_pt_src = pd.point_source_id;
                             }
                             t = input.get_gps_time(j).unwrap_or(0f64);
-                            if t < min_t { 
-                                min_t = t; 
+                            if t < min_t {
+                                min_t = t;
                                 min_t_pt_src = pd.point_source_id;
                             }
                         }
@@ -446,7 +458,6 @@ impl WhiteboxTool for ClassifyOverlapPoints {
                         }
                     }
                 }
-                
 
                 // let ret = frs.search(x, y);
                 // if ret.len() > 0 {
@@ -706,5 +717,7 @@ struct TreeItem {
 impl KdPoint for TreeItem {
     type Scalar = f64;
     type Dim = typenum::U2; // 3 dimensional tree.
-    fn at(&self, k: usize) -> f64 { self.point[k] }
+    fn at(&self, k: usize) -> f64 {
+        self.point[k]
+    }
 }

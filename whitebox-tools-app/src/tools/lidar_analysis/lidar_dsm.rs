@@ -7,18 +7,18 @@ License: MIT
 */
 
 use self::na::Vector3;
-use whitebox_common::algorithms::{point_in_poly, triangulate};
-use whitebox_lidar::*;
 use crate::na;
-use whitebox_raster::*;
-use whitebox_common::spatial_ref_system::esri_wkt_from_epsg;
-use whitebox_common::structures::{BoundingBox, DistanceMetric, FixedRadiusSearch2D, Point2D};
 use crate::tools::*;
 use num_cpus;
 use std::io::{Error, ErrorKind};
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::{env, f64, fs, path, thread};
+use whitebox_common::algorithms::{point_in_poly, triangulate};
+use whitebox_common::spatial_ref_system::esri_wkt_from_epsg;
+use whitebox_common::structures::{BoundingBox, DistanceMetric, FixedRadiusSearch2D, Point2D};
+use whitebox_lidar::*;
+use whitebox_raster::*;
 // use rayon::prelude::*;
 
 /// This tool creates a digital surface model (DSM) from a LiDAR point cloud. A DSM reflects the elevation of the tops
@@ -324,11 +324,18 @@ impl WhiteboxTool for LidarDigitalSurfaceModel {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -480,7 +487,8 @@ impl WhiteboxTool for LidarDigitalSurfaceModel {
                                         let pd: PointData = input[i];
                                         let p = input.get_transformed_coords(i);
                                         if !pd.withheld() {
-                                            if pd.classification() != 7 && pd.classification() != 18 {
+                                            if pd.classification() != 7 && pd.classification() != 18
+                                            {
                                                 // it's not low or high noise
                                                 if bb.is_point_in_box(p.x, p.y)
                                                     && p.z >= min_z

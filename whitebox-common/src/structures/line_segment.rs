@@ -179,15 +179,17 @@ impl LineSegment {
 
     pub fn dist_to_segment_squared(&self, p: Point2D) -> f64 {
         let l2 = self.p1.distance_squared(&self.p2);
-        if l2 == 0.0 { return p.distance_squared(&self.p1) };
-        let mut t = ((p.x - self.p1.x) * (self.p2.x - self.p1.x) + (p.y - self.p1.y) * (self.p2.y - self.p1.y)) / l2;
+        if l2 == 0.0 {
+            return p.distance_squared(&self.p1);
+        };
+        let mut t = ((p.x - self.p1.x) * (self.p2.x - self.p1.x)
+            + (p.y - self.p1.y) * (self.p2.y - self.p1.y))
+            / l2;
         t = 0f64.max(1f64.min(t));
-        p.distance_squared(
-            &Point2D::new(
-                self.p1.x + t * (self.p2.x - self.p1.x),
-                self.p1.y + t * (self.p2.y - self.p1.y)
-            )
-        )
+        p.distance_squared(&Point2D::new(
+            self.p1.x + t * (self.p2.x - self.p1.x),
+            self.p1.y + t * (self.p2.y - self.p1.y),
+        ))
     }
 
     pub fn dist_to_segment(&self, p: Point2D) -> f64 {

@@ -1,28 +1,28 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 03/06/2023
 Last Modified: 03/06/2023
 License: MIT
 */
 
+use evalexpr::*;
 use std::env;
 use std::f64;
+use std::f64::consts::PI;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
 use std::time::Instant;
 use whitebox_common::utils::get_formatted_elapsed_time;
-use whitebox_vector::{FieldData, Shapefile, ShapeType};
-use evalexpr::*;
-use std::f64::consts::PI;
+use whitebox_vector::{FieldData, ShapeType, Shapefile};
 
 /// This tool extracts features from an input vector into an output file based on attribute properties. The user must
 /// specify the name of the input (`--input`) and output (`--output`) files, along with the filter statement (`--statement`).
 /// The conditional statement is a single-line logical condition containing one or more attribute variables contained in
 /// the file's attribute table that evaluates to TRUE/FALSE. In addition to the common comparison and logical  
 /// operators, i.e. < > <= >= == (EQUAL TO) != (NOT EQUAL TO) || (OR) && (AND), conditional statements may contain a  
-/// any valid mathematical operation and the `null` value. 
-/// 
+/// any valid mathematical operation and the `null` value.
+///
 /// | Identifier           | Argument Amount | Argument Types                | Description |
 /// |----------------------|-----------------|-------------------------------|-------------|
 /// | `min`                | >= 1            | Numeric                       | Returns the minimum of the arguments |
@@ -79,16 +79,16 @@ use std::f64::consts::PI;
 /// | `pi`                 | 0               | Empty                         | Return the value of the PI constant. |/
 ///
 /// The following are examples of valid conditional statements:
-/// 
+///
 /// ```
 /// HEIGHT >= 300.0
-/// 
+///
 /// CROP == "corn"
-/// 
+///
 /// (ELEV >= 525.0) && (HGT_AB_GR <= 5.0)
-/// 
+///
 /// math::ln(CARBON) > 1.0
-/// 
+///
 /// VALUE == null
 /// ```
 fn main() {
@@ -173,7 +173,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let mut statement = String::new();
     let mut input_file: String = String::new();
     let mut output_file: String = String::new();
-            
+
     if args.len() <= 1 {
         return Err(Error::new(
             ErrorKind::InvalidInput,
@@ -206,19 +206,27 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 args[i + 1].to_string()
             };
         } else if arg.contains("-statement") {
-            statement = arg.replace("--statement=", "")
-                           .replace("-statement=", "")
-                           .replace("--statement", "")
-                           .replace("-statement", "");
+            statement = arg
+                .replace("--statement=", "")
+                .replace("-statement=", "")
+                .replace("--statement", "")
+                .replace("-statement", "");
         }
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -241,7 +249,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let precompiled = build_operator_tree(&statement).unwrap(); // Do proper error handling here
 
     // create output file
-    let mut output = Shapefile::initialize_using_file(&output_file, &input, input.header.shape_type, true)?;
+    let mut output =
+        Shapefile::initialize_using_file(&output_file, &input, input.header.shape_type, true)?;
 
     let att_fields = input.attributes.get_fields();
     let mut contains_fid = false;
@@ -261,20 +270,24 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             for i in 0..att_fields.len() {
                 match &att_data[i] {
                     FieldData::Int(val) => {
-                        _ = context.set_value(att_fields[i].name.clone().into(), (*val as i64).into());
+                        _ = context
+                            .set_value(att_fields[i].name.clone().into(), (*val as i64).into());
                     }
                     FieldData::Real(val) => {
                         _ = context.set_value(att_fields[i].name.clone().into(), (*val).into());
-                    },
+                    }
                     FieldData::Text(val) => {
                         _ = context.set_value(att_fields[i].name.clone().into(), (&**val).into());
-                    },
+                    }
                     FieldData::Date(val) => {
-                        _ = context.set_value(att_fields[i].name.clone().into(), format!("{}", *val).into());
-                    },
+                        _ = context.set_value(
+                            att_fields[i].name.clone().into(),
+                            format!("{}", *val).into(),
+                        );
+                    }
                     FieldData::Bool(val) => {
                         _ = context.set_value(att_fields[i].name.clone().into(), (*val).into());
-                    },
+                    }
                     FieldData::Null => {
                         _ = context.set_value(att_fields[i].name.clone().into(), "null".into());
                     }
@@ -290,8 +303,9 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             _ = context.set_value("NODATA".into(), "null".into());
             _ = context.set_value("pi".into(), (PI).into());
             _ = context.set_value("PI".into(), (PI).into());
-            
-            if !contains_fid { // add the FID
+
+            if !contains_fid {
+                // add the FID
                 _ = context.set_value("FID".into(), (record_num as i64).into());
             }
 
@@ -306,10 +320,9 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 }
             }
         }
-        
+
         if configurations.verbose_mode {
-            progress =
-                (100.0_f64 * (record_num + 1) as f64 / input.num_records as f64) as usize;
+            progress = (100.0_f64 * (record_num + 1) as f64 / input.num_records as f64) as usize;
             if progress != old_progress {
                 println!("Progress: {}%", progress);
                 old_progress = progress;
@@ -334,7 +347,9 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             Err(e) => return Err(e),
         };
     } else {
-        println!("WARNING: No features were selected and therefore no output file will be written.");
+        println!(
+            "WARNING: No features were selected and therefore no output file will be written."
+        );
     }
 
     let elapsed_time = get_formatted_elapsed_time(start);

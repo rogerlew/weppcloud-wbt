@@ -11,9 +11,7 @@ NOTES:
 2. Need to add the ability to exclude points based on max scan angle deviation.
 */
 
-use whitebox_lidar::*;
 use crate::tools::*;
-use whitebox_common::structures::Point3D;
 use kdtree::distance::squared_euclidean;
 use kdtree::KdTree;
 use num_cpus;
@@ -24,6 +22,8 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use whitebox_common::structures::Point3D;
+use whitebox_lidar::*;
 
 /// This tool normalizes an input LiDAR point cloud (`--input`) such that point z-values in the output LAS file
 /// (`--output`) are converted from elevations to heights above the ground, specifically the height above the
@@ -175,11 +175,18 @@ impl WhiteboxTool for HeightAboveGround {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -288,7 +295,8 @@ impl WhiteboxTool for HeightAboveGround {
                 let pr2: LidarPointRecord;
                 match pr {
                     LidarPointRecord::PointRecord0 { mut point_data } => {
-                        point_data.z = ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                        point_data.z =
+                            ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
                         pr2 = LidarPointRecord::PointRecord0 {
                             point_data: point_data,
                         };
@@ -297,7 +305,8 @@ impl WhiteboxTool for HeightAboveGround {
                         mut point_data,
                         gps_data,
                     } => {
-                        point_data.z = ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                        point_data.z =
+                            ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
                         pr2 = LidarPointRecord::PointRecord1 {
                             point_data: point_data,
                             gps_data: gps_data,
@@ -307,7 +316,8 @@ impl WhiteboxTool for HeightAboveGround {
                         mut point_data,
                         colour_data,
                     } => {
-                        point_data.z = ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                        point_data.z =
+                            ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
                         pr2 = LidarPointRecord::PointRecord2 {
                             point_data: point_data,
                             colour_data: colour_data,
@@ -318,7 +328,8 @@ impl WhiteboxTool for HeightAboveGround {
                         gps_data,
                         colour_data,
                     } => {
-                        point_data.z = ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                        point_data.z =
+                            ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
                         pr2 = LidarPointRecord::PointRecord3 {
                             point_data: point_data,
                             gps_data: gps_data,
@@ -330,7 +341,8 @@ impl WhiteboxTool for HeightAboveGround {
                         gps_data,
                         wave_packet,
                     } => {
-                        point_data.z = ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                        point_data.z =
+                            ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
                         pr2 = LidarPointRecord::PointRecord4 {
                             point_data: point_data,
                             gps_data: gps_data,
@@ -343,7 +355,8 @@ impl WhiteboxTool for HeightAboveGround {
                         colour_data,
                         wave_packet,
                     } => {
-                        point_data.z = ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                        point_data.z =
+                            ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
                         pr2 = LidarPointRecord::PointRecord5 {
                             point_data: point_data,
                             gps_data: gps_data,
@@ -355,7 +368,8 @@ impl WhiteboxTool for HeightAboveGround {
                         mut point_data,
                         gps_data,
                     } => {
-                        point_data.z = ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                        point_data.z =
+                            ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
                         pr2 = LidarPointRecord::PointRecord6 {
                             point_data: point_data,
                             gps_data: gps_data,
@@ -366,7 +380,8 @@ impl WhiteboxTool for HeightAboveGround {
                         gps_data,
                         colour_data,
                     } => {
-                        point_data.z = ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                        point_data.z =
+                            ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
                         pr2 = LidarPointRecord::PointRecord7 {
                             point_data: point_data,
                             gps_data: gps_data,
@@ -378,7 +393,8 @@ impl WhiteboxTool for HeightAboveGround {
                         gps_data,
                         colour_data,
                     } => {
-                        point_data.z = ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                        point_data.z =
+                            ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
                         pr2 = LidarPointRecord::PointRecord8 {
                             point_data: point_data,
                             gps_data: gps_data,
@@ -390,7 +406,8 @@ impl WhiteboxTool for HeightAboveGround {
                         gps_data,
                         wave_packet,
                     } => {
-                        point_data.z = ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                        point_data.z =
+                            ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
                         pr2 = LidarPointRecord::PointRecord9 {
                             point_data: point_data,
                             gps_data: gps_data,
@@ -403,7 +420,8 @@ impl WhiteboxTool for HeightAboveGround {
                         colour_data,
                         wave_packet,
                     } => {
-                        point_data.z = ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                        point_data.z =
+                            ((z - input.header.z_offset) / input.header.z_scale_factor) as i32;
                         pr2 = LidarPointRecord::PointRecord10 {
                             point_data: point_data,
                             gps_data: gps_data,

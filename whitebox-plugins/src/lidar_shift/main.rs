@@ -1,4 +1,4 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 19/01/2022
 Last Modified: 19/01/2022
@@ -11,15 +11,15 @@ use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
 use std::time::Instant;
-use whitebox_lidar::*;
 use whitebox_common::utils::get_formatted_elapsed_time;
+use whitebox_lidar::*;
 
-/// This tool can be used to shift the x,y,z coordinates of points within a LiDAR file. The user must specify 
+/// This tool can be used to shift the x,y,z coordinates of points within a LiDAR file. The user must specify
 /// the name of the input file (`--input`) and the output file (`--output`). Additionally, the user must specify
 /// the x,y,z shift values (`x_shift`, `y_shift`, `z_shift`). At least one non-zero shift value is needed
-/// to run the tool. Notice that shifting the x,y,z coordinates of LiDAR points is also possible using the 
+/// to run the tool. Notice that shifting the x,y,z coordinates of LiDAR points is also possible using the
 /// `ModifyLidar` tool, which can also be used for more sophisticated point property manipulation (e.g. rotations).
-/// 
+///
 /// # See Also
 /// `ModifyLidar`, `LidarElevationSlice`, `HeightAboveGround`
 fn main() {
@@ -185,11 +185,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let start = Instant::now();
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -407,6 +414,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             &format!("Elapsed Time (Including I/O): {}", elapsed_time)
         );
     }
-        
+
     Ok(())
 }

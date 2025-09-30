@@ -1,3 +1,9 @@
+# FindOutlet Specification
+
+Coded with CODEX
+
+### Prompt:
+```
 You are in the WhiteboxTools fork (WEPPcloud variant).
 
 Goal: Create a new tool in the `hydroanalysis` toolbox named `FindOutlet`.
@@ -41,3 +47,21 @@ Extras:
 
 Please update the necessary module registrations and ensure the code follows the
 style in `DEVELOPING_TOOLS.md`.
+```
+
+### Documentation
+
+#### Algorithm
+- Load the D8 pointer, stream mask, and watershed mask rasters and ensure they share dimensions; abort with a descriptive error otherwise.
+- Build a binary watershed mask (`Array2D<u8>`) from positive watershed cells, tracking the centroid (mean row/column) of the masked area and collecting perimeter cells (mask cells neighboured by outside cells or image edges). Record any streams that touch the perimeter for diagnostic output but do not fail immediately.
+- Run a breadth-first search outward from the perimeter to assign each interior cell its integer distance from the boundary; sort all interior cells by descending distance so the deepest interior locations are tried first (capped at 512 candidates).
+- For each candidate cell, walk the D8 flow path by translating pointer values through the Whitebox/ESRI lookup tables, keeping a `HashSet` of visited cells and enforcing an iteration ceiling (`rows * columns * 4`) to guard against loops.
+- Stop the walk when the next step would exit the mask or raster extent; confirm the last in-mask cell is a stream (non-zero, non-nodata). The first candidate whose terminating cell is on a stream is selected as the outlet, capturing the number of steps taken, candidate index, and distance-to-boundary metrics.
+- If no candidate succeeds, accumulate the first few failure reasons (loops, invalid pointers, non-stream boundaries, etc.) and raise an error summarizing them for easier debugging of problematic masks.
+
+#### Output
+- Emit a single-point GeoJSON `FeatureCollection` containing the outlet coordinates in map units with CRS metadata when an EPSG code is known.
+- Populate the feature properties with diagnostics required by automation (outlet row/column, centroid, distance to boundary, candidate rank, step count, watershed cell totals, perimeter-stream stats, EPSG, and sampled perimeter stream cells when present).
+
+#### Failure Handling
+- Missing parameters, dimension mismatches, empty watershed masks, invalid D8 pointers, and candidates failing stream validation all surface as `ErrorKind::InvalidInput` messages with contextual details so upstream workflows can log and remediate issues quickly.

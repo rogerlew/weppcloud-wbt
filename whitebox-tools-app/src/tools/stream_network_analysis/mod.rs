@@ -14,6 +14,7 @@ mod rasterize_streams;
 mod remove_short_streams;
 mod shreve_magnitude;
 mod strahler_order;
+mod stream_junctions;
 mod stream_link_class;
 mod stream_link_id;
 mod stream_link_length;
@@ -22,7 +23,6 @@ mod stream_slope_continuous;
 mod topological_stream_order;
 mod total_length_channels;
 mod tributary_id;
-mod stream_junctions;
 
 // exports identifiers from private sub-modules in the current module namespace
 pub use self::dist_to_outlet::DistanceToOutlet;
@@ -40,6 +40,7 @@ pub use self::rasterize_streams::RasterizeStreams;
 pub use self::remove_short_streams::RemoveShortStreams;
 pub use self::shreve_magnitude::ShreveStreamMagnitude;
 pub use self::strahler_order::StrahlerStreamOrder;
+pub use self::stream_junctions::StreamJunctionIdentifier;
 pub use self::stream_link_class::StreamLinkClass;
 pub use self::stream_link_id::StreamLinkIdentifier;
 pub use self::stream_link_length::StreamLinkLength;
@@ -48,4 +49,3 @@ pub use self::stream_slope_continuous::StreamSlopeContinuous;
 pub use self::topological_stream_order::TopologicalStreamOrder;
 pub use self::total_length_channels::LengthOfUpstreamChannels;
 pub use self::tributary_id::TributaryIdentifier;
-pub use self::stream_junctions::StreamJunctionIdentifier;

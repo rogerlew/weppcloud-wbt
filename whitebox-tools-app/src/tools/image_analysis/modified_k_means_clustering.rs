@@ -6,9 +6,6 @@ Last Modified: 24/02/2019
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::rendering::html::*;
-use whitebox_common::rendering::LineGraph;
 use crate::tools::*;
 use num_cpus;
 use rand::prelude::*;
@@ -23,6 +20,9 @@ use std::process::Command;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::rendering::html::*;
+use whitebox_common::rendering::LineGraph;
+use whitebox_raster::*;
 
 /// This modified k-means algorithm is similar to that described by Mather and Koch (2011).
 /// The main difference between the traditional k-means and this technique is that the user
@@ -315,11 +315,18 @@ impl WhiteboxTool for ModifiedKMeansClustering {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -695,12 +702,7 @@ impl WhiteboxTool for ModifiedKMeansClustering {
                 .write_all(&format!("<strong>Num. bands</strong>: {}<br>", num_files).as_bytes())?;
             for i in 0..num_files {
                 writer.write_all(
-                    &format!(
-                        "<strong>Image {}</strong>: {}<br>",
-                        i + 1,
-                        input_files[i]
-                    )
-                    .as_bytes(),
+                    &format!("<strong>Image {}</strong>: {}<br>", i + 1, input_files[i]).as_bytes(),
                 )?;
             }
             writer.write_all(

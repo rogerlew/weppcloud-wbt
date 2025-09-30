@@ -10,7 +10,6 @@ with each of the mean, min, max, range, std dev, and total. The output raster ca
 only represent one statistic, given by the --stat flag.
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
 use std::cmp::Ordering::Equal;
@@ -26,6 +25,7 @@ use std::process::Command;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_raster::*;
 
 /// This tool can be used to extract common descriptive statistics associated with the distribution
 /// of some underlying data raster based on feature units defined by a feature definition raster.
@@ -259,11 +259,18 @@ impl WhiteboxTool for ZonalStatistics {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -392,7 +399,10 @@ impl WhiteboxTool for ZonalStatistics {
             for col in 0..columns {
                 val = input.get_value(row, col);
                 features_val = features.get_value(row, col);
-                if val != nodata && features_val != features_nodata && !(zero_is_background && val == 0.0) {
+                if val != nodata
+                    && features_val != features_nodata
+                    && !(zero_is_background && val == 0.0)
+                {
                     id = (features_val.round() as isize - min_id) as usize;
                     features_data[id].push(val);
                     features_present[id] = true;
@@ -426,7 +436,10 @@ impl WhiteboxTool for ZonalStatistics {
             for col in 0..columns {
                 val = input.get_value(row, col);
                 features_val = features.get_value(row, col);
-                if val != nodata && features_val != features_nodata && !(zero_is_background && val == 0.0) {
+                if val != nodata
+                    && features_val != features_nodata
+                    && !(zero_is_background && val == 0.0)
+                {
                     id = (features_val.round() as isize - min_id) as usize;
                     features_total_deviation[id] +=
                         (val - features_average[id]) * (val - features_average[id]);
@@ -488,7 +501,10 @@ impl WhiteboxTool for ZonalStatistics {
                 for col in 0..columns {
                     val = input.get_value(row, col);
                     features_val = features.get_value(row, col);
-                    if val != nodata && features_val != features_nodata && !(zero_is_background && val == 0.0) {
+                    if val != nodata
+                        && features_val != features_nodata
+                        && !(zero_is_background && val == 0.0)
+                    {
                         id = (features_val.round() as isize - min_id) as usize;
                         output.set_value(row, col, out_stat[id]);
                     }

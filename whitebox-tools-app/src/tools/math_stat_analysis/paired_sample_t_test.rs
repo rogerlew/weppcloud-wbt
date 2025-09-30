@@ -6,9 +6,6 @@ Last Modified: 25/10/2019
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::rendering::html::*;
-use whitebox_common::rendering::LineGraph;
 use crate::tools::*;
 use rand::prelude::*;
 use std::cmp::Ordering::Equal;
@@ -23,6 +20,9 @@ use std::process::Command;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::rendering::html::*;
+use whitebox_common::rendering::LineGraph;
+use whitebox_raster::*;
 
 /// This tool will perform a paired-sample *t*-test to evaluate whether a significant
 /// statistical difference exists between the two rasters. The null hypothesis is that
@@ -218,11 +218,18 @@ impl WhiteboxTool for PairedSampleTTest {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

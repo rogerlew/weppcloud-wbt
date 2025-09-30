@@ -6,15 +6,15 @@ Last Modified: 28/01/2020
 License: MIT
 */
 
-use whitebox_common::spatial_ref_system::esri_wkt_from_epsg;
 use crate::tools::*;
-use whitebox_vector::{AttributeField, FieldData, FieldDataType, ShapeType, Shapefile};
 use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{BufReader, Error, ErrorKind};
 use std::path;
 use std::{f64, i32};
+use whitebox_common::spatial_ref_system::esri_wkt_from_epsg;
+use whitebox_vector::{AttributeField, FieldData, FieldDataType, ShapeType, Shapefile};
 
 /// This tool can be used to import a series of points contained within a comma-separated values
 /// (*.csv) file (`--input`) into a vector shapefile of a POINT ShapeType. The input file must be an ASCII text
@@ -230,11 +230,18 @@ impl WhiteboxTool for CsvPointsToVector {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -333,8 +340,8 @@ impl WhiteboxTool for CsvPointsToVector {
                                 .push(FieldData::Real(line_vec[a].trim().parse::<f64>().unwrap()))
                         } else {
                             match field_types[a] {
-                                FieldDataType::Int => imported_data.push(
-                                    match line_vec[a].trim().parse::<i32>() {
+                                FieldDataType::Int => {
+                                    imported_data.push(match line_vec[a].trim().parse::<i32>() {
                                         Ok(value) => FieldData::Int(value),
                                         Err(_e) => {
                                             if line_vec[a].contains(".") {
@@ -346,36 +353,33 @@ impl WhiteboxTool for CsvPointsToVector {
                                                             field_precision[a] = prec;
                                                         }
                                                         FieldData::Real(value)
-                                                    },
-                                                    Err(_e) => FieldData::Null
+                                                    }
+                                                    Err(_e) => FieldData::Null,
                                                 }
                                             } else {
                                                 FieldData::Null
                                             }
-                                        },
-                                    }
-                                ),
-                                FieldDataType::Real => {
-                                    match line_vec[a].trim().parse::<f64>() {
-                                        Ok(value) => {
-                                            let prec = get_precision(line_vec[a]);
-                                            if prec > field_precision[a] {
-                                                field_precision[a] = prec;
-                                            }
-                                            imported_data.push(FieldData::Real(value))
-                                        },
-                                        Err(_e) => imported_data.push(FieldData::Null)
-                                    }
+                                        }
+                                    })
                                 }
-                                FieldDataType::Bool => imported_data.push(
-                                    match line_vec[a].trim().parse::<bool>() {
+                                FieldDataType::Real => match line_vec[a].trim().parse::<f64>() {
+                                    Ok(value) => {
+                                        let prec = get_precision(line_vec[a]);
+                                        if prec > field_precision[a] {
+                                            field_precision[a] = prec;
+                                        }
+                                        imported_data.push(FieldData::Real(value))
+                                    }
+                                    Err(_e) => imported_data.push(FieldData::Null),
+                                },
+                                FieldDataType::Bool => {
+                                    imported_data.push(match line_vec[a].trim().parse::<bool>() {
                                         Ok(value) => FieldData::Bool(value),
                                         Err(_e) => FieldData::Null,
-                                    }
-                                ),
-                                FieldDataType::Text => imported_data.push(
-                                    FieldData::Text(line_vec[a].trim().to_string())
-                                ),
+                                    })
+                                }
+                                FieldDataType::Text => imported_data
+                                    .push(FieldData::Text(line_vec[a].trim().to_string())),
                                 FieldDataType::Date => imported_data
                                     .push(FieldData::Text(line_vec[a].trim().to_string())),
                             }

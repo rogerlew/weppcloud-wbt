@@ -7,22 +7,22 @@ License: MIT
 */
 
 use crate::tools::*;
-use whitebox_common::algorithms::{minimum_bounding_box, MinimizationCriterion};
-use whitebox_common::structures::Point2D;
-use whitebox_vector::*;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::algorithms::{minimum_bounding_box, MinimizationCriterion};
+use whitebox_common::structures::Point2D;
+use whitebox_vector::*;
 
-/// This tool calculates the degree to which each polygon in an input shapefile (`--input`) deviates from the average, 
+/// This tool calculates the degree to which each polygon in an input shapefile (`--input`) deviates from the average,
 /// or regional, direction. The input file will have a new attribute inserted in the attribute table, `DEV_DIR`, which
 /// will contain the calculated values. The deviation values are in degrees. The orientation of each polygon is determined
-/// based on the long-axis of the minimum bounding box fitted to the polygon. The regional direction is based on the 
+/// based on the long-axis of the minimum bounding box fitted to the polygon. The regional direction is based on the
 /// mean direction of the polygons, weighted by long-axis length (longer polygons contribute more weight) and elongation,
-/// i.e., a function of the long and short axis lengths (greater elongation contributes more weight). Polygons with 
-/// elongation values lower than the elongation threshold value (`--elong_threshold`), which has values between 0 and 1, 
-/// will be excluded from the calculation of the regional direction. 
+/// i.e., a function of the long and short axis lengths (greater elongation contributes more weight). Polygons with
+/// elongation values lower than the elongation threshold value (`--elong_threshold`), which has values between 0 and 1,
+/// will be excluded from the calculation of the regional direction.
 ///
 /// # See Also
 /// `PatchOrientation`, `ElongationRatio`
@@ -39,7 +39,9 @@ impl DeviationFromRegionalDirection {
         // public constructor
         let name = "DeviationFromRegionalDirection".to_string();
         let toolbox = "GIS Analysis/Patch Shape Tools".to_string();
-        let description = "Calculates the deviation of vector polygons from the regional average direction.".to_string();
+        let description =
+            "Calculates the deviation of vector polygons from the regional average direction."
+                .to_string();
 
         let mut parameters = vec![];
         parameters.push(ToolParameter {
@@ -177,11 +179,18 @@ impl WhiteboxTool for DeviationFromRegionalDirection {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -192,8 +201,12 @@ impl WhiteboxTool for DeviationFromRegionalDirection {
             input_file = format!("{}{}", working_directory, input_file);
         }
 
-        if elongation_threshold < 0.05 { elongation_threshold = 0.05; }
-        if elongation_threshold > 0.95 { elongation_threshold = 0.95; }
+        if elongation_threshold < 0.05 {
+            elongation_threshold = 0.05;
+        }
+        if elongation_threshold > 0.95 {
+            elongation_threshold = 0.95;
+        }
 
         if verbose {
             println!("Reading data...")
@@ -211,13 +224,14 @@ impl WhiteboxTool for DeviationFromRegionalDirection {
             ));
         }
 
-        // First, calculate the mean direction of the polygon set. This is weighted by 
-        // the polygon length and it's elongation, such that w = L * (1 - S/L) where 
+        // First, calculate the mean direction of the polygon set. This is weighted by
+        // the polygon length and it's elongation, such that w = L * (1 - S/L) where
         // L is the long-axis length and S is the short-axis length. Thus, more weight
         // is assigned to larger, more elongated polygons.
 
         // create output file
-        let mut output = Shapefile::initialize_using_file(&input_file, &input, input.header.shape_type, true)?;
+        let mut output =
+            Shapefile::initialize_using_file(&input_file, &input, input.header.shape_type, true)?;
 
         // add the attributes
         output.attributes.add_field(&AttributeField::new(
@@ -316,12 +330,12 @@ impl WhiteboxTool for DeviationFromRegionalDirection {
                 num_polys_used += 1;
                 long_axis * elongation
             } else {
-                 0.0 // If the poly isn't elongated enough, don't use it in caluclating the mean regional poly direction
-            }; 
-            
+                0.0 // If the poly isn't elongated enough, don't use it in caluclating the mean regional poly direction
+            };
+
             // towards calculating the mean regional poly direction
-            sum_sin += (slope_rma.atan()*2.0).sin() * weight; // multiply by 2 because these are axial data, not true directions
-            sum_cos += (slope_rma.atan()*2.0).cos() * weight;
+            sum_sin += (slope_rma.atan() * 2.0).sin() * weight; // multiply by 2 because these are axial data, not true directions
+            sum_cos += (slope_rma.atan() * 2.0).cos() * weight;
             // sum_sin += slope_rma.atan().sin() * weight;
             // sum_cos += slope_rma.atan().cos() * weight;
 
@@ -344,13 +358,17 @@ impl WhiteboxTool for DeviationFromRegionalDirection {
 
         // Calculate the weighted regional weighted mean direciton of the polygons
         let mut regional_angle = -(sum_sin.atan2(sum_cos) / 2.0).to_degrees() + 90.0; // divided by 2 because these are axial data not true directions
-        // let mut regional_angle = -(sum_sin.atan2(sum_cos)).to_degrees() + 90.0; 
-        if regional_angle < 0.0 { regional_angle = 180.0 + regional_angle; }
-
-        if verbose {
-            println!("Regional weighted mean polygon direction: {:.3} degrees", regional_angle);
+                                                                                      // let mut regional_angle = -(sum_sin.atan2(sum_cos)).to_degrees() + 90.0;
+        if regional_angle < 0.0 {
+            regional_angle = 180.0 + regional_angle;
         }
 
+        if verbose {
+            println!(
+                "Regional weighted mean polygon direction: {:.3} degrees",
+                regional_angle
+            );
+        }
 
         let mut deviation_angle: f64;
         for record_num in 0..input.num_records {

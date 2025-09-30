@@ -1,35 +1,31 @@
 mod about;
 mod custom_widgets;
-mod extension;
 mod deactivate_extension;
-mod update_extension;
+mod extension;
 mod settings_panel;
 mod tool_dialog;
 mod tool_info;
 mod tools_panel;
 mod tree;
+mod update_extension;
 
-pub use custom_widgets::{ toggle };
-pub use tree::Tree;
-pub use tool_info::{
-    ParameterFileType,
-    ParameterType,
-    ToolInfo,
-    ToolParameter,
-    VectorGeometryType,
-};
 use about::WbLogo;
 use anyhow::{bail, Result};
-use extension::ExtensionInstall;
-use std::collections::{ HashMap, HashSet, VecDeque };
-use std::{env, path::Path, path::PathBuf };
-use std::process::Command;
-use serde_json::Value;
+pub use custom_widgets::toggle;
 use eframe::egui;
 use egui::CentralPanel;
 use egui::FontFamily::Proportional;
 use egui::FontId;
 use egui::TextStyle::*;
+use extension::ExtensionInstall;
+use serde_json::Value;
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::process::Command;
+use std::{env, path::Path, path::PathBuf};
+pub use tool_info::{
+    ParameterFileType, ParameterType, ToolInfo, ToolParameter, VectorGeometryType,
+};
+pub use tree::Tree;
 
 static mut CLEAR_STATE: bool = false;
 static mut INSTALL_EXTENSION: bool = false;
@@ -65,7 +61,9 @@ fn main() {
                     "".to_string()
                 };
                 unsafe {
-                    if extension_name.to_lowercase().contains("general") || extension_name.to_lowercase().contains("gte") {
+                    if extension_name.to_lowercase().contains("general")
+                        || extension_name.to_lowercase().contains("gte")
+                    {
                         EXTENSION_NAME = 0;
                     } else if extension_name.to_lowercase().contains("agri") {
                         EXTENSION_NAME = 3;
@@ -85,9 +83,14 @@ fn main() {
     let icon_file = img_directory.join("WBT_icon.png");
     let icon_data = if icon_file.exists() {
         // Some(load_icon(&icon_file.to_str().unwrap_or("No exe path found.").replace("\"", "")))
-        match load_icon(&icon_file.to_str().unwrap_or("No exe path found.").replace("\"", "")) {
+        match load_icon(
+            &icon_file
+                .to_str()
+                .unwrap_or("No exe path found.")
+                .replace("\"", ""),
+        ) {
             Ok(v) => Some(v),
-            Err(_) => None
+            Err(_) => None,
         }
     } else {
         None
@@ -230,7 +233,7 @@ impl MyApp {
 
             slf.ei.product_index = EXTENSION_NAME;
         }
-        
+
         slf.theme_changed = true;
         slf.fonts_changed = true;
         slf.state.whitebox_exe = slf.get_executable_path().unwrap_or("".to_string());
@@ -245,7 +248,8 @@ impl MyApp {
             let url = "http://www.whiteboxgeo.com/versioning_info/versioning_info.json";
             match reqwest::blocking::Client::builder()
                 .timeout(std::time::Duration::from_secs(10))
-                .build() {
+                .build()
+            {
                 Ok(client) => {
                     match client.get(url).build() {
                         Ok(req) => {
@@ -256,17 +260,31 @@ impl MyApp {
                                         Ok(v) => {
                                             let version_string = v["wbtVersion"].as_str();
                                             if version_string.is_some() {
-                                                let current_version = version_string.unwrap_or("").split(".").collect::<Vec<&str>>();
-                                                let version_array = slf.wbt_version.split(" ").collect::<Vec<&str>>();
+                                                let current_version = version_string
+                                                    .unwrap_or("")
+                                                    .split(".")
+                                                    .collect::<Vec<&str>>();
+                                                let version_array = slf
+                                                    .wbt_version
+                                                    .split(" ")
+                                                    .collect::<Vec<&str>>();
                                                 for s in &version_array {
                                                     if s.contains("v") {
                                                         let used_version = s.replace("v", "");
-                                                        let used_version = used_version.split(".").collect::<Vec<&str>>();
-                                                        if current_version.len() == 3 && used_version.len() == 3 {
+                                                        let used_version = used_version
+                                                            .split(".")
+                                                            .collect::<Vec<&str>>();
+                                                        if current_version.len() == 3
+                                                            && used_version.len() == 3
+                                                        {
                                                             let mut flag = false;
                                                             for i in 0..3 {
-                                                                let used = used_version[i].parse::<isize>().unwrap_or(0);
-                                                                let cur = current_version[i].parse::<isize>().unwrap_or(0);
+                                                                let used = used_version[i]
+                                                                    .parse::<isize>()
+                                                                    .unwrap_or(0);
+                                                                let cur = current_version[i]
+                                                                    .parse::<isize>()
+                                                                    .unwrap_or(0);
                                                                 if used < cur {
                                                                     flag = true;
                                                                 }
@@ -283,7 +301,9 @@ impl MyApp {
                                                 let tools_list = v["gteTools"].as_array().unwrap();
                                                 for tool in tools_list {
                                                     if tool.is_string() {
-                                                        slf.extension_tools_list.push(tool.as_str().unwrap().to_string());
+                                                        slf.extension_tools_list.push(
+                                                            tool.as_str().unwrap().to_string(),
+                                                        );
                                                     }
                                                 }
                                             }
@@ -291,11 +311,15 @@ impl MyApp {
                                             // Are there any extensions installed?
                                             if slf.installed_extensions.gte {
                                                 if v["gteTools"].is_array() {
-                                                    let tools_list = v["gteTools"].as_array().unwrap();
+                                                    let tools_list =
+                                                        v["gteTools"].as_array().unwrap();
                                                     for tool in tools_list {
                                                         if tool.is_string() {
-                                                            if !slf.tool_order.contains_key(tool.as_str().unwrap()) {
-                                                                slf.update_extension_msg_visible = true;
+                                                            if !slf.tool_order.contains_key(
+                                                                tool.as_str().unwrap(),
+                                                            ) {
+                                                                slf.update_extension_msg_visible =
+                                                                    true;
                                                                 slf.extensions_outdated = true;
                                                             }
                                                         }
@@ -303,11 +327,15 @@ impl MyApp {
                                                 }
                                             } else if slf.installed_extensions.dem {
                                                 if v["demTools"].is_array() {
-                                                    let tools_list = v["demTools"].as_array().unwrap();
+                                                    let tools_list =
+                                                        v["demTools"].as_array().unwrap();
                                                     for tool in tools_list {
                                                         if tool.is_string() {
-                                                            if !slf.tool_order.contains_key(tool.as_str().unwrap()) {
-                                                                slf.update_extension_msg_visible = true;
+                                                            if !slf.tool_order.contains_key(
+                                                                tool.as_str().unwrap(),
+                                                            ) {
+                                                                slf.update_extension_msg_visible =
+                                                                    true;
                                                                 slf.extensions_outdated = true;
                                                             }
                                                         }
@@ -315,11 +343,15 @@ impl MyApp {
                                                 }
                                             } else if slf.installed_extensions.lidar {
                                                 if v["lidarTools"].is_array() {
-                                                    let tools_list = v["lidarTools"].as_array().unwrap();
+                                                    let tools_list =
+                                                        v["lidarTools"].as_array().unwrap();
                                                     for tool in tools_list {
                                                         if tool.is_string() {
-                                                            if !slf.tool_order.contains_key(tool.as_str().unwrap()) {
-                                                                slf.update_extension_msg_visible = true;
+                                                            if !slf.tool_order.contains_key(
+                                                                tool.as_str().unwrap(),
+                                                            ) {
+                                                                slf.update_extension_msg_visible =
+                                                                    true;
                                                                 slf.extensions_outdated = true;
                                                             }
                                                         }
@@ -327,11 +359,15 @@ impl MyApp {
                                                 }
                                             } else if slf.installed_extensions.agriculture {
                                                 if v["agTools"].is_array() {
-                                                    let tools_list = v["agTools"].as_array().unwrap();
+                                                    let tools_list =
+                                                        v["agTools"].as_array().unwrap();
                                                     for tool in tools_list {
                                                         if tool.is_string() {
-                                                            if !slf.tool_order.contains_key(tool.as_str().unwrap()) {
-                                                                slf.update_extension_msg_visible = true;
+                                                            if !slf.tool_order.contains_key(
+                                                                tool.as_str().unwrap(),
+                                                            ) {
+                                                                slf.update_extension_msg_visible =
+                                                                    true;
                                                                 slf.extensions_outdated = true;
                                                             }
                                                         }
@@ -343,18 +379,18 @@ impl MyApp {
                                             // Do nothing.
                                         }
                                     }
-                                },
-                                Err(_e) => { 
+                                }
+                                Err(_e) => {
                                     // Do nothing.
                                 }
                             }
-                        },
-                        Err(_e) => { 
+                        }
+                        Err(_e) => {
                             // Do nothing.
                         }
                     }
-                },
-                Err(_e) => { 
+                }
+                Err(_e) => {
                     // Do nothing.
                 }
             }
@@ -381,10 +417,8 @@ impl MyApp {
     fn get_tool_info(&mut self) -> Result<()> {
         // Start by getting the executable path
         let exe = self.get_executable_path().unwrap_or("".to_string());
-        
-        let output = Command::new(&exe)
-                .args(["--toolbox"])
-                .output()?;
+
+        let output = Command::new(&exe).args(["--toolbox"]).output()?;
 
         let mut tool_list = vec![];
         let mut toolboxes = HashSet::new();
@@ -418,9 +452,7 @@ impl MyApp {
         }
 
         // Get the tool descriptions
-        let output = Command::new(exe)
-                .args(["--listtools"])
-                .output()?;
+        let output = Command::new(exe).args(["--listtools"]).output()?;
 
         let mut tool_descriptions = HashMap::new();
         if output.status.success() {
@@ -429,7 +461,10 @@ impl MyApp {
             for tool in tool_data {
                 if !tool.trim().is_empty() {
                     let tool_and_desc = tool.split(":").collect::<Vec<&str>>();
-                    tool_descriptions.insert(tool_and_desc[0].trim().to_owned(), tool_and_desc[1].trim().to_owned());
+                    tool_descriptions.insert(
+                        tool_and_desc[0].trim().to_owned(),
+                        tool_and_desc[1].trim().to_owned(),
+                    );
                 }
             }
         } else {
@@ -444,8 +479,9 @@ impl MyApp {
         let mut num_tools = 0;
         for i in 0..tool_list.len() {
             let json_value = self.get_tool_parameters(tool_list[i].0)?; // Add the tool parameters JSON object to the tool info
-            // self.open_tools.push(false);
-            self.tool_info.push(ToolInfo::new(tool_list[i].0, tool_list[i].1, json_value));
+                                                                        // self.open_tools.push(false);
+            self.tool_info
+                .push(ToolInfo::new(tool_list[i].0, tool_list[i].1, json_value));
             self.tool_info[num_tools].update_output_command(self.state.output_command);
             self.tool_info[num_tools].update_verbose_mode(self.state.view_tool_output);
             self.tool_info[num_tools].update_compress_rasters(self.state.compress_rasters);
@@ -480,18 +516,22 @@ impl MyApp {
     fn get_version(&mut self) -> Result<()> {
         // Start by getting the executable path
         if let Some(exe) = self.get_executable_path() {
-            let output = Command::new(&exe)
-                .args(["--version"])
-                .output()?;
-        
+            let output = Command::new(&exe).args(["--version"]).output()?;
+
             if output.status.success() {
                 let s = std::str::from_utf8(&(output.stdout))?;
                 let version_data = s.split("\n").collect::<Vec<&str>>();
                 self.wbt_version = version_data[0].to_string();
                 return Ok(());
             } else {
-                println!("stdout: {}", std::str::from_utf8(output.stdout.as_slice()).unwrap_or("No message"));
-                println!("stderr: {}", std::str::from_utf8(output.stderr.as_slice()).unwrap_or("No message"));
+                println!(
+                    "stdout: {}",
+                    std::str::from_utf8(output.stdout.as_slice()).unwrap_or("No message")
+                );
+                println!(
+                    "stderr: {}",
+                    std::str::from_utf8(output.stderr.as_slice()).unwrap_or("No message")
+                );
                 bail!("Could not execute the WhiteboxTools binary");
             }
         } else {
@@ -506,14 +546,20 @@ impl MyApp {
         let output = Command::new(&exe)
             .args([&format!("--toolparameters={}", tool_name)])
             .output()?;
-    
+
         let ret: Value;
         if output.status.success() {
             let s = std::str::from_utf8(&(output.stdout))?;
             ret = serde_json::from_str(s).unwrap_or(Value::Null);
         } else {
-            println!("stdout: {}", std::str::from_utf8(output.stdout.as_slice()).unwrap_or("No message"));
-            println!("stderr: {}", std::str::from_utf8(output.stderr.as_slice()).unwrap_or("No message"));
+            println!(
+                "stdout: {}",
+                std::str::from_utf8(output.stdout.as_slice()).unwrap_or("No message")
+            );
+            println!(
+                "stderr: {}",
+                std::str::from_utf8(output.stderr.as_slice()).unwrap_or("No message")
+            );
             bail!("Error running toolparameters command");
         }
         Ok(ret)
@@ -521,7 +567,6 @@ impl MyApp {
 
     fn get_executable_path(&self) -> Option<String> {
         if self.state.whitebox_exe.is_empty() || !Path::new(&self.state.whitebox_exe).exists() {
-
             // First, check the path of the WbRunner executable.
             let mut dir = env::current_exe().unwrap_or(Path::new("").to_path_buf());
             dir.pop();
@@ -530,27 +575,30 @@ impl MyApp {
 
             // check that it exists.
             if exe.exists() {
-                return Some(exe.to_str().unwrap_or("").to_string())
+                return Some(exe.to_str().unwrap_or("").to_string());
             }
 
             // Perhaps WBT has been installed to PATH, in which case we will find it via the
             // whereis command on unix-like OSs.
             if cfg!(unix) {
-                if let Ok(output) = Command::new("whereis")
-                .arg("whitebox_tools")
-                .output() {
+                if let Ok(output) = Command::new("whereis").arg("whitebox_tools").output() {
                     if output.status.success() {
                         if let Ok(s) = std::str::from_utf8(&(output.stdout)) {
-                            let exe = s.replace("whitebox_tools: ", "").replace("\"", "").replace("\n", "").trim().to_string();
+                            let exe = s
+                                .replace("whitebox_tools: ", "")
+                                .replace("\"", "")
+                                .replace("\n", "")
+                                .trim()
+                                .to_string();
                             if Path::new(&exe).exists() {
                                 println!("Found whitebox_tools in: {exe}");
-                                return Some(exe)
+                                return Some(exe);
                             }
                         }
                     }
                 }
-            // } else if cfg!(windows) {
-            //     // Not sure that there is an equivalent on Windows.
+                // } else if cfg!(windows) {
+                //     // Not sure that there is an equivalent on Windows.
             }
 
             // Prompt the user to locate the whitebox_tools executable
@@ -561,18 +609,20 @@ impl MyApp {
             };
 
             if rfd::MessageDialog::new()
-            .set_level(rfd::MessageLevel::Warning)
-            .set_title("WhiteboxTools Executable File")
-            .set_description(msg)
-            .set_buttons(rfd::MessageButtons::Ok)
-            .show() {
+                .set_level(rfd::MessageLevel::Warning)
+                .set_title("WhiteboxTools Executable File")
+                .set_description(msg)
+                .set_buttons(rfd::MessageButtons::Ok)
+                .show()
+            {
                 // do nothing
             }
 
             if let Some(file) = rfd::FileDialog::new()
-            .set_title("Please locate the WhiteboxTools executable file")
-            .set_directory("/")
-            .pick_file() {
+                .set_title("Please locate the WhiteboxTools executable file")
+                .set_directory("/")
+                .pick_file()
+            {
                 if file.exists() {
                     return Some(file.to_str().unwrap_or("").to_string());
                 }
@@ -590,10 +640,16 @@ impl MyApp {
             let output = Command::new(&exe)
                 .args([&format!("--max_procs={}", self.state.max_procs)])
                 .output()?;
-        
+
             if !output.status.success() {
-                println!("stdout: {}", std::str::from_utf8(output.stdout.as_slice()).unwrap_or("No message"));
-                println!("stderr: {}", std::str::from_utf8(output.stderr.as_slice()).unwrap_or("No message"));
+                println!(
+                    "stdout: {}",
+                    std::str::from_utf8(output.stdout.as_slice()).unwrap_or("No message")
+                );
+                println!(
+                    "stderr: {}",
+                    std::str::from_utf8(output.stderr.as_slice()).unwrap_or("No message")
+                );
                 bail!("Error running --max_procs");
             }
         }
@@ -615,7 +671,11 @@ impl MyApp {
             self.most_used_hm.insert(tool_name.to_string(), 1);
         };
 
-        self.most_used = self.most_used_hm.iter().map(|v| (*v.1, v.0.to_string())).collect::<Vec<(u16, String)>>(); // self.most_used_hm.iter().map().collect();
+        self.most_used = self
+            .most_used_hm
+            .iter()
+            .map(|v| (*v.1, v.0.to_string()))
+            .collect::<Vec<(u16, String)>>(); // self.most_used_hm.iter().map().collect();
         self.most_used.sort_by(|a, b| b.cmp(a));
 
         if self.tool_order.get(tool_name).is_some() {
@@ -630,8 +690,8 @@ impl MyApp {
     fn update_working_dir(&mut self, working_dir: &str) {
         let mut path = PathBuf::new();
         path.push(working_dir);
-        
-        // Is working_dir a directory or a file? If a file, pop the file_name 
+
+        // Is working_dir a directory or a file? If a file, pop the file_name
         // and work with the directory.
         if path.is_file() {
             // path = path.parent().unwrap(); //.pop();
@@ -645,17 +705,25 @@ impl MyApp {
         if path.is_relative() {
             return; // This is a relative path, meaning it is likely just a file not a dir.
         }
-        
+
         if let Some(path_str) = path.to_str() {
             self.state.working_dir = path_str.to_string();
 
-            if !self.state.recent_working_dirs.contains(&self.state.working_dir) {
+            if !self
+                .state
+                .recent_working_dirs
+                .contains(&self.state.working_dir)
+            {
                 if self.state.recent_working_dirs.len() <= self.state.num_recent_dirs {
-                    self.state.recent_working_dirs.push(self.state.working_dir.clone());
+                    self.state
+                        .recent_working_dirs
+                        .push(self.state.working_dir.clone());
                 } else {
                     self.state.recent_working_dirs.remove(0);
-                    self.state.recent_working_dirs.push(self.state.working_dir.clone());
-                }   
+                    self.state
+                        .recent_working_dirs
+                        .push(self.state.working_dir.clone());
+                }
             } else {
                 // first find the index of the existing one
                 let mut idx = 0;
@@ -666,7 +734,9 @@ impl MyApp {
                     }
                 }
                 self.state.recent_working_dirs.remove(idx);
-                self.state.recent_working_dirs.push(self.state.working_dir.clone());
+                self.state
+                    .recent_working_dirs
+                    .push(self.state.working_dir.clone());
             }
         }
     }
@@ -698,20 +768,26 @@ impl eframe::App for MyApp {
 
             // Redefine text_styles
             style.text_styles = [
-            (Heading, FontId::new(self.state.header_font_size, Proportional)),
-            // (Name("Heading2".into()), FontId::new(18.0, Proportional)),
-            // (Name("Context".into()), FontId::new(14.0, Proportional)),
-            (Body, FontId::new(self.state.body_font_size, Proportional)),
-            (Monospace, FontId::new(self.state.body_font_size, egui::FontFamily::Monospace)),
-            (Button, FontId::new(self.state.body_font_size, Proportional)),
-            (Small, FontId::new(10.0, Proportional)),
-            ].into();
+                (
+                    Heading,
+                    FontId::new(self.state.header_font_size, Proportional),
+                ),
+                // (Name("Heading2".into()), FontId::new(18.0, Proportional)),
+                // (Name("Context".into()), FontId::new(14.0, Proportional)),
+                (Body, FontId::new(self.state.body_font_size, Proportional)),
+                (
+                    Monospace,
+                    FontId::new(self.state.body_font_size, egui::FontFamily::Monospace),
+                ),
+                (Button, FontId::new(self.state.body_font_size, Proportional)),
+                (Small, FontId::new(10.0, Proportional)),
+            ]
+            .into();
 
             // Mutate global style with above changes
             ctx.set_style(style);
             self.fonts_changed = false;
         }
-        
 
         CentralPanel::default().show(ctx, |ui| {
             // // Top menu panel
@@ -769,28 +845,33 @@ impl eframe::App for MyApp {
                 // Top button panel
                 egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
                     ui.horizontal(|ui| {
-                        
                         // if ui.button("Close").clicked() {
                         //     frame.close();
                         // }
-                        
+
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             ui.toggle_value(&mut self.about_visible, "ℹ")
-                            .on_hover_text("About Whitebox Runner");
+                                .on_hover_text("About Whitebox Runner");
                             // .clicked() {
                             //     // Open About window.
                             //     self.about_visible = true;
                             // }
-                            
+
                             ui.toggle_value(&mut self.state.settings_visible, "⛭") // ⚙
-                            .on_hover_text("View settings");
+                                .on_hover_text("View settings");
                             // .clicked() {
                             //     self.state.settings_visible = !self.state.settings_visible;
                             // }
 
-                            if ui.button("✖").on_hover_text("Close all open tool dialogs").clicked() {
+                            if ui
+                                .button("✖")
+                                .on_hover_text("Close all open tool dialogs")
+                                .clicked()
+                            {
                                 for i in (0..self.list_of_open_tools.len()).rev() {
-                                    if let Ok(mut tool_output) = self.list_of_open_tools[i].tool_output.lock() {
+                                    if let Ok(mut tool_output) =
+                                        self.list_of_open_tools[i].tool_output.lock()
+                                    {
                                         *tool_output = "".to_string();
                                     }
                                     if self.open_tools[i] {
@@ -802,14 +883,22 @@ impl eframe::App for MyApp {
 
                             if ui.visuals().dark_mode {
                                 ui.horizontal(|ui| {
-                                    if ui.button("☀").on_hover_text("Switch to light mode").clicked() {
+                                    if ui
+                                        .button("☀")
+                                        .on_hover_text("Switch to light mode")
+                                        .clicked()
+                                    {
                                         self.theme_changed = true;
                                         self.state.theme = AppTheme::Light;
                                     }
                                 });
                             } else {
                                 ui.horizontal(|ui| {
-                                    if ui.button("🌙").on_hover_text("Switch to dark mode").clicked() {
+                                    if ui
+                                        .button("🌙")
+                                        .on_hover_text("Switch to dark mode")
+                                        .clicked()
+                                    {
                                         self.theme_changed = true;
                                         self.state.theme = AppTheme::Dark;
                                     }
@@ -829,7 +918,7 @@ impl eframe::App for MyApp {
                     if self.about_visible {
                         self.about_window(ctx);
                     }
-                    
+
                     if self.extension_visible {
                         self.install_extension(ctx);
                     }
@@ -848,7 +937,9 @@ impl eframe::App for MyApp {
                             self.tool_dialog(ctx, i);
                         } else {
                             remove_idx = i as isize;
-                            if let Ok(mut tool_output) = self.list_of_open_tools[i].tool_output.lock() {
+                            if let Ok(mut tool_output) =
+                                self.list_of_open_tools[i].tool_output.lock()
+                            {
                                 *tool_output = "".to_string();
                             }
                         }
@@ -905,18 +996,19 @@ impl eframe::App for MyApp {
         // close the window?
         if self.show_confirmation_dialog {
             if rfd::MessageDialog::new()
-            .set_level(rfd::MessageLevel::Warning)
-            .set_title("Closing Whitebox Runner")
-            .set_description("Are you sure that you want to quit the application?")
-            .set_buttons(rfd::MessageButtons::YesNo)
-            .show() {
+                .set_level(rfd::MessageLevel::Warning)
+                .set_title("Closing Whitebox Runner")
+                .set_description("Are you sure that you want to quit the application?")
+                .set_buttons(rfd::MessageButtons::YesNo)
+                .show()
+            {
                 self.allowed_to_close = true;
                 frame.close();
             } else {
                 self.show_confirmation_dialog = false;
             }
         }
-    }    
+    }
 }
 
 /// Something to view in the demo windows

@@ -6,13 +6,13 @@ Last Modified: 18/10/2019
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 
 /// This tool will identify the catchment areas of each Horton-Strahler stream order link in a user-specified
 /// stream network (`--streams`), i.e. the network's *Strahler basins*. The tool effectively performs a Horton-Strahler
@@ -190,11 +190,18 @@ impl WhiteboxTool for StrahlerOrderBasins {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

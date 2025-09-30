@@ -7,9 +7,6 @@ License: MIT
 */
 
 use crate::na::DMatrix;
-use whitebox_raster::*;
-use whitebox_common::rendering::html::*;
-use whitebox_common::rendering::LineGraph;
 use crate::tools::*;
 use std::env;
 use std::f64;
@@ -19,6 +16,9 @@ use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::process::Command;
+use whitebox_common::rendering::html::*;
+use whitebox_common::rendering::LineGraph;
+use whitebox_raster::*;
 
 /// Principal component analysis (PCA) is a common data reduction technique that is used to reduce the dimensionality of
 /// multi-dimensional space. In the field of remote sensing, PCA is often used to reduce the number of bands of
@@ -237,11 +237,18 @@ impl WhiteboxTool for PrincipalComponentAnalysis {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -276,7 +283,10 @@ impl WhiteboxTool for PrincipalComponentAnalysis {
             working_directory.to_owned()
         };
 
-        if !output_html_file.contains(&sep) && !output_html_file.contains("/") && !output_html_file.is_empty() {
+        if !output_html_file.contains(&sep)
+            && !output_html_file.contains("/")
+            && !output_html_file.is_empty()
+        {
             output_html_file = format!("{}{}", wd, output_html_file);
         }
 
@@ -555,16 +565,12 @@ impl WhiteboxTool for PrincipalComponentAnalysis {
             &format!("<div id='graph' align=\"center\">{}</div>", graph.get_svg()).as_bytes(),
         )?;
 
-
-
-
-
         // The following will print a full-precision version of the eigenvectors as a comment (hidden from the user).
         // It is intended to be parsed by the InversePCA tool to perform the inverse operation.
 
         writer.write_all("\n\n<!-- The following table of full-precision eigenvectors can be used for inverse PCA calculations.".as_bytes())?;
         for a in 0..num_files {
-            let mut s = format!("\nEigenvector {}: [", a+1);
+            let mut s = format!("\nEigenvector {}: [", a + 1);
             pc = component_order[a];
             for k in 0..num_files {
                 if k == 0 {
@@ -578,9 +584,6 @@ impl WhiteboxTool for PrincipalComponentAnalysis {
         }
 
         writer.write_all("\n-->".as_bytes())?;
-
-
-
 
         writer.write_all("\n</body>".as_bytes())?;
 

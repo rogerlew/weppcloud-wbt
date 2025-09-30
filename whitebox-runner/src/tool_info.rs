@@ -49,54 +49,64 @@ impl ToolInfo {
         if let Ok(mut cancel) = self.cancel.lock() {
             *cancel = false;
         };
-        
+
         // self.animate_progress = true;
         if self.exe_path.trim().is_empty() {
             // we have an unspecified non-optional param
             rfd::MessageDialog::new()
-            .set_level(rfd::MessageLevel::Warning).set_title("Error Running Tool")
-            .set_description("The WhiteboxTools executable path does not appear to be set.")
-            .set_buttons(rfd::MessageButtons::Ok)
-            .show();
+                .set_level(rfd::MessageLevel::Warning)
+                .set_title("Error Running Tool")
+                .set_description("The WhiteboxTools executable path does not appear to be set.")
+                .set_buttons(rfd::MessageButtons::Ok)
+                .show();
             return;
         }
         // Collect the parameter values
         let mut param_str = String::new(); // String::from(&format!("{} -r={} --wd={}", self.exe_path, self.tool_name, self.working_dir));
-        let mut args: Vec<String> = vec![format!("-r={}", self.tool_name), format!("--wd={}", self.working_dir)];
+        let mut args: Vec<String> = vec![
+            format!("-r={}", self.tool_name),
+            format!("--wd={}", self.working_dir),
+        ];
         for parameter in &self.parameters {
-            let flag = parameter.flags[parameter.flags.len()-1].clone();
+            let flag = parameter.flags[parameter.flags.len() - 1].clone();
             match parameter.parameter_type {
-                ParameterType::Boolean => { 
+                ParameterType::Boolean => {
                     if parameter.bool_value {
                         // param_str.push_str(&format!(" {flag}={}", parameter.bool_value));
                         param_str.push_str(&format!(" {flag}"));
                         // args.push(format!("{flag}=", parameter.bool_value));
                         args.push(format!("{flag}"));
-                    } 
-                },
-                ParameterType::String => { 
+                    }
+                }
+                ParameterType::String => {
                     if !parameter.str_value.trim().is_empty() {
-                        param_str.push_str(&format!(" {flag}='{}'", parameter.str_value)); 
+                        param_str.push_str(&format!(" {flag}='{}'", parameter.str_value));
                         args.push(format!("{flag}='{}'", parameter.str_value));
                     } else if !parameter.optional {
                         // we have an unspecified non-optional param
                         rfd::MessageDialog::new()
-                        .set_level(rfd::MessageLevel::Warning).set_title("Error Parsing Parameter")
-                        .set_description(&format!("Unspecified non-optional parameter {}.", parameter.name))
-                        .set_buttons(rfd::MessageButtons::Ok)
-                        .show();
+                            .set_level(rfd::MessageLevel::Warning)
+                            .set_title("Error Parsing Parameter")
+                            .set_description(&format!(
+                                "Unspecified non-optional parameter {}.",
+                                parameter.name
+                            ))
+                            .set_buttons(rfd::MessageButtons::Ok)
+                            .show();
 
                         return;
                     }
-                },
+                }
                 // ParameterType::StringList => { param_str.push_str(&format!("{flag}={:?}", parameter.str_vec_value); },
-                ParameterType::Integer | ParameterType::Float => { 
+                ParameterType::Integer | ParameterType::Float => {
                     if !parameter.str_value.trim().is_empty() {
-                        // if (parameter.parameter_type == ParameterType::Integer && parameter.str_value.trim().parse::<usize>().is_ok()) || 
+                        // if (parameter.parameter_type == ParameterType::Integer && parameter.str_value.trim().parse::<usize>().is_ok()) ||
                         // (parameter.parameter_type == ParameterType::Float && parameter.str_value.trim().parse::<f32>().is_ok()) {
                         if parameter.str_value.trim().parse::<f32>().is_ok() {
                             let mut arg = parameter.str_value.clone();
-                            if parameter.parameter_type == ParameterType::Integer && arg.trim().contains(".") {
+                            if parameter.parameter_type == ParameterType::Integer
+                                && arg.trim().contains(".")
+                            {
                                 arg = arg.split(".").collect::<Vec<&str>>()[0].trim().to_string();
                             }
                             param_str.push_str(&format!(" {flag}={}", arg));
@@ -104,86 +114,115 @@ impl ToolInfo {
                         } else {
                             // we had an error parsing the user intput in a number.
                             rfd::MessageDialog::new()
-                            .set_level(rfd::MessageLevel::Warning).set_title("Error Parsing Parameter")
-                            .set_description(&format!("Error parsing a non-optional parameter {}.", parameter.name))
-                            .set_buttons(rfd::MessageButtons::Ok)
-                            .show();
+                                .set_level(rfd::MessageLevel::Warning)
+                                .set_title("Error Parsing Parameter")
+                                .set_description(&format!(
+                                    "Error parsing a non-optional parameter {}.",
+                                    parameter.name
+                                ))
+                                .set_buttons(rfd::MessageButtons::Ok)
+                                .show();
                             return;
                         }
                     } else if !parameter.optional {
                         // we have an unspecified non-optional param
                         rfd::MessageDialog::new()
-                        .set_level(rfd::MessageLevel::Warning).set_title("Error Parsing Parameter")
-                        .set_description(&format!("Unspecified non-optional parameter {}.", parameter.name))
-                        .set_buttons(rfd::MessageButtons::Ok)
-                        .show();
+                            .set_level(rfd::MessageLevel::Warning)
+                            .set_title("Error Parsing Parameter")
+                            .set_description(&format!(
+                                "Unspecified non-optional parameter {}.",
+                                parameter.name
+                            ))
+                            .set_buttons(rfd::MessageButtons::Ok)
+                            .show();
 
                         return;
                     }
-                },
-                ParameterType::VectorAttributeField => { 
+                }
+                ParameterType::VectorAttributeField => {
                     if !parameter.str_value.trim().is_empty() {
-                        param_str.push_str(&format!(" {flag}='{}'", parameter.str_value)); 
+                        param_str.push_str(&format!(" {flag}='{}'", parameter.str_value));
                         args.push(format!("{flag}='{}'", parameter.str_value));
                     } else if !parameter.optional {
                         // we have an unspecified non-optional param
                         rfd::MessageDialog::new()
-                        .set_level(rfd::MessageLevel::Warning).set_title("Error Parsing Parameter")
-                        .set_description(&format!("Unspecified non-optional parameter {}.", parameter.name))
-                        .set_buttons(rfd::MessageButtons::Ok)
-                        .show();
+                            .set_level(rfd::MessageLevel::Warning)
+                            .set_title("Error Parsing Parameter")
+                            .set_description(&format!(
+                                "Unspecified non-optional parameter {}.",
+                                parameter.name
+                            ))
+                            .set_buttons(rfd::MessageButtons::Ok)
+                            .show();
 
                         return;
                     }
-                },
+                }
                 ParameterType::StringOrNumber => {
-                    if !parameter.str_value.trim().is_empty() { 
-                        param_str.push_str(&format!(" {flag}='{}'", parameter.str_value)); 
+                    if !parameter.str_value.trim().is_empty() {
+                        param_str.push_str(&format!(" {flag}='{}'", parameter.str_value));
                         args.push(format!("{flag}='{}'", parameter.str_value));
                     } else if !parameter.optional {
                         // we have an unspecified non-optional param
                         rfd::MessageDialog::new()
-                        .set_level(rfd::MessageLevel::Warning).set_title("Error Parsing Parameter")
-                        .set_description(&format!("Unspecified non-optional parameter {}.", parameter.name))
-                        .set_buttons(rfd::MessageButtons::Ok)
-                        .show();
+                            .set_level(rfd::MessageLevel::Warning)
+                            .set_title("Error Parsing Parameter")
+                            .set_description(&format!(
+                                "Unspecified non-optional parameter {}.",
+                                parameter.name
+                            ))
+                            .set_buttons(rfd::MessageButtons::Ok)
+                            .show();
 
                         return;
                     }
-                },
-                ParameterType::ExistingFile => { 
+                }
+                ParameterType::ExistingFile => {
                     if !parameter.str_value.trim().is_empty() {
                         // does the file exist?
                         if std::path::Path::new(parameter.str_value.trim()).exists() {
-                            param_str.push_str(&format!(" {flag}='{}'", parameter.str_value.trim()));
+                            param_str
+                                .push_str(&format!(" {flag}='{}'", parameter.str_value.trim()));
                             args.push(format!("{flag}='{}'", parameter.str_value));
                         } else {
                             // maybe we just need to append the working directory...
-                            if std::path::Path::new(&self.working_dir).join(&parameter.str_value.trim()).exists() {
-                                param_str.push_str(&format!(" {flag}='{}'", parameter.str_value.trim()));
+                            if std::path::Path::new(&self.working_dir)
+                                .join(&parameter.str_value.trim())
+                                .exists()
+                            {
+                                param_str
+                                    .push_str(&format!(" {flag}='{}'", parameter.str_value.trim()));
                                 args.push(format!("{flag}='{}'", parameter.str_value));
                             } else {
                                 // we have an incorrect param
                                 rfd::MessageDialog::new()
-                                .set_level(rfd::MessageLevel::Warning).set_title("Error Parsing Parameter")
-                                .set_description(&format!("The specified file path does not exist. ({}).", parameter.name))
-                                .set_buttons(rfd::MessageButtons::Ok)
-                                .show();
+                                    .set_level(rfd::MessageLevel::Warning)
+                                    .set_title("Error Parsing Parameter")
+                                    .set_description(&format!(
+                                        "The specified file path does not exist. ({}).",
+                                        parameter.name
+                                    ))
+                                    .set_buttons(rfd::MessageButtons::Ok)
+                                    .show();
 
                                 return;
                             }
-                        } 
+                        }
                     } else if !parameter.optional {
                         // we have an unspecified non-optional param
                         rfd::MessageDialog::new()
-                        .set_level(rfd::MessageLevel::Warning).set_title("Error Parsing Parameter")
-                        .set_description(&format!("Unspecified non-optional parameter {}.", parameter.name))
-                        .set_buttons(rfd::MessageButtons::Ok)
-                        .show();
+                            .set_level(rfd::MessageLevel::Warning)
+                            .set_title("Error Parsing Parameter")
+                            .set_description(&format!(
+                                "Unspecified non-optional parameter {}.",
+                                parameter.name
+                            ))
+                            .set_buttons(rfd::MessageButtons::Ok)
+                            .show();
 
                         return;
                     }
-                },
+                }
                 ParameterType::ExistingFileOrFloat => {
                     if !parameter.str_value.trim().is_empty() {
                         param_str.push_str(&format!(" {flag}='{}'", parameter.str_value));
@@ -191,46 +230,59 @@ impl ToolInfo {
                     } else if !parameter.str_vec_value[0].trim().is_empty() {
                         match parameter.str_vec_value[0].trim().parse::<f32>() {
                             Ok(_) => {
-                                param_str.push_str(&format!(" {flag}='{}'", parameter.str_vec_value[0]));
+                                param_str
+                                    .push_str(&format!(" {flag}='{}'", parameter.str_vec_value[0]));
                                 args.push(format!("{flag}='{}'", parameter.str_vec_value[0]));
-                            },
+                            }
                             Err(_) => {
                                 // we had an error parsing the user intput in a number.
                                 rfd::MessageDialog::new()
-                                .set_level(rfd::MessageLevel::Warning).set_title("Error Parsing Parameter")
-                                .set_description(&format!("Error parsing a non-optional parameter {}.", parameter.name))
-                                .set_buttons(rfd::MessageButtons::Ok)
-                                .show();
+                                    .set_level(rfd::MessageLevel::Warning)
+                                    .set_title("Error Parsing Parameter")
+                                    .set_description(&format!(
+                                        "Error parsing a non-optional parameter {}.",
+                                        parameter.name
+                                    ))
+                                    .set_buttons(rfd::MessageButtons::Ok)
+                                    .show();
                                 return;
                             }
                         }
                     } else if !parameter.optional {
                         // we have an unspecified non-optional param
                         rfd::MessageDialog::new()
-                        .set_level(rfd::MessageLevel::Warning).set_title("Error Parsing Parameter")
-                        .set_description(&format!("Unspecified non-optional parameter {}.", parameter.name))
-                        .set_buttons(rfd::MessageButtons::Ok)
-                        .show();
+                            .set_level(rfd::MessageLevel::Warning)
+                            .set_title("Error Parsing Parameter")
+                            .set_description(&format!(
+                                "Unspecified non-optional parameter {}.",
+                                parameter.name
+                            ))
+                            .set_buttons(rfd::MessageButtons::Ok)
+                            .show();
 
                         return;
                     }
-                },
-                ParameterType::NewFile => { 
+                }
+                ParameterType::NewFile => {
                     if !parameter.str_value.trim().is_empty() {
-                        param_str.push_str(&format!(" {flag}='{}'", parameter.str_value.trim())); 
+                        param_str.push_str(&format!(" {flag}='{}'", parameter.str_value.trim()));
                         args.push(format!("{flag}='{}'", parameter.str_value));
                     } else if !parameter.optional {
                         // we have an unspecified non-optional param
                         rfd::MessageDialog::new()
-                        .set_level(rfd::MessageLevel::Warning).set_title("Error Parsing Parameter")
-                        .set_description(&format!("Unspecified non-optional parameter {}.", parameter.name))
-                        .set_buttons(rfd::MessageButtons::Ok)
-                        .show();
+                            .set_level(rfd::MessageLevel::Warning)
+                            .set_title("Error Parsing Parameter")
+                            .set_description(&format!(
+                                "Unspecified non-optional parameter {}.",
+                                parameter.name
+                            ))
+                            .set_buttons(rfd::MessageButtons::Ok)
+                            .show();
 
                         return;
                     }
-                },
-                ParameterType::FileList => { 
+                }
+                ParameterType::FileList => {
                     if !parameter.str_value.trim().is_empty() {
                         let files: Vec<&str> = parameter.str_value.split("\n").collect();
                         let mut s = String::from("\"");
@@ -245,20 +297,24 @@ impl ToolInfo {
                             }
                         }
                         s.push_str("\"");
-                        param_str.push_str(&format!(" {flag}={}", s)); 
+                        param_str.push_str(&format!(" {flag}={}", s));
                         args.push(format!("{flag}={}", s));
                     } else if !parameter.optional {
                         // we have an unspecified non-optional param
                         rfd::MessageDialog::new()
-                        .set_level(rfd::MessageLevel::Warning).set_title("Error Parsing Parameter")
-                        .set_description(&format!("Unspecified non-optional parameter {}.", parameter.name))
-                        .set_buttons(rfd::MessageButtons::Ok)
-                        .show();
+                            .set_level(rfd::MessageLevel::Warning)
+                            .set_title("Error Parsing Parameter")
+                            .set_description(&format!(
+                                "Unspecified non-optional parameter {}.",
+                                parameter.name
+                            ))
+                            .set_buttons(rfd::MessageButtons::Ok)
+                            .show();
 
                         return;
                     }
-                },
-                ParameterType::Directory => { 
+                }
+                ParameterType::Directory => {
                     if !parameter.str_value.trim().is_empty() {
                         if std::path::Path::new(parameter.str_value.trim()).exists() {
                             param_str.push_str(&format!(" {flag}='{}'", parameter.str_value));
@@ -266,28 +322,42 @@ impl ToolInfo {
                         } else {
                             // we have an unspecified non-optional param
                             rfd::MessageDialog::new()
-                            .set_level(rfd::MessageLevel::Warning).set_title("Error Parsing Parameter")
-                            .set_description(&format!("The specified directory does not exist. ({}).", parameter.name.trim()))
-                            .set_buttons(rfd::MessageButtons::Ok)
-                            .show();
+                                .set_level(rfd::MessageLevel::Warning)
+                                .set_title("Error Parsing Parameter")
+                                .set_description(&format!(
+                                    "The specified directory does not exist. ({}).",
+                                    parameter.name.trim()
+                                ))
+                                .set_buttons(rfd::MessageButtons::Ok)
+                                .show();
 
                             return;
-                        }  
+                        }
                     } else if !parameter.optional {
                         // we have an unspecified non-optional param
                         rfd::MessageDialog::new()
-                        .set_level(rfd::MessageLevel::Warning).set_title("Error Parsing Parameter")
-                        .set_description(&format!("Unspecified non-optional parameter {}.", parameter.name))
-                        .set_buttons(rfd::MessageButtons::Ok)
-                        .show();
+                            .set_level(rfd::MessageLevel::Warning)
+                            .set_title("Error Parsing Parameter")
+                            .set_description(&format!(
+                                "Unspecified non-optional parameter {}.",
+                                parameter.name
+                            ))
+                            .set_buttons(rfd::MessageButtons::Ok)
+                            .show();
 
                         return;
                     }
-                },
-                ParameterType::OptionList => { 
+                }
+                ParameterType::OptionList => {
                     // if !parameter.str_value.trim().is_empty() {
-                        param_str.push_str(&format!(" {flag}='{}'", parameter.str_vec_value[parameter.int_value])); 
-                        args.push(format!("{flag}='{}'", parameter.str_vec_value[parameter.int_value]));
+                    param_str.push_str(&format!(
+                        " {flag}='{}'",
+                        parameter.str_vec_value[parameter.int_value]
+                    ));
+                    args.push(format!(
+                        "{flag}='{}'",
+                        parameter.str_vec_value[parameter.int_value]
+                    ));
                     // } else if !parameter.optional {
                     //     // we have an unspecified non-optional param
                     //     rfd::MessageDialog::new()
@@ -298,10 +368,9 @@ impl ToolInfo {
 
                     //     return;
                     // }
-                },
+                }
             }
         }
-        
 
         if self.verbose_mode {
             param_str.push_str(" -v=true");
@@ -327,15 +396,10 @@ impl ToolInfo {
         let tool_output = Arc::clone(&self.tool_output);
         if let Ok(mut to) = tool_output.lock() {
             if self.output_command {
-                to.push_str(
-                    &format!(
-                        "{} -r={} --wd=\"{}\" {}\n", 
-                        &self.exe_path, 
-                        self.tool_name, 
-                        self.working_dir, 
-                        param_str
-                    )
-                );
+                to.push_str(&format!(
+                    "{} -r={} --wd=\"{}\" {}\n",
+                    &self.exe_path, self.tool_name, self.working_dir, param_str
+                ));
             }
         }
 
@@ -351,7 +415,8 @@ impl ToolInfo {
                 .args(&args)
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
-                .spawn().unwrap();
+                .spawn()
+                .unwrap();
 
             let mut stdout = child.stdout.take().unwrap();
             let mut stderr = child.stderr.take().unwrap();
@@ -365,16 +430,21 @@ impl ToolInfo {
                     if line.contains("\n") {
                         let a = line.split("\n").collect::<Vec<&str>>();
 
-                        for m in 0..a.len()-1 {
+                        for m in 0..a.len() - 1 {
                             out_str.push_str(&format!("{}\n", a[m]));
-                        
+
                             if out_str.contains("%") {
                                 let val1: Vec<&str> = out_str.split(":").collect::<Vec<&str>>();
-                                let percent_val = val1[1].replace("%", "").replace("\n", "").trim().parse::<f32>().unwrap_or(0.0);
+                                let percent_val = val1[1]
+                                    .replace("%", "")
+                                    .replace("\n", "")
+                                    .trim()
+                                    .parse::<f32>()
+                                    .unwrap_or(0.0);
                                 if let Ok(mut val) = pcnt.lock() {
                                     *val = percent_val / 100.0;
                                 }
-        
+
                                 if let Ok(mut val2) = progress_label.lock() {
                                     *val2 = val1[0].replace("\n", "").to_string();
                                 }
@@ -388,7 +458,7 @@ impl ToolInfo {
                             out_str = "".to_string();
                         }
 
-                        out_str.push_str(&format!("{}", a[a.len()-1]));
+                        out_str.push_str(&format!("{}", a[a.len() - 1]));
                     } else {
                         out_str.push_str(&format!("{line}"));
                     }
@@ -409,7 +479,7 @@ impl ToolInfo {
                     // }
                     // to.push_str(&format!("{line}"));
                 }
-                
+
                 std::io::stdout().flush().unwrap();
                 read
             };
@@ -426,7 +496,7 @@ impl ToolInfo {
                                 Ok(_) => {
                                     *cancel2 = false; // reset the cancel.
                                     to.push_str("\nProcess cancelled\n");
-                                },
+                                }
                                 Err(_) => {
                                     to.push_str("\nError encountered while killing process\n");
                                 }
@@ -486,7 +556,7 @@ impl ToolInfo {
         if let Ok(mut tool_output) = self.tool_output.lock() {
             *tool_output = String::new();
         }
-        
+
         if let Ok(mut val) = self.progress.lock() {
             *val = 0.0;
         }
@@ -518,21 +588,24 @@ impl ToolInfo {
 
     pub fn get_tool_help(&self) -> Option<String> {
         let output = Command::new(&self.exe_path)
-                .args([format!("--toolhelp={}", self.tool_name)])
-                .output()
-                .expect("Could not execute the WhiteboxTools binary");
-        
+            .args([format!("--toolhelp={}", self.tool_name)])
+            .output()
+            .expect("Could not execute the WhiteboxTools binary");
+
         if output.status.success() {
             let s = match std::str::from_utf8(&(output.stdout)) {
                 Ok(v) => v,
-                Err(_) => return Some("https://www.whiteboxgeo.com/manual/wbt_book/intro.html".to_string()),
+                Err(_) => {
+                    return Some(
+                        "https://www.whiteboxgeo.com/manual/wbt_book/intro.html".to_string(),
+                    )
+                }
             };
             return Some(s.to_string());
         }
         Some("https://www.whiteboxgeo.com/manual/wbt_book/intro.html".to_string())
     }
 }
-
 
 #[derive(Default, Debug, PartialEq, Clone)]
 pub enum ParameterType {
@@ -566,7 +639,6 @@ pub enum ParameterFileType {
     Dat,
 }
 
-
 #[derive(Default, Debug, PartialEq, Clone)]
 pub enum VectorGeometryType {
     #[default]
@@ -599,7 +671,10 @@ fn parse_parameters(parameters: &Value) -> Vec<ToolParameter> {
     let empty: Vec<Value> = vec![];
     let tool_parameters = parameters["parameters"].as_array().unwrap_or(&empty);
     for j in 0..tool_parameters.len() {
-        let name = tool_parameters[j]["name"].as_str().unwrap_or("").to_string();
+        let name = tool_parameters[j]["name"]
+            .as_str()
+            .unwrap_or("")
+            .to_string();
         let empty_arr: Vec<Value> = vec![];
         let flags: Vec<String> = tool_parameters[j]["flags"]
             .as_array()
@@ -607,9 +682,17 @@ fn parse_parameters(parameters: &Value) -> Vec<ToolParameter> {
             .iter()
             .map(|v| v.as_str().unwrap_or("").to_owned())
             .collect();
-        let description = tool_parameters[j]["description"].as_str().unwrap_or("").to_string();
+        let description = tool_parameters[j]["description"]
+            .as_str()
+            .unwrap_or("")
+            .to_string();
         let default_value = if tool_parameters[j]["default_value"].is_string() {
-            Some(tool_parameters[j]["default_value"].as_str().unwrap_or("").to_string())
+            Some(
+                tool_parameters[j]["default_value"]
+                    .as_str()
+                    .unwrap_or("")
+                    .to_string(),
+            )
         } else {
             None
         };
@@ -628,17 +711,31 @@ fn parse_parameters(parameters: &Value) -> Vec<ToolParameter> {
             let s = parameter_type.as_str().unwrap_or("").to_lowercase();
             if s == "boolean" {
                 if default_value.is_some() {
-                    bool_value = default_value.clone().unwrap_or("false".to_string()).trim().to_lowercase().parse().unwrap_or(false);
+                    bool_value = default_value
+                        .clone()
+                        .unwrap_or("false".to_string())
+                        .trim()
+                        .to_lowercase()
+                        .parse()
+                        .unwrap_or(false);
                 }
                 ParameterType::Boolean
             } else if s == "float" {
                 if default_value.is_some() {
-                    str_value = default_value.clone().unwrap_or("".to_string()).trim().to_owned();
+                    str_value = default_value
+                        .clone()
+                        .unwrap_or("".to_string())
+                        .trim()
+                        .to_owned();
                 }
                 ParameterType::Float
             } else if s == "integer" {
                 if default_value.is_some() {
-                    str_value = default_value.clone().unwrap_or("".to_string()).trim().to_owned();
+                    str_value = default_value
+                        .clone()
+                        .unwrap_or("".to_string())
+                        .trim()
+                        .to_owned();
                 }
                 ParameterType::Integer
             } else if s == "string" {
@@ -663,7 +760,11 @@ fn parse_parameters(parameters: &Value) -> Vec<ToolParameter> {
         } else if parameter_type.is_object() {
             if !parameter_type["ExistingFile"].is_null() {
                 if parameter_type["ExistingFile"].is_string() {
-                    let s = parameter_type["ExistingFile"].as_str().unwrap_or("").trim().to_lowercase();
+                    let s = parameter_type["ExistingFile"]
+                        .as_str()
+                        .unwrap_or("")
+                        .trim()
+                        .to_lowercase();
                     if s == "lidar" {
                         file_type = ParameterFileType::Lidar;
                     } else if s == "raster" {
@@ -686,31 +787,35 @@ fn parse_parameters(parameters: &Value) -> Vec<ToolParameter> {
                             file_type = ParameterFileType::Vector;
                             let s = o["Vector"].as_str().unwrap_or("").trim().to_lowercase();
                             if s == "any" {
-                                geometry_type =VectorGeometryType::Any;
+                                geometry_type = VectorGeometryType::Any;
                             } else if s == "point" {
-                                geometry_type =VectorGeometryType::Point;
+                                geometry_type = VectorGeometryType::Point;
                             } else if s == "line" {
-                                geometry_type =VectorGeometryType::Line;
+                                geometry_type = VectorGeometryType::Line;
                             } else if s == "polygon" {
-                                geometry_type =VectorGeometryType::Polygon;
+                                geometry_type = VectorGeometryType::Polygon;
                             } else if s == "lineorpolygon" {
-                                geometry_type =VectorGeometryType::LineOrPolygon;
+                                geometry_type = VectorGeometryType::LineOrPolygon;
                             }
                         }
                     } else if o.contains_key("RasterAndVector") {
                         if o["RasterAndVector"].is_string() {
                             file_type = ParameterFileType::RasterAndVector;
-                            let s = o["RasterAndVector"].as_str().unwrap_or("").trim().to_lowercase();
+                            let s = o["RasterAndVector"]
+                                .as_str()
+                                .unwrap_or("")
+                                .trim()
+                                .to_lowercase();
                             if s == "any" {
-                                geometry_type =VectorGeometryType::Any;
+                                geometry_type = VectorGeometryType::Any;
                             } else if s == "point" {
-                                geometry_type =VectorGeometryType::Point;
+                                geometry_type = VectorGeometryType::Point;
                             } else if s == "line" {
-                                geometry_type =VectorGeometryType::Line;
+                                geometry_type = VectorGeometryType::Line;
                             } else if s == "polygon" {
-                                geometry_type =VectorGeometryType::Polygon;
+                                geometry_type = VectorGeometryType::Polygon;
                             } else if s == "lineorpolygon" {
-                                geometry_type =VectorGeometryType::LineOrPolygon;
+                                geometry_type = VectorGeometryType::LineOrPolygon;
                             }
                         }
                     }
@@ -718,7 +823,11 @@ fn parse_parameters(parameters: &Value) -> Vec<ToolParameter> {
                 ParameterType::ExistingFile
             } else if !parameter_type["NewFile"].is_null() {
                 if parameter_type["NewFile"].is_string() {
-                    let s = parameter_type["NewFile"].as_str().unwrap_or("").trim().to_lowercase();
+                    let s = parameter_type["NewFile"]
+                        .as_str()
+                        .unwrap_or("")
+                        .trim()
+                        .to_lowercase();
                     if s == "lidar" {
                         file_type = ParameterFileType::Lidar;
                     } else if s == "raster" {
@@ -741,31 +850,35 @@ fn parse_parameters(parameters: &Value) -> Vec<ToolParameter> {
                             file_type = ParameterFileType::Vector;
                             let s = o["Vector"].as_str().unwrap_or("").trim().to_lowercase();
                             if s == "any" {
-                                geometry_type =VectorGeometryType::Any;
+                                geometry_type = VectorGeometryType::Any;
                             } else if s == "point" {
-                                geometry_type =VectorGeometryType::Point;
+                                geometry_type = VectorGeometryType::Point;
                             } else if s == "line" {
-                                geometry_type =VectorGeometryType::Line;
+                                geometry_type = VectorGeometryType::Line;
                             } else if s == "polygon" {
-                                geometry_type =VectorGeometryType::Polygon;
+                                geometry_type = VectorGeometryType::Polygon;
                             } else if s == "lineorpolygon" {
-                                geometry_type =VectorGeometryType::LineOrPolygon;
+                                geometry_type = VectorGeometryType::LineOrPolygon;
                             }
                         }
                     } else if o.contains_key("RasterAndVector") {
                         if o["RasterAndVector"].is_string() {
                             file_type = ParameterFileType::RasterAndVector;
-                            let s = o["RasterAndVector"].as_str().unwrap_or("").trim().to_lowercase();
+                            let s = o["RasterAndVector"]
+                                .as_str()
+                                .unwrap_or("")
+                                .trim()
+                                .to_lowercase();
                             if s == "any" {
-                                geometry_type =VectorGeometryType::Any;
+                                geometry_type = VectorGeometryType::Any;
                             } else if s == "point" {
-                                geometry_type =VectorGeometryType::Point;
+                                geometry_type = VectorGeometryType::Point;
                             } else if s == "line" {
-                                geometry_type =VectorGeometryType::Line;
+                                geometry_type = VectorGeometryType::Line;
                             } else if s == "polygon" {
-                                geometry_type =VectorGeometryType::Polygon;
+                                geometry_type = VectorGeometryType::Polygon;
                             } else if s == "lineorpolygon" {
-                                geometry_type =VectorGeometryType::LineOrPolygon;
+                                geometry_type = VectorGeometryType::LineOrPolygon;
                             }
                         }
                     }
@@ -773,18 +886,22 @@ fn parse_parameters(parameters: &Value) -> Vec<ToolParameter> {
                 ParameterType::NewFile
             } else if !parameter_type["OptionList"].is_null() {
                 str_vec_value = parameter_type["OptionList"]
-                .as_array()
-                .unwrap_or(&empty_arr)
-                .iter()
-                .map(|v| v.as_str().unwrap_or("").to_owned())
-                .collect();
+                    .as_array()
+                    .unwrap_or(&empty_arr)
+                    .iter()
+                    .map(|v| v.as_str().unwrap_or("").to_owned())
+                    .collect();
                 if default_value.is_some() {
                     str_value = default_value.clone().unwrap_or("".to_string());
                 }
                 ParameterType::OptionList
             } else if !parameter_type["FileList"].is_null() {
                 if parameter_type["FileList"].is_string() {
-                    let s = parameter_type["FileList"].as_str().unwrap_or("").trim().to_lowercase();
+                    let s = parameter_type["FileList"]
+                        .as_str()
+                        .unwrap_or("")
+                        .trim()
+                        .to_lowercase();
                     if s == "lidar" {
                         file_type = ParameterFileType::Lidar;
                     } else if s == "raster" {
@@ -807,31 +924,35 @@ fn parse_parameters(parameters: &Value) -> Vec<ToolParameter> {
                             file_type = ParameterFileType::Vector;
                             let s = o["Vector"].as_str().unwrap_or("").trim().to_lowercase();
                             if s == "any" {
-                                geometry_type =VectorGeometryType::Any;
+                                geometry_type = VectorGeometryType::Any;
                             } else if s == "point" {
-                                geometry_type =VectorGeometryType::Point;
+                                geometry_type = VectorGeometryType::Point;
                             } else if s == "line" {
-                                geometry_type =VectorGeometryType::Line;
+                                geometry_type = VectorGeometryType::Line;
                             } else if s == "polygon" {
-                                geometry_type =VectorGeometryType::Polygon;
+                                geometry_type = VectorGeometryType::Polygon;
                             } else if s == "lineorpolygon" {
-                                geometry_type =VectorGeometryType::LineOrPolygon;
+                                geometry_type = VectorGeometryType::LineOrPolygon;
                             }
                         }
                     } else if o.contains_key("RasterAndVector") {
                         if o["RasterAndVector"].is_string() {
                             file_type = ParameterFileType::RasterAndVector;
-                            let s = o["RasterAndVector"].as_str().unwrap_or("").trim().to_lowercase();
+                            let s = o["RasterAndVector"]
+                                .as_str()
+                                .unwrap_or("")
+                                .trim()
+                                .to_lowercase();
                             if s == "any" {
-                                geometry_type =VectorGeometryType::Any;
+                                geometry_type = VectorGeometryType::Any;
                             } else if s == "point" {
-                                geometry_type =VectorGeometryType::Point;
+                                geometry_type = VectorGeometryType::Point;
                             } else if s == "line" {
-                                geometry_type =VectorGeometryType::Line;
+                                geometry_type = VectorGeometryType::Line;
                             } else if s == "polygon" {
-                                geometry_type =VectorGeometryType::Polygon;
+                                geometry_type = VectorGeometryType::Polygon;
                             } else if s == "lineorpolygon" {
-                                geometry_type =VectorGeometryType::LineOrPolygon;
+                                geometry_type = VectorGeometryType::LineOrPolygon;
                             }
                         }
                     }
@@ -840,7 +961,11 @@ fn parse_parameters(parameters: &Value) -> Vec<ToolParameter> {
             } else if !parameter_type["ExistingFileOrFloat"].is_null() {
                 str_vec_value = vec!["".to_string()];
                 if parameter_type["ExistingFileOrFloat"].is_string() {
-                    let s = parameter_type["ExistingFileOrFloat"].as_str().unwrap_or("").trim().to_lowercase();
+                    let s = parameter_type["ExistingFileOrFloat"]
+                        .as_str()
+                        .unwrap_or("")
+                        .trim()
+                        .to_lowercase();
                     if s == "lidar" {
                         file_type = ParameterFileType::Lidar;
                     } else if s == "raster" {
@@ -863,31 +988,35 @@ fn parse_parameters(parameters: &Value) -> Vec<ToolParameter> {
                             file_type = ParameterFileType::Vector;
                             let s = o["Vector"].as_str().unwrap_or("").trim().to_lowercase();
                             if s == "any" {
-                                geometry_type =VectorGeometryType::Any;
+                                geometry_type = VectorGeometryType::Any;
                             } else if s == "point" {
-                                geometry_type =VectorGeometryType::Point;
+                                geometry_type = VectorGeometryType::Point;
                             } else if s == "line" {
-                                geometry_type =VectorGeometryType::Line;
+                                geometry_type = VectorGeometryType::Line;
                             } else if s == "polygon" {
-                                geometry_type =VectorGeometryType::Polygon;
+                                geometry_type = VectorGeometryType::Polygon;
                             } else if s == "lineorpolygon" {
-                                geometry_type =VectorGeometryType::LineOrPolygon;
+                                geometry_type = VectorGeometryType::LineOrPolygon;
                             }
                         }
                     } else if o.contains_key("RasterAndVector") {
                         if o["RasterAndVector"].is_string() {
                             file_type = ParameterFileType::RasterAndVector;
-                            let s = o["RasterAndVector"].as_str().unwrap_or("").trim().to_lowercase();
+                            let s = o["RasterAndVector"]
+                                .as_str()
+                                .unwrap_or("")
+                                .trim()
+                                .to_lowercase();
                             if s == "any" {
-                                geometry_type =VectorGeometryType::Any;
+                                geometry_type = VectorGeometryType::Any;
                             } else if s == "point" {
-                                geometry_type =VectorGeometryType::Point;
+                                geometry_type = VectorGeometryType::Point;
                             } else if s == "line" {
-                                geometry_type =VectorGeometryType::Line;
+                                geometry_type = VectorGeometryType::Line;
                             } else if s == "polygon" {
-                                geometry_type =VectorGeometryType::Polygon;
+                                geometry_type = VectorGeometryType::Polygon;
                             } else if s == "lineorpolygon" {
-                                geometry_type =VectorGeometryType::LineOrPolygon;
+                                geometry_type = VectorGeometryType::LineOrPolygon;
                             }
                         }
                     }
@@ -895,11 +1024,11 @@ fn parse_parameters(parameters: &Value) -> Vec<ToolParameter> {
                 ParameterType::ExistingFileOrFloat
             } else if !parameter_type["VectorAttributeField"].is_null() {
                 str_vec_value = parameter_type["VectorAttributeField"]
-                .as_array()
-                .unwrap_or(&empty_arr)
-                .iter()
-                .map(|v| v.as_str().unwrap_or("").to_owned())
-                .collect();
+                    .as_array()
+                    .unwrap_or(&empty_arr)
+                    .iter()
+                    .map(|v| v.as_str().unwrap_or("").to_owned())
+                    .collect();
                 ParameterType::VectorAttributeField
             } else {
                 println!("Object: {:?}", parameter_type);

@@ -9,8 +9,6 @@ NOTES: This tool provides a full workflow D8 flow operation. This includes remov
 the D8 pointer raster and finally the D8 flow accumulation operation.
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
 use num_cpus;
 use std::cmp::Ordering;
@@ -24,6 +22,8 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 
 /// Resolves all of the depressions in a DEM, outputting a breached DEM, an aspect-aligned non-divergent flow
 /// pointer, and a flow accumulation raster.
@@ -256,7 +256,9 @@ impl WhiteboxTool for FlowAccumulationFullWorkflow {
                 } else {
                     out_type = String::from("ca");
                 }
-            } else if vec[0].to_lowercase() == "-correct_pntr" || vec[0].to_lowercase() == "--correct_pntr" {
+            } else if vec[0].to_lowercase() == "-correct_pntr"
+                || vec[0].to_lowercase() == "--correct_pntr"
+            {
                 if vec.len() == 1 || !vec[1].to_string().to_lowercase().contains("false") {
                     correct_pntr = true;
                 }
@@ -280,11 +282,18 @@ impl WhiteboxTool for FlowAccumulationFullWorkflow {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -630,8 +639,9 @@ impl WhiteboxTool for FlowAccumulationFullWorkflow {
             let (mut zl, mut zr, mut zn): (f64, f64, f64);
             let mut count: isize;
             let mut resolved: bool;
-            for row in 1..(rows-1) { // buffer the edges
-                for col in 1..(columns-1) {
+            for row in 1..(rows - 1) {
+                // buffer the edges
+                for col in 1..(columns - 1) {
                     // flow_dir is the n-index of the flow revicing cell
                     dir = flow_dir.get_value(row, col);
                     old_val = dir;
@@ -647,26 +657,33 @@ impl WhiteboxTool for FlowAccumulationFullWorkflow {
                         dir_no = flow_dir.get_value(row + dy[r1 as usize], col + dx[r1 as usize]); // right
                         zr = output.get_value(row + dy[r1 as usize], col + dx[r1 as usize]);
                         zn = output.get_value(row + dy[dir as usize], col + dx[dir as usize]);
-                        if dir_n == r2 && zr != nodata && zr <= zn { // left -> right cross && not nodata && is lower
+                        if dir_n == r2 && zr != nodata && zr <= zn {
+                            // left -> right cross && not nodata && is lower
                             new_val = r1;
-                        } else if dir_no == l2 && zl != nodata && zl <= zn { // right -> left cross && not nodata && is lower
+                        } else if dir_no == l2 && zl != nodata && zl <= zn {
+                            // right -> left cross && not nodata && is lower
                             new_val = l1;
-                        } else { // keep original value
+                        } else {
+                            // keep original value
                             new_val = dir;
                         }
-                        
-                        if new_val != dir && new_val % 2 == 0 && [0,6,7].contains(&new_val) { // make sure new val doesn't create error 1 where it can't be corrected
+
+                        if new_val != dir && new_val % 2 == 0 && [0, 6, 7].contains(&new_val) {
+                            // make sure new val doesn't create error 1 where it can't be corrected
                             l1 = new_val + 7 - (8 * (new_val + 7 > 7) as i8);
                             r1 = new_val + 1 - (8 * (new_val + 1 > 7) as i8);
                             l2 = r1 + 5 - (8 * (r1 + 5 > 7) as i8);
                             r2 = l1 + 3 - (8 * (l1 + 3 > 7) as i8);
-                            dir_n = flow_dir.get_value(row + dy[l1 as usize], col + dx[l1 as usize]); // left
-                            dir_no = flow_dir.get_value(row + dy[r1 as usize], col + dx[r1 as usize]); // right
-                            if dir_n == r2 || dir_no == l2 { // avoid new error, roll back
+                            dir_n =
+                                flow_dir.get_value(row + dy[l1 as usize], col + dx[l1 as usize]); // left
+                            dir_no =
+                                flow_dir.get_value(row + dy[r1 as usize], col + dx[r1 as usize]); // right
+                            if dir_n == r2 || dir_no == l2 {
+                                // avoid new error, roll back
                                 new_val = old_val;
                             }
                         }
-                        
+
                         // setting value here preserves solutions from error 1 but prevents this scan from beng parallelized
                         flow_dir.set_value(row, col, new_val);
 
@@ -674,9 +691,11 @@ impl WhiteboxTool for FlowAccumulationFullWorkflow {
                         resolved = false;
                         count = 0;
                         dir = new_val;
-                        while !resolved && dir >= 0 { // search until outflow is found, else keep original value.
+                        while !resolved && dir >= 0 {
+                            // search until outflow is found, else keep original value.
                             // find the flow reviever n-index.
-                            dir_n = flow_dir.get_value(row + dy[dir as usize], col + dx[dir as usize]);
+                            dir_n =
+                                flow_dir.get_value(row + dy[dir as usize], col + dx[dir as usize]);
                             if dir_n >= 0 {
                                 old_val = dir; // always set to the last valid direction
 
@@ -686,7 +705,8 @@ impl WhiteboxTool for FlowAccumulationFullWorkflow {
                                 l2 = dir + 6 - (8 * (dir + 6 > 7) as i8);
                                 r2 = dir + 2 - (8 * (dir + 2 > 7) as i8);
 
-                                if dir % 2 == 0 { // diagonal
+                                if dir % 2 == 0 {
+                                    // diagonal
                                     if dir_n == l1 {
                                         new_val = r1 + 4 - (8 * (r1 + 4 > 7) as i8);
                                     } else if dir_n == r1 {
@@ -695,13 +715,14 @@ impl WhiteboxTool for FlowAccumulationFullWorkflow {
                                         new_val = dir;
                                         resolved = true;
                                     }
-                                } else { // cardinal
+                                } else {
+                                    // cardinal
                                     if dir_n == l1 {
                                         new_val = r2 + 4 - (8 * (r2 + 4 > 7) as i8);
                                     } else if dir_n == r1 {
                                         new_val = l2 + 4 - (8 * (l2 + 4 > 7) as i8);
                                     } else if dir_n == l2 {
-                                        new_val = r1 + 4 - (8 * (r1 + 4 > 7) as i8);  
+                                        new_val = r1 + 4 - (8 * (r1 + 4 > 7) as i8);
                                     } else if dir_n == r2 {
                                         new_val = l1 + 4 - (8 * (l1 + 4 > 7) as i8);
                                     } else {
@@ -710,29 +731,38 @@ impl WhiteboxTool for FlowAccumulationFullWorkflow {
                                     };
                                 }
 
-                                if new_val != dir && new_val % 2 == 0 && [0,6,7].contains(&new_val) { // make sure new val doesn't create error 1 where it can't be corrected
+                                if new_val != dir
+                                    && new_val % 2 == 0
+                                    && [0, 6, 7].contains(&new_val)
+                                {
+                                    // make sure new val doesn't create error 1 where it can't be corrected
                                     l1 = new_val + 7 - (8 * (new_val + 7 > 7) as i8);
                                     r1 = new_val + 1 - (8 * (new_val + 1 > 7) as i8);
                                     l2 = r1 + 5 - (8 * (r1 + 5 > 7) as i8);
                                     r2 = l1 + 3 - (8 * (l1 + 3 > 7) as i8);
-                                    dir_n = flow_dir.get_value(row + dy[l1 as usize], col + dx[l1 as usize]); // left
-                                    dir_no = flow_dir.get_value(row + dy[r1 as usize], col + dx[r1 as usize]); // right
-                                    if dir_n == r2 || dir_no == l2 { // roll back
+                                    dir_n = flow_dir
+                                        .get_value(row + dy[l1 as usize], col + dx[l1 as usize]); // left
+                                    dir_no = flow_dir
+                                        .get_value(row + dy[r1 as usize], col + dx[r1 as usize]); // right
+                                    if dir_n == r2 || dir_no == l2 {
+                                        // roll back
                                         new_val = old_val;
                                         resolved = true;
                                     }
-                                }                                
-                            } else { // roll back
+                                }
+                            } else {
+                                // roll back
                                 new_val = old_val;
                                 resolved = true;
                             }
-                            if count > 7 { // stuck in a loop, use original flow_dir
+                            if count > 7 {
+                                // stuck in a loop, use original flow_dir
                                 new_val = flow_dir.get_value(row, col);
                                 resolved = true;
                             }
                             dir = new_val;
                             count += 1;
-                        } 
+                        }
                         flow_dir.set_value(row, col, new_val);
                     }
                 }
@@ -743,7 +773,7 @@ impl WhiteboxTool for FlowAccumulationFullWorkflow {
                         old_progress = progress;
                     }
                 }
-            }  
+            }
         }
 
         let flow_dir = Arc::new(flow_dir);

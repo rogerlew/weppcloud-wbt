@@ -1,4 +1,4 @@
-/* 
+/*
 Authors: Prof. John Lindsay
 Created: 28/07/2021 (oringinally in Whitebox Toolset Extension)
 Last Modified: 01/09/2023
@@ -7,41 +7,37 @@ License: MIT
 
 use rstar::primitives::GeomWithData;
 use rstar::RTree;
-use std::io::{Error, ErrorKind};
-use std::{env, path, str};
-use std::time::Instant;
-use std::ops::Index;
 use std::collections::VecDeque;
+use std::io::{Error, ErrorKind};
+use std::ops::Index;
+use std::time::Instant;
+use std::{env, path, str};
 const EPSILON: f64 = std::f64::EPSILON;
-use whitebox_common::utils::{
-    get_formatted_elapsed_time,
-    haversine_distance,
-    wrapped_print
-};
 use whitebox_common::structures::Point2D;
+use whitebox_common::utils::{get_formatted_elapsed_time, haversine_distance, wrapped_print};
 use whitebox_vector::*;
 
 /// This tool performs common stream network analysis operations on an input vector stream file (`--streams`).
 /// The network indices produced by this analysis are contained within the output vector's (`--output`)
 /// attribute table. The following table shows each of the network indices that are calculated.
-/// 
+///
 /// | Index Name | Description |
 /// | :- | :- |
-/// | OUTLET | Unique outlet identifying value, used as basin identifier | 
-/// | TRIB_ID | Unique tributary identifying value | 
-/// | DIST2MOUTH | Distance to outlet (i.e., mouth node) | 
-/// | DS_NODES | Number of downstream nodes | 
-/// | TUCL | Total upstream channel length; the channel equivalent to catchment area | 
-/// | MAXUPSDIST | Maximum upstream distance | 
-/// | HORTON | Horton stream order | 
-/// | STRAHLER | Strahler stream order | 
-/// | SHREVE | Shreve stream magnitude | 
-/// | HACK | Hack stream order | 
-/// | MAINSTREAM | Boolean value indicating whether link is the main stream trunk of its basin | 
+/// | OUTLET | Unique outlet identifying value, used as basin identifier |
+/// | TRIB_ID | Unique tributary identifying value |
+/// | DIST2MOUTH | Distance to outlet (i.e., mouth node) |
+/// | DS_NODES | Number of downstream nodes |
+/// | TUCL | Total upstream channel length; the channel equivalent to catchment area |
+/// | MAXUPSDIST | Maximum upstream distance |
+/// | HORTON | Horton stream order |
+/// | STRAHLER | Strahler stream order |
+/// | SHREVE | Shreve stream magnitude |
+/// | HACK | Hack stream order |
+/// | MAINSTREAM | Boolean value indicating whether link is the main stream trunk of its basin |
 /// | IS_OUTLET | Boolean value indicating whether link is an outlet link |  
 ///
 /// In addition to the input and output files, the user must also specify the snap distance
-/// used to associate points at confluences within the network (`--snap`). It is advisable that the 
+/// used to associate points at confluences within the network (`--snap`). It is advisable that the
 /// input streams file be pre-processed prior to analysis using the `RepairStreamVectorTopology` tool.
 ///
 /// > Note: The input streams file for this tool should be pre-processed using the `RepairStreamVectorTopology`
@@ -63,8 +59,8 @@ use whitebox_vector::*;
 /// For example, see the `StrahlerStreamOrder`, `ShreveStreamMagnitude` tools.
 ///
 /// # Reference
-/// Lindsay, JB, Yang, W, Hornby, DD. 2019. Drainage network analysis and structuring of topologically 
-/// noisy vector stream data. ISPRS International Journal of Geo-Information. 8(9), 422; DOI: 
+/// Lindsay, JB, Yang, W, Hornby, DD. 2019. Drainage network analysis and structuring of topologically
+/// noisy vector stream data. ISPRS International Journal of Geo-Information. 8(9), 422; DOI:
 /// 10.3390/ijgi8090422
 ///
 /// # See Also
@@ -122,8 +118,8 @@ fn help() {
     Note: Use of this tool requires a valid license. To obtain a license,
     contact Whitebox Geospatial Inc. (support@whiteboxgeo.com).
     "#
-            .replace("*", &sep)
-            .replace("EXE_NAME", exe_name);
+    .replace("*", &sep)
+    .replace("EXE_NAME", exe_name);
     println!("{}", s);
 }
 
@@ -200,11 +196,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -215,8 +218,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let start = Instant::now();
 
     let snap_distance = snap_distance * snap_distance;
-    
-    
+
     if !streams_file.contains(&sep) && !streams_file.contains("/") {
         streams_file = format!("{}{}", working_directory, streams_file);
     }
@@ -225,7 +227,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     let input = Shapefile::read(&streams_file)?;
-    
+
     // Make sure the input vector file is of polygon type
     if input.header.shape_type.base_shape_type() != ShapeType::PolyLine {
         return Err(Error::new(
@@ -234,100 +236,28 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         ));
     }
 
-
     // create output file
-    let mut output = Shapefile::initialize_using_file(&output_file, &input, ShapeType::PolyLine, false)?;
-    
+    let mut output =
+        Shapefile::initialize_using_file(&output_file, &input, ShapeType::PolyLine, false)?;
+
     // add the attributes
 
     let fields_vec: Vec<AttributeField> = vec![
-        AttributeField::new(
-            "FID", 
-            FieldDataType::Int, 
-            7u8, 
-            0u8
-        ),
-        AttributeField::new(
-            "TUCL", 
-            FieldDataType::Real, 
-            10u8, 
-            4u8
-        ),
-        AttributeField::new(
-            "MAXUPSDIST", 
-            FieldDataType::Real, 
-            10u8, 
-            4u8
-        ),
-        AttributeField::new(
-            "OUTLET", 
-            FieldDataType::Int, 
-            7u8, 
-            0u8
-        ),
-        AttributeField::new(
-            "HORTON", 
-            FieldDataType::Int, 
-            7u8, 
-            0u8
-        ),
-        AttributeField::new(
-            "STRAHLER", 
-            FieldDataType::Int, 
-            7u8, 
-            0u8
-        ),
-        AttributeField::new(
-            "SHREVE", 
-            FieldDataType::Int, 
-            7u8, 
-            0u8
-        ),
-        AttributeField::new(
-            "HACK", 
-            FieldDataType::Int, 
-            7u8, 
-            0u8
-        ),
-        AttributeField::new(
-            "DIST2MOUTH", 
-            FieldDataType::Real, 
-            10u8, 
-            4u8
-        ),
-        AttributeField::new(
-            "DS_NODES", 
-            FieldDataType::Int, 
-            7u8, 
-            0u8
-        ),
-        AttributeField::new(
-            "IS_OUTLET", 
-            FieldDataType::Int, 
-            1u8, 
-            0u8
-        ),
-        AttributeField::new(
-            "DS_LINK_ID", 
-            FieldDataType::Int, 
-            7u8, 
-            0u8
-        ),
-        AttributeField::new(
-            "MAINSTEM", 
-            FieldDataType::Int, 
-            1u8, 
-            0u8
-        ),
-        AttributeField::new(
-            "TRIB_ID", 
-            FieldDataType::Int, 
-            7u8, 
-            0u8
-        )
+        AttributeField::new("FID", FieldDataType::Int, 7u8, 0u8),
+        AttributeField::new("TUCL", FieldDataType::Real, 10u8, 4u8),
+        AttributeField::new("MAXUPSDIST", FieldDataType::Real, 10u8, 4u8),
+        AttributeField::new("OUTLET", FieldDataType::Int, 7u8, 0u8),
+        AttributeField::new("HORTON", FieldDataType::Int, 7u8, 0u8),
+        AttributeField::new("STRAHLER", FieldDataType::Int, 7u8, 0u8),
+        AttributeField::new("SHREVE", FieldDataType::Int, 7u8, 0u8),
+        AttributeField::new("HACK", FieldDataType::Int, 7u8, 0u8),
+        AttributeField::new("DIST2MOUTH", FieldDataType::Real, 10u8, 4u8),
+        AttributeField::new("DS_NODES", FieldDataType::Int, 7u8, 0u8),
+        AttributeField::new("IS_OUTLET", FieldDataType::Int, 1u8, 0u8),
+        AttributeField::new("DS_LINK_ID", FieldDataType::Int, 7u8, 0u8),
+        AttributeField::new("MAINSTEM", FieldDataType::Int, 1u8, 0u8),
+        AttributeField::new("TRIB_ID", FieldDataType::Int, 7u8, 0u8),
     ];
-
-
 
     // let in_atts = input.attributes.clone();
     // let mut parent_fid_att = 999;
@@ -342,18 +272,32 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
     output.attributes.add_fields(&fields_vec);
 
-    let mut output_confluences = Shapefile::initialize_using_file(&output_file.replace(".shp", "_confluences.shp"), &input, ShapeType::Point, false)?;
+    let mut output_confluences = Shapefile::initialize_using_file(
+        &output_file.replace(".shp", "_confluences.shp"),
+        &input,
+        ShapeType::Point,
+        false,
+    )?;
     output_confluences
         .attributes
         .add_field(&AttributeField::new("FID", FieldDataType::Int, 6u8, 0u8));
 
-
-    let mut output_channel_heads = Shapefile::initialize_using_file(&output_file.replace(".shp", "_channelHeads.shp"), &input, ShapeType::Point, false)?;
+    let mut output_channel_heads = Shapefile::initialize_using_file(
+        &output_file.replace(".shp", "_channelHeads.shp"),
+        &input,
+        ShapeType::Point,
+        false,
+    )?;
     output_channel_heads
         .attributes
         .add_field(&AttributeField::new("FID", FieldDataType::Int, 6u8, 0u8));
 
-    let mut output_outlets = Shapefile::initialize_using_file(&output_file.replace(".shp", "_outlets.shp"), &input, ShapeType::Point, false)?;
+    let mut output_outlets = Shapefile::initialize_using_file(
+        &output_file.replace(".shp", "_outlets.shp"),
+        &input,
+        ShapeType::Point,
+        false,
+    )?;
     output_outlets
         .attributes
         .add_field(&AttributeField::new("FID", FieldDataType::Int, 6u8, 0u8));
@@ -361,19 +305,23 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     // count the number of parts
     let mut total_num_parts = 0;
     for record_num in 0..input.num_records {
-        let record = input.get_record(record_num);        
+        let record = input.get_record(record_num);
         total_num_parts += record.num_parts as usize;
     }
 
     let mut link_mag = vec![0f64; total_num_parts];
-    
+
     let mut link_lengths = vec![0f64; total_num_parts];
     let mut outlet_nums = vec![0; total_num_parts];
     let mut num_downstream_nodes = vec![0; total_num_parts];
 
     let mut downstream_link = vec![-99; total_num_parts];
 
-    let is_geographic_proj = if input.header.x_min.abs() <= 180.0 && input.header.x_max.abs() <= 180.0 && input.header.y_min.abs() < 90.0 && input.header.y_max.abs() <= 90.0 {
+    let is_geographic_proj = if input.header.x_min.abs() <= 180.0
+        && input.header.x_max.abs() <= 180.0
+        && input.header.y_min.abs() < 90.0
+        && input.header.y_max.abs() <= 90.0
+    {
         // it's likely in geographic coordinates.
         wrapped_print("Warning: It appears that the input data is in geographic coordinates. This tool will run better on projected point data.", 50);
         true
@@ -391,7 +339,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let mut polylines = vec![];
     let mut length: f64;
     for record_num in 0..input.num_records {
-        let record = input.get_record(record_num);  
+        let record = input.get_record(record_num);
         for part in 0..record.num_parts as usize {
             part_start = record.parts[part] as usize;
             part_end = if part < record.num_parts as usize - 1 {
@@ -400,33 +348,29 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 record.num_points as usize - 1
             };
 
-            polylines.push(
-                Polyline::new(
-                    &record.points[part_start..=part_end]
-                )
-            );
+            polylines.push(Polyline::new(&record.points[part_start..=part_end]));
 
             end_nodes.push(Location::new(
                 [record.points[part_start].x, record.points[part_start].y],
-                (fid, true)
+                (fid, true),
             ));
 
             end_nodes.push(Location::new(
                 [record.points[part_end].x, record.points[part_end].y],
-                (fid, false)
+                (fid, false),
             ));
 
             // calculate the length of this line
             length = 0.0;
-            for i in part_start+1..=part_end {
+            for i in part_start + 1..=part_end {
                 length += if !is_geographic_proj {
-                    record.points[i].distance(&record.points[i-1])
+                    record.points[i].distance(&record.points[i - 1])
                 } else {
                     let phi1 = record.points[i].y;
                     let lambda1 = record.points[i].x;
 
-                    let phi2 = record.points[i-1].y;
-                    let lambda2 = record.points[i-1].x;
+                    let phi2 = record.points[i - 1].y;
+                    let lambda2 = record.points[i - 1].x;
 
                     haversine_distance((phi1, lambda1), (phi2, lambda2))
                 };
@@ -484,7 +428,9 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             // outlet_list.push(fid);
 
             output_outlets.add_point_record(p1.x, p1.y);
-            output_outlets.attributes.add_record(vec![FieldData::Int(fid as i32)], false);
+            output_outlets
+                .attributes
+                .add_record(vec![FieldData::Int(fid as i32)], false);
         }
 
         p1 = polylines[fid].get_first_node();
@@ -496,15 +442,19 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 num_neighbours += 1;
             }
         }
-        
+
         if num_neighbours == 0 {
             strahler_order[fid] = 1;
             shreve_order[fid] = 1;
             output_channel_heads.add_point_record(p1.x, p1.y);
-            output_channel_heads.attributes.add_record(vec![FieldData::Int(fid as i32)], false);
+            output_channel_heads
+                .attributes
+                .add_record(vec![FieldData::Int(fid as i32)], false);
         } else {
             output_confluences.add_point_record(p1.x, p1.y);
-            output_confluences.attributes.add_record(vec![FieldData::Int(fid as i32)], false);
+            output_confluences
+                .attributes
+                .add_record(vec![FieldData::Int(fid as i32)], false);
         }
 
         if configurations.verbose_mode {
@@ -521,10 +471,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     for outlet in 0..outlet_pts.len() {
         head_pt = outlet_pts[outlet];
         let ret = endnode_tree.locate_within_distance([head_pt.x, head_pt.y], snap_dist_sq);
-        
+
         for pt in ret {
             let (fid, is_start) = pt.data;
-            
+
             if !visited[fid] {
                 visited[fid] = true;
 
@@ -567,7 +517,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         }
     }
 
-
     // How many inflowing links?
     let mut num_inflowing = vec![0; total_num_parts];
     for n in 0..total_num_parts {
@@ -582,7 +531,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             channel_head_list.push(n);
         }
     }
-
 
     let mut ds_queue: VecDeque<isize> = VecDeque::with_capacity(total_num_parts);
     let mut dsl: isize;
@@ -613,7 +561,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 max_upstream_length[dsl as usize] = max_upstream_length[fid as usize];
                 trib_num[dsl as usize] = trib_num[fid as usize];
             }
-            
+
             num_inflowing[dsl as usize] -= 1;
             if num_inflowing[dsl as usize] == 0 {
                 ds_queue.push_back(dsl);
@@ -621,11 +569,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         }
     }
 
-
     // Is main stem
     for n in 0..total_num_parts {
         if outlet_nums[n] > 0 {
-            let outlet_link = outlet_list[outlet_nums[n]-1];
+            let outlet_link = outlet_list[outlet_nums[n] - 1];
             if trib_num[n] == trib_num[outlet_link] {
                 is_main_stem[n] = true;
             }
@@ -648,16 +595,16 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         horton_order[n] = trib_max_strahler[trib];
     }
     drop(trib_max_strahler);
-    
+
     // Calculate Hack order
     let mut visited = vec![false; total_num_parts];
     for outlet in 0..outlet_pts.len() {
         head_pt = outlet_pts[outlet];
         let ret = endnode_tree.locate_within_distance([head_pt.x, head_pt.y], snap_dist_sq);
-        
+
         for pt in ret {
             let (fid, is_start) = pt.data;
-            
+
             if !visited[fid] {
                 visited[fid] = true;
 
@@ -698,7 +645,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             }
         }
     }
-
 
     // Output the data into the attribute table.
     let mut feature_num = 0;
@@ -753,8 +699,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
         count += 1;
         if configurations.verbose_mode {
-            progress =
-                (100.0_f64 * (count + 1) as f64 / total_num_parts as f64) as usize;
+            progress = (100.0_f64 * (count + 1) as f64 / total_num_parts as f64) as usize;
             if progress != old_progress {
                 println!("Writing data: {}%", progress);
                 old_progress = progress;
@@ -791,7 +736,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         }
         Err(e) => return Err(e),
     };
-    
+
     let _ = match output_channel_heads.write() {
         Ok(_) => {
             if configurations.verbose_mode {
@@ -800,8 +745,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         }
         Err(e) => return Err(e),
     };
-    
-    
+
     let elapsed_time = get_formatted_elapsed_time(start);
 
     if configurations.verbose_mode {
@@ -814,11 +758,9 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     Ok(())
 }
 
-
 #[derive(Default, Clone, Debug)]
 struct Polyline {
-    vertices: Vec<Point2D>
-    // id: usize,
+    vertices: Vec<Point2D>, // id: usize,
 }
 
 impl Index<usize> for Polyline {
@@ -828,12 +770,12 @@ impl Index<usize> for Polyline {
         &self.vertices[index]
     }
 }
- 
+
 impl Polyline {
     // Creates a new Polyline from vertices
     fn new(vertices: &[Point2D]) -> Self {
         Polyline {
-            vertices: vertices.to_vec()
+            vertices: vertices.to_vec(),
         }
     }
 

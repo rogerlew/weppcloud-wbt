@@ -12,13 +12,13 @@ This tools provides similar functionality to the ESRI Thin LAS (2D) and LasTools
 high variability in point density, consider using the LidarThinHighDesnity tool instead.
 */
 
-use whitebox_lidar::*;
-use whitebox_common::structures::{Array2D, Point3D};
 use crate::tools::*;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::structures::{Array2D, Point3D};
+use whitebox_lidar::*;
 
 /// Thins a LiDAR point cloud, reducing point density.
 pub struct LidarThin {
@@ -227,11 +227,18 @@ impl WhiteboxTool for LidarThin {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -327,7 +334,8 @@ impl WhiteboxTool for LidarThin {
                     prev_id = pt_id.get_value(row, col);
                     if prev_id == n_points {
                         pt_id.set_value(row, col, i);
-                    } else if p.z < input.get_transformed_coords(prev_id).z { // input.get_point_info(prev_id).z {
+                    } else if p.z < input.get_transformed_coords(prev_id).z {
+                        // input.get_point_info(prev_id).z {
                         pt_id.set_value(row, col, i);
                         filtered[prev_id] = true;
                     } else {
@@ -353,7 +361,8 @@ impl WhiteboxTool for LidarThin {
                     prev_id = pt_id.get_value(row, col);
                     if prev_id == n_points {
                         pt_id.set_value(row, col, i);
-                    } else if p.z > input.get_transformed_coords(prev_id).z { // input.get_point_info(prev_id).z {
+                    } else if p.z > input.get_transformed_coords(prev_id).z {
+                        // input.get_point_info(prev_id).z {
                         pt_id.set_value(row, col, i);
                         filtered[prev_id] = true;
                     } else {

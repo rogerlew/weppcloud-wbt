@@ -6,7 +6,6 @@ Last Modified: 30/01/2020
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
 use std::cmp::Ordering::Equal;
@@ -17,6 +16,7 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_raster::*;
 
 /// This tool can be used to extract channel networks from an input digital elevation models (`--dem`) using
 /// one of three techniques that are based on local topography alone.
@@ -277,11 +277,18 @@ impl WhiteboxTool for ExtractValleys {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -340,8 +347,7 @@ impl WhiteboxTool for ExtractValleys {
                             for col in 0..filter_size as isize {
                                 dx[i] = col - midpoint;
                                 dy[i] = row - midpoint;
-                                z = (dx[i] * dx[i]) as f64 as f64
-                                    + (dy[i] * dy[i]) as f64 as f64;
+                                z = (dx[i] * dx[i]) as f64 as f64 + (dy[i] * dy[i]) as f64 as f64;
                                 if z > sqr_radius {
                                     filter_shape[i] = false;
                                 }

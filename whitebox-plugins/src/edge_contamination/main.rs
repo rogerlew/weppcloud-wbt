@@ -1,4 +1,4 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 23/07/2021
 Last Modified: 23/07/2021
@@ -18,14 +18,14 @@ use whitebox_raster::*;
 
 /// This tool identifs grid cells in a DEM for which the upslope area extends beyond the raster data extent, so-called
 /// 'edge-contamined cells'. If a significant number of edge contaminated cells intersect with your area of interest,
-/// it is likely that any estimate of upslope area (i.e. flow accumulation) will be under-estimated. 
-/// 
-/// The user must specify the  name (`--dem`) of the input digital elevation model (DEM) and the 
-/// output file (`--output`). The DEM must have been hydrologically corrected to remove all spurious depressions and 
-/// flat areas. DEM pre-processing is usually achieved using either the `BreachDepressions` (also `BreachDepressionsLeastCost`) 
-/// or `FillDepressions` tool. 
+/// it is likely that any estimate of upslope area (i.e. flow accumulation) will be under-estimated.
 ///
-/// Additionally, the user must specify the type of flow algorithm used for the analysis (`-flow_type`), which must be 
+/// The user must specify the  name (`--dem`) of the input digital elevation model (DEM) and the
+/// output file (`--output`). The DEM must have been hydrologically corrected to remove all spurious depressions and
+/// flat areas. DEM pre-processing is usually achieved using either the `BreachDepressions` (also `BreachDepressionsLeastCost`)
+/// or `FillDepressions` tool.
+///
+/// Additionally, the user must specify the type of flow algorithm used for the analysis (`-flow_type`), which must be
 /// one of 'd8', 'mfd', or 'dinf', based on each of the `D8FlowAccumulation`, `FD8FlowAccumulation`, `DInfFlowAccumulation`
 /// methods respectively.
 ///
@@ -120,7 +120,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let mut mfd = false;
     let mut dinf = false;
     let mut z_factor = -1.0;
-    
+
     if args.len() <= 1 {
         return Err(Error::new(
             ErrorKind::InvalidInput,
@@ -187,11 +187,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -242,13 +249,11 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         cell_size_y,
     ];
 
-    
     // let mut output = Raster::initialize_using_config(&output_file, &dem.configs);
     let mut output = Raster::initialize_using_file(&output_file, &dem);
     output.configs.data_type = DataType::U8;
     output.configs.nodata = 0.0;
     output.reinitialize_values(0.0);
-
 
     let mut stack = Vec::with_capacity(num_cells as usize);
     let mut edge_stack = Vec::with_capacity(num_cells as usize);
@@ -328,14 +333,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     // let mut dir_dinf: f64;
     // let mut af: f64;
     // let mut ac: f64;
-    let (mut e1, mut r, mut s1, mut s2, mut s, mut e2): (
-        f64,
-        f64,
-        f64,
-        f64,
-        f64,
-        f64,
-    );
+    let (mut e1, mut r, mut s1, mut s2, mut s, mut e2): (f64, f64, f64, f64, f64, f64);
     // let ac_vals = [0f64, 1f64, 1f64, 2f64, 2f64, 3f64, 3f64, 4f64];
     // let af_vals = [1f64, -1f64, 1f64, -1f64, 1f64, -1f64, 1f64, -1f64];
     let e1_col = [1, 0, 0, -1, -1, 0, 0, 1];
@@ -352,16 +350,11 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         col = cell.1;
         output.set_value(row, col, 1.0);
         z = dem.get_value(row, col) * z_factor;
-        
-        max_slope = if dinf {
-            f64::MIN
-        } else {
-            -1f64
-        };
+
+        max_slope = if dinf { f64::MIN } else { -1f64 };
         dir = -1i8;
         // dir_dinf = 360.0;
         for i in 0..8 {
-
             if dinf {
                 e1 = dem.get_value(row + e1_row[i], col + e1_col[i]);
                 e2 = dem.get_value(row + e2_row[i], col + e2_col[i]);
@@ -391,7 +384,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                         } else if r > atanof1 {
                             s = (z - e2) / diag_cell_size;
                         }
-                        if s >= max_slope { // && s != 0.00001 {
+                        if s >= max_slope {
+                            // && s != 0.00001 {
                             max_slope = s;
                             a1 = row + e1_row[i];
                             b1 = col + e1_col[i];
@@ -404,7 +398,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                         } else {
                             (z - e2) / diag_cell_size
                         };
-                        if s >= max_slope { // && s != 0.00001 {
+                        if s >= max_slope {
+                            // && s != 0.00001 {
                             max_slope = s;
                             if z > e1 {
                                 a1 = row + e1_row[i];
@@ -416,12 +411,12 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                                 b1 = -1;
                                 a2 = row + e2_row[i];
                                 b2 = col + e2_col[i];
-                            }    
+                            }
                         }
                     }
                 }
             }
-            
+
             if d8 || mfd {
                 row_n = row + dy[i];
                 col_n = col + dx[i];
@@ -466,7 +461,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 visited.set_value(row_n, col_n, 2);
             }
         }
-        
+
         if configurations.verbose_mode {
             num_solved_cells += 1;
             progress = (100.0_f64 * num_solved_cells as f64 / (num_cells - 1) as f64) as usize;

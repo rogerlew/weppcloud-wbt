@@ -6,7 +6,6 @@ Last Modified: 14/03/2023
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::ParameterFileType;
 use crate::tools::ParameterType;
 use crate::tools::ToolParameter;
@@ -19,6 +18,7 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_raster::*;
 
 /// This tool will re-assign a user-defined background value in an input raster image the **NoData** value.
 /// More precisely, the NoData value will be changed to the specified background value and any existing
@@ -32,8 +32,8 @@ use std::thread;
 /// header, without modifying pixel values. The `ModifyNoDataValue` tool will update the value in the header,
 /// and then modify each existing NoData pixel to contain this new value. Also, `SetNodataValue` does not
 /// overwrite the input file, while the `ModifyNoDataValue` tool does.
-/// 
-/// This tool may result in a change in the data type of the output image compared with the input image, if 
+///
+/// This tool may result in a change in the data type of the output image compared with the input image, if
 /// the background value is set to a negative value and the input image data type is an unsigned integer. In
 /// some cases, this may result in a doubling of the storage size of the output image.
 ///
@@ -52,8 +52,7 @@ impl SetNodataValue {
         // public constructor
         let name = "SetNodataValue".to_string();
         let toolbox = "Data Tools".to_string();
-        let description =
-            "Assign the NoData value for an input image.".to_string();
+        let description = "Assign the NoData value for an input image.".to_string();
 
         let mut parameters = vec![];
         parameters.push(ToolParameter {
@@ -189,11 +188,18 @@ impl WhiteboxTool for SetNodataValue {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -223,22 +229,21 @@ impl WhiteboxTool for SetNodataValue {
             match out_configs.data_type {
                 DataType::U64 => {
                     out_configs.data_type = DataType::I64;
-                },
+                }
                 DataType::U32 => {
                     out_configs.data_type = DataType::I64;
-                },
+                }
                 DataType::U16 => {
                     out_configs.data_type = DataType::I32;
-                },
+                }
                 DataType::U8 => {
                     out_configs.data_type = DataType::I16;
-                },
+                }
                 _ => {} // do nothing
             }
-        } 
+        }
 
         let mut output = Raster::initialize_using_config(&output_file, &out_configs);
-        
 
         let mut num_procs = num_cpus::get() as isize;
         let configs = whitebox_common::configs::get_configs()?;

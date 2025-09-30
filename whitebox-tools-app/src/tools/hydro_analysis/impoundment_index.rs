@@ -6,14 +6,14 @@ Last Modified: 12/10/2018
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, VecDeque};
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 // use std::path;
 // use std::path::Path;
 
@@ -282,11 +282,18 @@ impl WhiteboxTool for ImpoundmentSizeIndex {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -296,19 +303,31 @@ impl WhiteboxTool for ImpoundmentSizeIndex {
         if !input_file.contains(&sep) && !input_file.contains("/") {
             input_file = format!("{}{}", working_directory, input_file);
         }
-        if !out_mean_file.is_empty() && !out_mean_file.contains(&sep) && !out_mean_file.contains("/") {
+        if !out_mean_file.is_empty()
+            && !out_mean_file.contains(&sep)
+            && !out_mean_file.contains("/")
+        {
             out_mean_file = format!("{}{}", working_directory, out_mean_file);
         }
         if !out_max_file.is_empty() && !out_max_file.contains(&sep) && !out_max_file.contains("/") {
             out_max_file = format!("{}{}", working_directory, out_max_file);
         }
-        if !out_volume_file.is_empty() && !out_volume_file.contains(&sep) && !out_volume_file.contains("/") {
+        if !out_volume_file.is_empty()
+            && !out_volume_file.contains(&sep)
+            && !out_volume_file.contains("/")
+        {
             out_volume_file = format!("{}{}", working_directory, out_volume_file);
         }
-        if !out_area_file.is_empty() && !out_area_file.contains(&sep) && !out_area_file.contains("/") {
+        if !out_area_file.is_empty()
+            && !out_area_file.contains(&sep)
+            && !out_area_file.contains("/")
+        {
             out_area_file = format!("{}{}", working_directory, out_area_file);
         }
-        if !out_height_file.is_empty() && !out_height_file.contains(&sep) && !out_height_file.contains("/") {
+        if !out_height_file.is_empty()
+            && !out_height_file.contains(&sep)
+            && !out_height_file.contains("/")
+        {
             out_height_file = format!("{}{}", working_directory, out_height_file);
         }
 
@@ -728,29 +747,29 @@ impl WhiteboxTool for ImpoundmentSizeIndex {
                 upslope_elevs[row as usize][col as usize] = vec![];
 
                 // if out_type == 0 {
-                    // area
-                    // output.increment(row_n, col_n, num_upslope * grid_area);
-                    out_area.increment(row_n, col_n, (num_upslope * grid_area) as f32);
+                // area
+                // output.increment(row_n, col_n, num_upslope * grid_area);
+                out_area.increment(row_n, col_n, (num_upslope * grid_area) as f32);
                 // } else if out_type == 1 {
-                    // volume
-                    vol = total_elev_diff * grid_area;
-                    // output.increment(row_n, col_n, vol);
-                    out_volume.increment(row_n, col_n, vol as f32);
+                // volume
+                vol = total_elev_diff * grid_area;
+                // output.increment(row_n, col_n, vol);
+                out_volume.increment(row_n, col_n, vol as f32);
                 // } else if out_type == 2 {
-                    // mean depth
-                    // if num_upslope > 0f64 {
-                        // output.increment(row_n, col_n, total_elev_diff);
-                        // num_flooded_cells.increment(row_n, col_n, num_upslope as u32);
-                        // out_mean.increment(row_n, col_n, total_elev_diff);
-                    // }
+                // mean depth
+                // if num_upslope > 0f64 {
+                // output.increment(row_n, col_n, total_elev_diff);
+                // num_flooded_cells.increment(row_n, col_n, num_upslope as u32);
+                // out_mean.increment(row_n, col_n, total_elev_diff);
+                // }
                 // } else {
-                    // max depth
-                    // if output.get_value(row_n, col_n) < max_depth {
-                    //     output.set_value(row_n, col_n, max_depth);
-                    // }
-                    if out_max.get_value(row_n, col_n) < max_depth as f32 {
-                        out_max.set_value(row_n, col_n, max_depth as f32);
-                    }
+                // max depth
+                // if output.get_value(row_n, col_n) < max_depth {
+                //     output.set_value(row_n, col_n, max_depth);
+                // }
+                if out_max.get_value(row_n, col_n) < max_depth as f32 {
+                    out_max.set_value(row_n, col_n, max_depth as f32);
+                }
                 // }
 
                 num_inflowing.decrement(row_n, col_n, 1i8);
@@ -768,7 +787,6 @@ impl WhiteboxTool for ImpoundmentSizeIndex {
                 }
             }
         }
-
 
         let elapsed_time = get_formatted_elapsed_time(start);
 
@@ -795,11 +813,11 @@ impl WhiteboxTool for ImpoundmentSizeIndex {
                             out_volume.set_value(row, col, 0f32);
                             out_area.set_value(row, col, 0f32);
                         }
-                    // } else {
-                    //     // this handles the nodata values in the input that should also be
-                    //     // nodata in the output ISI image. The dam height raster will already
-                    //     // have nodata in each of these cells.
-                    //     output.set_value(row, col, nodata);
+                        // } else {
+                        //     // this handles the nodata values in the input that should also be
+                        //     // nodata in the output ISI image. The dam height raster will already
+                        //     // have nodata in each of these cells.
+                        //     output.set_value(row, col, nodata);
                     }
                 }
                 if verbose {
@@ -820,7 +838,8 @@ impl WhiteboxTool for ImpoundmentSizeIndex {
             ));
             output_hgt.add_metadata_entry(format!("Input file: {}", input_file));
             output_hgt.add_metadata_entry(format!("Dam length: {}", dam_length));
-            output_hgt.add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed_time));
+            output_hgt
+                .add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed_time));
 
             if verbose {
                 println!("Saving dam height data...")
@@ -834,7 +853,7 @@ impl WhiteboxTool for ImpoundmentSizeIndex {
                 Err(e) => return Err(e),
             };
         }
-        
+
         // let mut out_mean = Raster::initialize_using_file(&out_mean_file, &input);
         let mut out_mean: Array2D<f32> = Array2D::new(rows, columns, 0f32, -32768.0)?;
         let mut area: f32;
@@ -872,7 +891,8 @@ impl WhiteboxTool for ImpoundmentSizeIndex {
         // Output max depth data
         if !out_mean_file.is_empty() {
             //Raster::initialize_using_file(&output_file, &input);
-            let mut output = Raster::initialize_from_array2d(&out_mean_file, &out_configs, &out_mean);
+            let mut output =
+                Raster::initialize_from_array2d(&out_mean_file, &out_configs, &out_mean);
             output.configs.data_type = DataType::F32;
             drop(out_mean);
             if verbose {
@@ -887,7 +907,7 @@ impl WhiteboxTool for ImpoundmentSizeIndex {
                 Err(e) => return Err(e),
             };
         }
-        
+
         // Output max depth data
         if !out_max_file.is_empty() {
             //Raster::initialize_using_file(&output_file, &input);
@@ -909,7 +929,8 @@ impl WhiteboxTool for ImpoundmentSizeIndex {
 
         // Output flooded volume data
         if !out_volume_file.is_empty() {
-            let mut output = Raster::initialize_from_array2d(&out_volume_file, &out_configs, &out_volume);
+            let mut output =
+                Raster::initialize_from_array2d(&out_volume_file, &out_configs, &out_volume);
             output.configs.data_type = DataType::F32;
             drop(out_volume);
             if verbose {
@@ -928,7 +949,8 @@ impl WhiteboxTool for ImpoundmentSizeIndex {
         // Output flooded area data
         if !out_area_file.is_empty() {
             //Raster::initialize_using_file(&output_file, &input);
-            let mut output = Raster::initialize_from_array2d(&out_area_file, &out_configs, &out_area);
+            let mut output =
+                Raster::initialize_from_array2d(&out_area_file, &out_configs, &out_area);
             output.configs.data_type = DataType::F32;
             drop(out_area);
             if verbose {
@@ -944,10 +966,6 @@ impl WhiteboxTool for ImpoundmentSizeIndex {
             };
         }
 
-
-
-        
-        
         // output.configs.palette = "spectrum.plt".to_string();
         // output.add_metadata_entry(format!(
         //     "Created by whitebox_tools\' {} tool",
@@ -975,8 +993,6 @@ impl WhiteboxTool for ImpoundmentSizeIndex {
         //     }
         //     Err(e) => return Err(e),
         // };
-
-        
 
         if verbose {
             println!(

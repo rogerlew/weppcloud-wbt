@@ -10,18 +10,18 @@ License: MIT
 extern crate brotli;
 extern crate las;
 use super::header::LasHeader;
-use super::point_data::{ ColourData, PointData, WaveformPacket };
+use super::point_data::{ColourData, PointData, WaveformPacket};
 use super::vlr::Vlr;
-use super::zlidar_compression::{ZlidarCompression};
-use whitebox_raster::geotiff::geokeys::GeoKeys;
-use whitebox_common::spatial_ref_system::esri_wkt_from_epsg;
-use whitebox_common::structures::{ BoundingBox, Point3D };
-use whitebox_common::utils::{ ByteOrderReader, Endianness };
-use byteorder::{ LittleEndian, WriteBytesExt };
+use super::zlidar_compression::ZlidarCompression;
+use byteorder::{LittleEndian, WriteBytesExt};
 use chrono::prelude::*;
 use core::slice;
 use miniz_oxide::deflate::compress_to_vec_zlib;
 use miniz_oxide::inflate::decompress_to_vec_zlib;
+use whitebox_common::spatial_ref_system::esri_wkt_from_epsg;
+use whitebox_common::structures::{BoundingBox, Point3D};
+use whitebox_common::utils::{ByteOrderReader, Endianness};
+use whitebox_raster::geotiff::geokeys::GeoKeys;
 // use std::collections::VecDeque;
 // use std::cmp::min;
 use std::f64;
@@ -40,15 +40,15 @@ use zip::write::{FileOptions, ZipWriter};
 use zip::CompressionMethod;
 // use compression::prelude::*;
 // use lz4_compression::prelude::compress;
-use las::Reader;
 use las::Read as OtherRead;
+use las::Reader;
 // use las::raw::point::Flags::{ThreeByte, TwoByte};
 // use las::{Builder, Write, Writer};
+use las::raw::point::ScanAngle;
+use las::raw::vlr::RecordLength;
 use las::Builder;
 use las::Write as OtherWrite;
 use las::Writer as OtherWriter;
-use las::raw::point::ScanAngle;
-use las::raw::vlr::RecordLength;
 
 #[derive(Default, Clone)]
 pub struct LasFile {
@@ -198,9 +198,7 @@ impl LasFile {
         let y: f64;
         let z: f64;
         match point {
-            LidarPointRecord::PointRecord0 { 
-                point_data 
-            } => {
+            LidarPointRecord::PointRecord0 { point_data } => {
                 self.point_data.push(point_data);
                 x = point_data.x as f64 * self.header.x_scale_factor + self.header.x_offset;
                 y = point_data.y as f64 * self.header.y_scale_factor + self.header.y_offset;
@@ -479,11 +477,12 @@ impl LasFile {
         self.colour_data.len() > 0
     }
 
-    pub fn get_gps_time(&self, index: usize) -> Option<f64> { // Result<f64, Error> {
+    pub fn get_gps_time(&self, index: usize) -> Option<f64> {
+        // Result<f64, Error> {
         if self.gps_data.len() > index {
             return Some(self.gps_data[index]); // Ok(self.gps_data[index]);
-        // } else {
-        //     return Err(Error::new(ErrorKind::NotFound, "GPS time value not found, possibly because the file point format does not include GPS data."));
+                                               // } else {
+                                               //     return Err(Error::new(ErrorKind::NotFound, "GPS time value not found, possibly because the file point format does not include GPS data."));
         }
         None
     }
@@ -1183,28 +1182,31 @@ impl LasFile {
         self.header.project_id_used = true;
         self.header.version_major = header.version().major;
         self.header.version_minor = header.version().minor;
- 
+
         if self.header.version_major < 1
             || self.header.version_major > 2
             || self.header.version_minor > 5
         {
-                // There's something very wrong. Throw an error.
-                return Err(Error::new(ErrorKind::Other, format!("Error reading: {}\nIncorrect file version {}.{}\nEither the file is formatted incorrectly or it is an unsupported LAS version.", self.file_name, self.header.version_major, self.header.version_minor)));
+            // There's something very wrong. Throw an error.
+            return Err(Error::new(ErrorKind::Other, format!("Error reading: {}\nIncorrect file version {}.{}\nEither the file is formatted incorrectly or it is an unsupported LAS version.", self.file_name, self.header.version_major, self.header.version_minor)));
         }
 
         self.header.file_signature = str::from_utf8(&raw.file_signature).unwrap().to_owned();
         self.header.file_source_id = header.file_source_id();
-        self.header.global_encoding = GlobalEncodingField { value: raw.global_encoding };
-
+        self.header.global_encoding = GlobalEncodingField {
+            value: raw.global_encoding,
+        };
 
         let guid = header.guid(); //.to_fields_le() -> (u32, u16, u16, &[u8; 8]);
         let fields = guid.to_fields_le();
         self.header.project_id1 = fields.0;
-        self.header.project_id2 = fields.1; 
+        self.header.project_id2 = fields.1;
         self.header.project_id3 = fields.2;
         self.header.project_id4 = fields.3.clone();
 
-        self.header.system_id = str::from_utf8(&raw.system_identifier.to_owned()).unwrap().to_owned();
+        self.header.system_id = str::from_utf8(&raw.system_identifier.to_owned())
+            .unwrap()
+            .to_owned();
         self.header.generating_software = header.generating_software().to_owned();
         self.header.file_creation_day = raw.file_creation_day_of_year;
         self.header.file_creation_year = raw.file_creation_year;
@@ -1224,7 +1226,7 @@ impl LasFile {
         self.header.x_offset = transforms.x.offset;
         self.header.y_offset = transforms.y.offset;
         self.header.z_offset = transforms.z.offset;
-        
+
         let bounds = header.bounds();
         self.header.max_x = bounds.max.x;
         self.header.min_x = bounds.min.x;
@@ -1263,12 +1265,12 @@ impl LasFile {
 
          */
 
-         ///////////////////////
+        ///////////////////////
         // Read the VLR data //
         ///////////////////////
         for v1 in header.vlrs() {
             let mut v = v1.clone();
-            // The following is a bit of a hack. Either the las or laz crate has an error 
+            // The following is a bit of a hack. Either the las or laz crate has an error
             // where it is reading a VLR description in more than 32 characters.
             while v.description.len() > 32 {
                 v.description.pop();
@@ -1282,9 +1284,11 @@ impl LasFile {
             vlr.record_length_after_header = match raw_vlr.record_length_after_header {
                 RecordLength::Vlr(v) => v,
                 RecordLength::Evlr(v) => v as u16,
-            }; 
-            
-            let mut description = str::from_utf8(&raw_vlr.description.clone()).unwrap().to_owned();
+            };
+
+            let mut description = str::from_utf8(&raw_vlr.description.clone())
+                .unwrap()
+                .to_owned();
             while description.len() > 32 {
                 description.pop();
             }
@@ -1316,7 +1320,6 @@ impl LasFile {
             self.vlr_data.push(vlr);
         }
 
-
         if self.file_mode != "rh" {
             // Read the points into memory
             self.point_data = Vec::with_capacity(self.header.number_of_points as usize);
@@ -1325,7 +1328,7 @@ impl LasFile {
             self.waveform_data = Vec::with_capacity(self.header.number_of_points as usize);
             let mut rgb: ColourData;
             let mut wfp: WaveformPacket;
-                    
+
             for wrapped_point in reader.points() {
                 let point = wrapped_point.unwrap();
                 let raw_point = point.into_raw(&transforms).unwrap();
@@ -1336,20 +1339,21 @@ impl LasFile {
                 p.z = raw_point.z;
 
                 // if self.use_point_intensity {
-                    p.intensity = raw_point.intensity;
+                p.intensity = raw_point.intensity;
                 // }
                 let flags = raw_point.flags;
                 p.set_return_number(flags.return_number());
                 p.set_number_of_returns(flags.number_of_returns());
                 p.set_classification(u8::from(flags.to_classification().unwrap()));
-                p.set_scan_direction_flag(flags.scan_direction() == las::point::ScanDirection::LeftToRight);
+                p.set_scan_direction_flag(
+                    flags.scan_direction() == las::point::ScanDirection::LeftToRight,
+                );
                 p.set_synthetic(flags.is_synthetic());
                 p.set_keypoint(flags.is_key_point());
                 p.set_withheld(flags.is_withheld());
                 p.set_overlap(flags.is_overlap());
                 p.set_scanner_channel(flags.scanner_channel());
                 p.set_edge_of_flightline_flag(flags.is_edge_of_flight_line());
-
 
                 // match flags {
                 //     TwoByte(b1, b2) => {
@@ -1362,9 +1366,9 @@ impl LasFile {
                 //         p.classification = b3;
                 //     },
                 // }
-                
+
                 // if self.use_point_userdata {
-                    p.user_data = raw_point.user_data;
+                p.user_data = raw_point.user_data;
                 // }
                 p.scan_angle = match raw_point.scan_angle {
                     ScanAngle::Rank(value) => value as i16,
@@ -1376,7 +1380,6 @@ impl LasFile {
                 if raw_point.gps_time.is_some() {
                     self.gps_data.push(raw_point.gps_time.unwrap());
                 }
-                
 
                 // read the RGB/NIR data
                 if raw_point.color.is_some() {
@@ -1393,7 +1396,7 @@ impl LasFile {
 
                     self.colour_data.push(rgb);
                 }
-                
+
                 // read the waveform data
                 if raw_point.waveform.is_some() {
                     let waveform = raw_point.waveform.unwrap();
@@ -1415,7 +1418,6 @@ impl LasFile {
         drop(reader);
 
         Ok(())
-
     }
 
     pub fn read_zlidar_data(&mut self) -> Result<(), Error> {
@@ -1622,10 +1624,10 @@ impl LasFile {
             bor.seek(next_offset);
             num_fields = bor.read_u8().expect("Error while reading byte data.");
             let compression_byte = bor.read_u8().expect("Error while reading byte data.");
-            
-            compression_method =  compression_byte & 0b0000_0111;
+
+            compression_method = compression_byte & 0b0000_0111;
             let compression_level = (compression_byte & 0b1111_1000) >> 3;
-            
+
             // if compression_method != 0 && compression_method != 1 {
             //     return Err(Error::new(
             //         ErrorKind::Other,
@@ -1634,12 +1636,18 @@ impl LasFile {
             // }
 
             self.compression = match compression_method {
-                0 => { ZlidarCompression::Deflate { level: compression_level } },
-                1 => { ZlidarCompression::Brotli { level: compression_level } },
-                _ => {return Err(Error::new(
-                    ErrorKind::Other,
-                    "Unsupported compression method.",
-                ));}
+                0 => ZlidarCompression::Deflate {
+                    level: compression_level,
+                },
+                1 => ZlidarCompression::Brotli {
+                    level: compression_level,
+                },
+                _ => {
+                    return Err(Error::new(
+                        ErrorKind::Other,
+                        "Unsupported compression method.",
+                    ));
+                }
             };
 
             major_version = bor.read_u8().expect("Error while reading byte data.");
@@ -1675,16 +1683,18 @@ impl LasFile {
                         offset = bor.read_u64().expect("Error while reading byte data.");
                         num_bytes = bor.read_u64().expect("Error while reading byte data.");
                         block_bytes += 17 + num_bytes;
-                        
+
                         // println!("field_code: {} offset: {} num_bytes: {} block_bytes: {}", field_code, offset, num_bytes, block_bytes);
-                        
+
                         // Decompress the bytes
                         bor.seek(offset as usize);
                         let mut compressed = vec![0u8; num_bytes as usize];
-                        bor.read_exact(&mut compressed).expect("Error while reading byte data.");
-                        let decompressed = if compression_method == 0 { 
+                        bor.read_exact(&mut compressed)
+                            .expect("Error while reading byte data.");
+                        let decompressed = if compression_method == 0 {
                             // DEFLATE
-                            decompress_to_vec_zlib(&compressed).expect("DEFLATE failed to decompress data.")
+                            decompress_to_vec_zlib(&compressed)
+                                .expect("DEFLATE failed to decompress data.")
                         } else if compression_method == 1 {
                             // brotli
                             brotli_decompress(&compressed)
@@ -1693,13 +1703,15 @@ impl LasFile {
                         };
 
                         match field_code {
-                            0 => { // Change byte
+                            0 => {
+                                // Change byte
                                 // println!("field_code: {} offset: {} num_bytes: {} {:?}", field_code, offset, num_bytes, compressed);
                                 change_bytes = decompressed.clone();
                                 num_points_in_block = change_bytes.len();
                                 change_byte_read = true;
-                            }, 
-                            1 => { // Scanner channel
+                            }
+                            1 => {
+                                // Scanner channel
                                 if !change_byte_read || num_points_in_block == 0 {
                                     panic!("Point block fields do not appear to be in the proper order. The file will not be read.");
                                 }
@@ -1730,9 +1742,13 @@ impl LasFile {
                                 }
 
                                 scanner_chan_read = true;
-                            },
-                            2 => { // Return number
-                                if !change_byte_read || !scanner_chan_read || num_points_in_block == 0 {
+                            }
+                            2 => {
+                                // Return number
+                                if !change_byte_read
+                                    || !scanner_chan_read
+                                    || num_points_in_block == 0
+                                {
                                     panic!("Point block fields do not appear to be in the proper order. The file will not be read.");
                                 }
 
@@ -1754,18 +1770,21 @@ impl LasFile {
                                         self.point_data[pt].set_return_number(prev_vals[scan_chan]);
                                     } else if ret_num_diff == 1 {
                                         // one more than previous for scan chan
-                                        self.point_data[pt].set_return_number(prev_vals[scan_chan] + 1);
+                                        self.point_data[pt]
+                                            .set_return_number(prev_vals[scan_chan] + 1);
                                         prev_vals[scan_chan] += 1;
                                     } else if ret_num_diff == 2 {
                                         // one less than previous for scan chan
-                                        self.point_data[pt].set_return_number(prev_vals[scan_chan] - 1);
+                                        self.point_data[pt]
+                                            .set_return_number(prev_vals[scan_chan] - 1);
                                         prev_vals[scan_chan] -= 1;
-                                    } else { // 3
+                                    } else {
+                                        // 3
                                         // new value stored in data
                                         ret_num = (val_u8 >> num_bits_read) & 0b0000_1111u8;
                                         self.point_data[pt].set_return_number(ret_num);
                                         num_bits_read += num_bits;
-                                        if num_bits_read == 8 && val_num < decompressed.len()-1 {
+                                        if num_bits_read == 8 && val_num < decompressed.len() - 1 {
                                             val_num += 1;
                                             val_u8 = decompressed[val_num];
                                             num_bits_read = 0;
@@ -1775,10 +1794,14 @@ impl LasFile {
                                 }
 
                                 ret_num_read = true;
-                            }, 
+                            }
 
-                            3 => { // Number of returns
-                                if !change_byte_read || !scanner_chan_read || num_points_in_block == 0 {
+                            3 => {
+                                // Number of returns
+                                if !change_byte_read
+                                    || !scanner_chan_read
+                                    || num_points_in_block == 0
+                                {
                                     panic!("Point block fields do not appear to be in the proper order. The file will not be read.");
                                 }
 
@@ -1799,14 +1822,15 @@ impl LasFile {
                                         num_rets = (val_u8 >> num_bits_read) & 0b0000_1111u8;
                                         self.point_data[pt].set_number_of_returns(num_rets);
                                         num_bits_read += num_bits;
-                                        if num_bits_read == 8 && val_num < decompressed.len()-1 {
+                                        if num_bits_read == 8 && val_num < decompressed.len() - 1 {
                                             val_num += 1;
                                             val_u8 = decompressed[val_num];
                                             num_bits_read = 0;
                                         }
                                         prev_vals[scan_chan] = num_rets;
                                     } else {
-                                        self.point_data[pt].set_number_of_returns(prev_vals[scan_chan]);
+                                        self.point_data[pt]
+                                            .set_number_of_returns(prev_vals[scan_chan]);
                                     }
 
                                     // if pt >= 100_000 && pt < 100_100 {
@@ -1816,10 +1840,16 @@ impl LasFile {
                                 }
 
                                 num_rets_read = true;
-                            }, 
+                            }
 
-                            4 => { // X
-                                if !change_byte_read || !scanner_chan_read || !ret_num_read || !num_rets_read || num_points_in_block == 0 {
+                            4 => {
+                                // X
+                                if !change_byte_read
+                                    || !scanner_chan_read
+                                    || !ret_num_read
+                                    || !num_rets_read
+                                    || num_points_in_block == 0
+                                {
                                     panic!("Point block fields do not appear to be in the proper order. The file will not be read.");
                                 }
 
@@ -1827,16 +1857,19 @@ impl LasFile {
                                 num_bytes = bor.read_u64().expect("Error while reading byte data.");
                                 bor.seek(offset as usize);
                                 let mut compressed = vec![0u8; num_bytes as usize];
-                                bor.read_exact(&mut compressed).expect("Error while reading byte data.");
+                                bor.read_exact(&mut compressed)
+                                    .expect("Error while reading byte data.");
                                 block_bytes += 16 + num_bytes;
-                                
+
                                 // Decompress the bytes
                                 bor.seek(offset as usize);
                                 let mut compressed = vec![0u8; num_bytes as usize];
-                                bor.read_exact(&mut compressed).expect("Error while reading byte data.");
-                                let decompressed2 = if compression_method == 0 { 
+                                bor.read_exact(&mut compressed)
+                                    .expect("Error while reading byte data.");
+                                let decompressed2 = if compression_method == 0 {
                                     // DEFLATE
-                                    decompress_to_vec_zlib(&compressed).expect("DEFLATE failed to decompress data.")
+                                    decompress_to_vec_zlib(&compressed)
+                                        .expect("DEFLATE failed to decompress data.")
                                 } else if compression_method == 1 {
                                     // brotli
                                     brotli_decompress(&compressed)
@@ -1866,18 +1899,13 @@ impl LasFile {
                                 self.point_data[point_num].x = val_i32; // as f64 * self.header.x_scale_factor + self.header.x_offset;
                                 let num_bits = 4;
                                 let mut num_bits_read = num_bits;
-                                let mut prev_index = [
-                                    [0; 16],
-                                    [0; 16],
-                                    [0; 16],
-                                    [0; 16],
-                                ];
+                                let mut prev_index = [[0; 16], [0; 16], [0; 16], [0; 16]];
                                 for _ in 1..num_points_in_block {
                                     // pt = point_num + j;
-                                    
+
                                     tag = (val_u8 >> num_bits_read) & 0b0000_1111u8;
                                     num_bits_read += num_bits;
-                                    if num_bits_read == 8 && val_num < decompressed.len()-1 {
+                                    if num_bits_read == 8 && val_num < decompressed.len() - 1 {
                                         val_num += 1;
                                         val_u8 = decompressed[val_num];
                                         num_bits_read = 0;
@@ -1888,13 +1916,17 @@ impl LasFile {
                                         val_i32 = tag as i32 - 6;
                                     } else if tag == 13 {
                                         // the offset is one byte
-                                        val_i32 = bor2.read_i8().expect("Error reading byte data.") as i32;
+                                        val_i32 = bor2.read_i8().expect("Error reading byte data.")
+                                            as i32;
                                     } else if tag == 14 {
                                         // the offset is two bytes
-                                        val_i32 = bor2.read_i16().expect("Error reading byte data.") as i32;
-                                    } else { // tag == 15
+                                        val_i32 = bor2.read_i16().expect("Error reading byte data.")
+                                            as i32;
+                                    } else {
+                                        // tag == 15
                                         // the offset is four bytes
-                                        val_i32 = bor2.read_i32().expect("Error reading byte data.");
+                                        val_i32 =
+                                            bor2.read_i32().expect("Error reading byte data.");
                                     }
                                     val2.push(val_i32);
                                 }
@@ -1902,24 +1934,31 @@ impl LasFile {
                                 for j in 1..num_points_in_block {
                                     pt = point_num + j;
                                     scan_chan = self.point_data[pt].scanner_channel() as usize;
-                                    
+
                                     cntx = self.get_context(pt);
-                                    let delta_j: i32 = val2[j] + delta_values[prev_index[scan_chan][cntx]];
+                                    let delta_j: i32 =
+                                        val2[j] + delta_values[prev_index[scan_chan][cntx]];
                                     delta_values.push(delta_j);
 
                                     let val: i32 = prev_vals[scan_chan] + delta_j;
 
                                     self.point_data[pt].x = val; // as f64 * self.header.x_scale_factor + self.header.x_offset;
-                                    // if pt >= 100_000 && pt < 100_100 {
-                                    //     println!("{}, {}/{}, {}, {}, {}", pt, self.point_data[pt].return_number(), self.point_data[pt].number_of_returns(), val2[j], delta_j, self.point_data[pt].x);
-                                    // }
+                                                                 // if pt >= 100_000 && pt < 100_100 {
+                                                                 //     println!("{}, {}/{}, {}, {}, {}", pt, self.point_data[pt].return_number(), self.point_data[pt].number_of_returns(), val2[j], delta_j, self.point_data[pt].x);
+                                                                 // }
                                     prev_vals[scan_chan] = val;
                                     prev_index[scan_chan][cntx] = j;
                                 }
-                            },
+                            }
 
-                            5 => { // Y
-                                if !change_byte_read || !scanner_chan_read || !ret_num_read || !num_rets_read || num_points_in_block == 0 {
+                            5 => {
+                                // Y
+                                if !change_byte_read
+                                    || !scanner_chan_read
+                                    || !ret_num_read
+                                    || !num_rets_read
+                                    || num_points_in_block == 0
+                                {
                                     panic!("Point block fields do not appear to be in the proper order. The file will not be read.");
                                 }
 
@@ -1927,16 +1966,19 @@ impl LasFile {
                                 num_bytes = bor.read_u64().expect("Error while reading byte data.");
                                 bor.seek(offset as usize);
                                 let mut compressed = vec![0u8; num_bytes as usize];
-                                bor.read_exact(&mut compressed).expect("Error while reading byte data.");
+                                bor.read_exact(&mut compressed)
+                                    .expect("Error while reading byte data.");
                                 block_bytes += 16 + num_bytes;
-                                
+
                                 // Decompress the bytes
                                 bor.seek(offset as usize);
                                 let mut compressed = vec![0u8; num_bytes as usize];
-                                bor.read_exact(&mut compressed).expect("Error while reading byte data.");
-                                let decompressed2 = if compression_method == 0 { 
+                                bor.read_exact(&mut compressed)
+                                    .expect("Error while reading byte data.");
+                                let decompressed2 = if compression_method == 0 {
                                     // DEFLATE
-                                    decompress_to_vec_zlib(&compressed).expect("DEFLATE failed to decompress data.")
+                                    decompress_to_vec_zlib(&compressed)
+                                        .expect("DEFLATE failed to decompress data.")
                                 } else if compression_method == 1 {
                                     // brotli
                                     brotli_decompress(&compressed)
@@ -1966,18 +2008,13 @@ impl LasFile {
                                 self.point_data[point_num].y = val_i32; // as f64 * self.header.y_scale_factor + self.header.y_offset;
                                 let num_bits = 4;
                                 let mut num_bits_read = num_bits;
-                                let mut prev_index = [
-                                    [0; 16],
-                                    [0; 16],
-                                    [0; 16],
-                                    [0; 16],
-                                ];
+                                let mut prev_index = [[0; 16], [0; 16], [0; 16], [0; 16]];
                                 for _ in 1..num_points_in_block {
                                     // pt = point_num + j;
-                                    
+
                                     tag = (val_u8 >> num_bits_read) & 0b0000_1111u8;
                                     num_bits_read += num_bits;
-                                    if num_bits_read == 8 && val_num < decompressed.len()-1 {
+                                    if num_bits_read == 8 && val_num < decompressed.len() - 1 {
                                         val_num += 1;
                                         val_u8 = decompressed[val_num];
                                         num_bits_read = 0;
@@ -1988,13 +2025,17 @@ impl LasFile {
                                         val_i32 = tag as i32 - 6;
                                     } else if tag == 13 {
                                         // the offset is one byte
-                                        val_i32 = bor2.read_i8().expect("Error reading byte data.") as i32;
+                                        val_i32 = bor2.read_i8().expect("Error reading byte data.")
+                                            as i32;
                                     } else if tag == 14 {
                                         // the offset is two bytes
-                                        val_i32 = bor2.read_i16().expect("Error reading byte data.") as i32;
-                                    } else { // tag == 15
+                                        val_i32 = bor2.read_i16().expect("Error reading byte data.")
+                                            as i32;
+                                    } else {
+                                        // tag == 15
                                         // the offset is four bytes
-                                        val_i32 = bor2.read_i32().expect("Error reading byte data.");
+                                        val_i32 =
+                                            bor2.read_i32().expect("Error reading byte data.");
                                     }
                                     val2.push(val_i32);
                                 }
@@ -2002,24 +2043,31 @@ impl LasFile {
                                 for j in 1..num_points_in_block {
                                     pt = point_num + j;
                                     scan_chan = self.point_data[pt].scanner_channel() as usize;
-                                    
+
                                     cntx = self.get_context(pt);
-                                    let delta_j: i32 = val2[j] + delta_values[prev_index[scan_chan][cntx]];
+                                    let delta_j: i32 =
+                                        val2[j] + delta_values[prev_index[scan_chan][cntx]];
                                     delta_values.push(delta_j);
 
                                     let val: i32 = prev_vals[scan_chan] + delta_j;
 
                                     self.point_data[pt].y = val; // as f64 * self.header.y_scale_factor + self.header.y_offset;
-                                    // if pt >= 100_000 && pt < 100_100 {
-                                    //     println!("{}, {}, {}", pt, self.point_data[pt].x, self.point_data[pt].y);
-                                    // }
+                                                                 // if pt >= 100_000 && pt < 100_100 {
+                                                                 //     println!("{}, {}, {}", pt, self.point_data[pt].x, self.point_data[pt].y);
+                                                                 // }
                                     prev_vals[scan_chan] = val;
                                     prev_index[scan_chan][cntx] = j;
                                 }
-                            },
+                            }
 
-                            6 => { // Z
-                                if !change_byte_read || !scanner_chan_read || !ret_num_read || !num_rets_read || num_points_in_block == 0 {
+                            6 => {
+                                // Z
+                                if !change_byte_read
+                                    || !scanner_chan_read
+                                    || !ret_num_read
+                                    || !num_rets_read
+                                    || num_points_in_block == 0
+                                {
                                     panic!("Point block fields do not appear to be in the proper order. The file will not be read.");
                                 }
 
@@ -2027,16 +2075,19 @@ impl LasFile {
                                 num_bytes = bor.read_u64().expect("Error while reading byte data.");
                                 bor.seek(offset as usize);
                                 let mut compressed = vec![0u8; num_bytes as usize];
-                                bor.read_exact(&mut compressed).expect("Error while reading byte data.");
+                                bor.read_exact(&mut compressed)
+                                    .expect("Error while reading byte data.");
                                 block_bytes += 16 + num_bytes;
-                                
+
                                 // Decompress the bytes
                                 bor.seek(offset as usize);
                                 let mut compressed = vec![0u8; num_bytes as usize];
-                                bor.read_exact(&mut compressed).expect("Error while reading byte data.");
-                                let decompressed2 = if compression_method == 0 { 
+                                bor.read_exact(&mut compressed)
+                                    .expect("Error while reading byte data.");
+                                let decompressed2 = if compression_method == 0 {
                                     // DEFLATE
-                                    decompress_to_vec_zlib(&compressed).expect("DEFLATE failed to decompress data.")
+                                    decompress_to_vec_zlib(&compressed)
+                                        .expect("DEFLATE failed to decompress data.")
                                 } else if compression_method == 1 {
                                     // brotli
                                     brotli_decompress(&compressed)
@@ -2065,7 +2116,7 @@ impl LasFile {
 
                                     tag = (val_u8 >> num_bits_read) & 0b0000_1111u8;
                                     num_bits_read += num_bits;
-                                    if num_bits_read == 8 && val_num < decompressed.len()-1 {
+                                    if num_bits_read == 8 && val_num < decompressed.len() - 1 {
                                         val_num += 1;
                                         val_u8 = decompressed[val_num];
                                         num_bits_read = 0;
@@ -2080,7 +2131,8 @@ impl LasFile {
                                     } else if tag == 14 {
                                         // the offset is two bytes
                                         bor2.read_i16().expect("Error reading byte data.") as i32
-                                    } else { // tag == 15
+                                    } else {
+                                        // tag == 15
                                         // the offset is four bytes
                                         bor2.read_i32().expect("Error reading byte data.")
                                     };
@@ -2104,9 +2156,10 @@ impl LasFile {
                                     //     println!("{}, {}, {}, {}", pt, self.point_data[pt].x, self.point_data[pt].y, self.point_data[pt].z);
                                     // }
                                 }
-                            },
+                            }
 
-                            7 => { // Intensity
+                            7 => {
+                                // Intensity
                                 if !change_byte_read || num_points_in_block == 0 {
                                     panic!("Point block fields do not appear to be in the proper order. The file will not be read.");
                                 }
@@ -2117,13 +2170,20 @@ impl LasFile {
                                 );
 
                                 // Convert to values
-                                self.point_data[point_num].intensity = bor2.read_u16().expect("Error while reading byte data.") as u16;
+                                self.point_data[point_num].intensity =
+                                    bor2.read_u16().expect("Error while reading byte data.") as u16;
                                 for j in 1..num_points_in_block {
                                     pt = point_num + j;
-                                    if ((change_bytes[j] & 0b1000_0000u8) >> 7) == 1 { // 2 bytes
-                                        self.point_data[pt].intensity = bor2.read_u16().expect("Error while reading byte data.");
-                                    } else { // 1 byte
-                                        self.point_data[pt].intensity = bor2.read_u8().expect("Error while reading byte data.") as u16;
+                                    if ((change_bytes[j] & 0b1000_0000u8) >> 7) == 1 {
+                                        // 2 bytes
+                                        self.point_data[pt].intensity = bor2
+                                            .read_u16()
+                                            .expect("Error while reading byte data.");
+                                    } else {
+                                        // 1 byte
+                                        self.point_data[pt].intensity =
+                                            bor2.read_u8().expect("Error while reading byte data.")
+                                                as u16;
                                     }
 
                                     // if pt >= 100_000 && pt < 100_100 {
@@ -2131,9 +2191,10 @@ impl LasFile {
                                     //     println!("{}, {}, {}", pt, t, self.point_data[pt].intensity);
                                     // }
                                 }
-                            }, 
+                            }
 
-                            8 => { // Flags
+                            8 => {
+                                // Flags
                                 if !change_byte_read || num_points_in_block == 0 {
                                     panic!("Point block fields do not appear to be in the proper order. The file will not be read.");
                                 }
@@ -2178,32 +2239,46 @@ impl LasFile {
                                         self.point_data[pt].set_edge_of_flightline_flag(false);
                                     }
                                 }
-                            }, 
+                            }
 
-                            9 => { // Classification byte
-                                if !change_byte_read || !scanner_chan_read || num_points_in_block == 0 {
+                            9 => {
+                                // Classification byte
+                                if !change_byte_read
+                                    || !scanner_chan_read
+                                    || num_points_in_block == 0
+                                {
                                     panic!("Point block fields do not appear to be in the proper order. The file will not be read.");
                                 }
 
                                 // Convert to values
                                 self.point_data[point_num].set_classification(decompressed[0]);
-                                let mut prev_val = [decompressed[0], decompressed[0], decompressed[0], decompressed[0]];
+                                let mut prev_val = [
+                                    decompressed[0],
+                                    decompressed[0],
+                                    decompressed[0],
+                                    decompressed[0],
+                                ];
                                 val_num = 0usize;
                                 for j in 1..num_points_in_block {
                                     pt = point_num + j;
                                     scan_chan = self.point_data[pt].scanner_channel() as usize;
                                     if ((change_bytes[j] & 0b0010_0000u8) >> 5) == 1 {
                                         val_num += 1;
-                                        self.point_data[pt].set_classification(decompressed[val_num]);
+                                        self.point_data[pt]
+                                            .set_classification(decompressed[val_num]);
                                         prev_val[scan_chan] = decompressed[val_num];
                                     } else {
                                         self.point_data[pt].set_classification(prev_val[scan_chan]);
                                     }
                                 }
-                            }, 
+                            }
 
-                            10 => { // User data
-                                if !change_byte_read || !scanner_chan_read || num_points_in_block == 0 {
+                            10 => {
+                                // User data
+                                if !change_byte_read
+                                    || !scanner_chan_read
+                                    || num_points_in_block == 0
+                                {
                                     panic!("Point block fields do not appear to be in the proper order. The file will not be read.");
                                 }
 
@@ -2211,16 +2286,19 @@ impl LasFile {
                                 num_bytes = bor.read_u64().expect("Error while reading byte data.");
                                 bor.seek(offset as usize);
                                 let mut compressed = vec![0u8; num_bytes as usize];
-                                bor.read_exact(&mut compressed).expect("Error while reading byte data.");
+                                bor.read_exact(&mut compressed)
+                                    .expect("Error while reading byte data.");
                                 block_bytes += 16 + num_bytes;
-                                
+
                                 // Decompress the bytes
                                 bor.seek(offset as usize);
                                 let mut compressed = vec![0u8; num_bytes as usize];
-                                bor.read_exact(&mut compressed).expect("Error while reading byte data.");
-                                let decompressed2 = if compression_method == 0 { 
+                                bor.read_exact(&mut compressed)
+                                    .expect("Error while reading byte data.");
+                                let decompressed2 = if compression_method == 0 {
                                     // DEFLATE
-                                    decompress_to_vec_zlib(&compressed).expect("DEFLATE failed to decompress data.")
+                                    decompress_to_vec_zlib(&compressed)
+                                        .expect("DEFLATE failed to decompress data.")
                                 } else if compression_method == 1 {
                                     // brotli
                                     brotli_decompress(&compressed)
@@ -2245,17 +2323,18 @@ impl LasFile {
                                 for j in 1..num_points_in_block {
                                     pt = point_num + j;
                                     scan_chan = self.point_data[pt].scanner_channel() as usize;
-                                    
+
                                     tag = (val_u8 >> num_bits_read) & 0b0000_0001u8;
                                     num_bits_read += num_bits;
-                                    if num_bits_read == 8 && val_num < decompressed.len()-1 {
+                                    if num_bits_read == 8 && val_num < decompressed.len() - 1 {
                                         val_num += 1;
                                         val_u8 = decompressed[val_num];
                                         num_bits_read = 0;
                                     }
 
                                     if tag == 1 {
-                                        self.point_data[pt].user_data = bor2.read_u8().expect("Error while reading byte data.");
+                                        self.point_data[pt].user_data =
+                                            bor2.read_u8().expect("Error while reading byte data.");
                                         prev_val[scan_chan] = self.point_data[pt].user_data;
                                     } else {
                                         self.point_data[pt].user_data = prev_val[scan_chan];
@@ -2265,10 +2344,14 @@ impl LasFile {
                                     //     println!("{}, {}", pt, self.point_data[pt].user_data);
                                     // }
                                 }
-                            },
+                            }
 
-                            11 => { // Scan angle
-                                if !change_byte_read || !scanner_chan_read || num_points_in_block == 0 {
+                            11 => {
+                                // Scan angle
+                                if !change_byte_read
+                                    || !scanner_chan_read
+                                    || num_points_in_block == 0
+                                {
                                     panic!("Point block fields do not appear to be in the proper order. The file will not be read.");
                                 }
 
@@ -2278,14 +2361,17 @@ impl LasFile {
                                 );
 
                                 // Convert to values
-                                let mut val = bor2.read_i16().expect("Error while reading byte data.");
+                                let mut val =
+                                    bor2.read_i16().expect("Error while reading byte data.");
                                 self.point_data[point_num].scan_angle = val;
                                 let mut prev_val = [val, val, val, val];
                                 for j in 1..num_points_in_block {
                                     pt = point_num + j;
                                     scan_chan = self.point_data[pt].scanner_channel() as usize;
                                     if ((change_bytes[j] & 0b0100_0000u8) >> 6) == 1 {
-                                        val = bor2.read_i16().expect("Error while reading byte data.");
+                                        val = bor2
+                                            .read_i16()
+                                            .expect("Error while reading byte data.");
                                         self.point_data[pt].scan_angle = val;
                                         prev_val[scan_chan] = val;
                                     } else {
@@ -2296,10 +2382,14 @@ impl LasFile {
                                     //     println!("{}, {}", pt, self.point_data[pt].scan_angle);
                                     // }
                                 }
-                            }, 
+                            }
 
-                            12 => { // PointSourceID
-                                if !change_byte_read || !scanner_chan_read || num_points_in_block == 0 {
+                            12 => {
+                                // PointSourceID
+                                if !change_byte_read
+                                    || !scanner_chan_read
+                                    || num_points_in_block == 0
+                                {
                                     panic!("Point block fields do not appear to be in the proper order. The file will not be read.");
                                 }
 
@@ -2307,16 +2397,19 @@ impl LasFile {
                                 num_bytes = bor.read_u64().expect("Error while reading byte data.");
                                 bor.seek(offset as usize);
                                 let mut compressed = vec![0u8; num_bytes as usize];
-                                bor.read_exact(&mut compressed).expect("Error while reading byte data.");
+                                bor.read_exact(&mut compressed)
+                                    .expect("Error while reading byte data.");
                                 block_bytes += 16 + num_bytes;
-                                
+
                                 // Decompress the bytes
                                 bor.seek(offset as usize);
                                 let mut compressed = vec![0u8; num_bytes as usize];
-                                bor.read_exact(&mut compressed).expect("Error while reading byte data.");
-                                let decompressed2 = if compression_method == 0 { 
+                                bor.read_exact(&mut compressed)
+                                    .expect("Error while reading byte data.");
+                                let decompressed2 = if compression_method == 0 {
                                     // DEFLATE
-                                    decompress_to_vec_zlib(&compressed).expect("DEFLATE failed to decompress data.")
+                                    decompress_to_vec_zlib(&compressed)
+                                        .expect("DEFLATE failed to decompress data.")
                                 } else if compression_method == 1 {
                                     // brotli
                                     brotli_decompress(&compressed)
@@ -2341,17 +2434,19 @@ impl LasFile {
                                 for j in 1..num_points_in_block {
                                     pt = point_num + j;
                                     scan_chan = self.point_data[pt].scanner_channel() as usize;
-                                    
+
                                     tag = (val_u8 >> num_bits_read) & 0b0000_0001u8;
                                     num_bits_read += num_bits;
-                                    if num_bits_read == 8 && val_num < decompressed.len()-1 {
+                                    if num_bits_read == 8 && val_num < decompressed.len() - 1 {
                                         val_num += 1;
                                         val_u8 = decompressed[val_num];
                                         num_bits_read = 0;
                                     }
 
                                     if tag == 1 {
-                                        self.point_data[pt].point_source_id = bor2.read_u16().expect("Error while reading byte data.");
+                                        self.point_data[pt].point_source_id = bor2
+                                            .read_u16()
+                                            .expect("Error while reading byte data.");
                                         prev_val[scan_chan] = self.point_data[pt].point_source_id;
                                     } else {
                                         self.point_data[pt].point_source_id = prev_val[scan_chan];
@@ -2361,10 +2456,14 @@ impl LasFile {
                                     //     println!("{}, {}", pt, self.point_data[pt].point_source_id);
                                     // }
                                 }
-                            },
+                            }
 
-                            13 => { // GPS time
-                                if !change_byte_read || !scanner_chan_read || num_points_in_block == 0 {
+                            13 => {
+                                // GPS time
+                                if !change_byte_read
+                                    || !scanner_chan_read
+                                    || num_points_in_block == 0
+                                {
                                     panic!("Point block fields do not appear to be in the proper order. The file will not be read.");
                                 }
 
@@ -2374,14 +2473,17 @@ impl LasFile {
                                 );
 
                                 // Convert to values
-                                let mut val = bor2.read_f64().expect("Error while reading byte data.");
+                                let mut val =
+                                    bor2.read_f64().expect("Error while reading byte data.");
                                 self.gps_data.push(val);
                                 let mut prev_val = [val, val, val, val];
                                 for j in 1..num_points_in_block {
                                     pt = point_num + j;
                                     scan_chan = self.point_data[pt].scanner_channel() as usize;
                                     if ((change_bytes[j] & 0b0000_0010u8) >> 1) == 1 {
-                                        val = bor2.read_f64().expect("Error while reading byte data.");
+                                        val = bor2
+                                            .read_f64()
+                                            .expect("Error while reading byte data.");
                                         self.gps_data.push(val + prev_val[scan_chan]);
                                         prev_val[scan_chan] = val + prev_val[scan_chan];
                                     } else {
@@ -2392,9 +2494,10 @@ impl LasFile {
                                     //     println!("{}, {}", pt, self.gps_data[pt]);
                                     // }
                                 }
-                            }, 
+                            }
 
-                            14 => { // Red
+                            14 => {
+                                // Red
                                 let mut bor2 = ByteOrderReader::<Cursor<Vec<u8>>>::new(
                                     Cursor::new(decompressed),
                                     Endianness::LittleEndian,
@@ -2407,9 +2510,10 @@ impl LasFile {
                                     val = bor2.read_u16().expect("Error while reading byte data.");
                                     self.colour_data[pt].red = val;
                                 }
-                            },
-                            
-                            15 => { // Green
+                            }
+
+                            15 => {
+                                // Green
                                 let mut bor2 = ByteOrderReader::<Cursor<Vec<u8>>>::new(
                                     Cursor::new(decompressed),
                                     Endianness::LittleEndian,
@@ -2422,9 +2526,10 @@ impl LasFile {
                                     val = bor2.read_u16().expect("Error while reading byte data.");
                                     self.colour_data[pt].green = val;
                                 }
-                            }, 
+                            }
 
-                            16 => { // Blue
+                            16 => {
+                                // Blue
                                 let mut bor2 = ByteOrderReader::<Cursor<Vec<u8>>>::new(
                                     Cursor::new(decompressed),
                                     Endianness::LittleEndian,
@@ -2437,9 +2542,10 @@ impl LasFile {
                                     val = bor2.read_u16().expect("Error while reading byte data.");
                                     self.colour_data[pt].blue = val;
                                 }
-                            }, 
+                            }
 
-                            17 => { // NIR
+                            17 => {
+                                // NIR
                                 let mut bor2 = ByteOrderReader::<Cursor<Vec<u8>>>::new(
                                     Cursor::new(decompressed),
                                     Endianness::LittleEndian,
@@ -2452,7 +2558,7 @@ impl LasFile {
                                     val = bor2.read_u16().expect("Error while reading byte data.");
                                     self.colour_data[pt].nir = val;
                                 }
-                            }, 
+                            }
                             _ => {
                                 panic!("Unrecognized field code.");
                             }
@@ -2577,7 +2683,7 @@ impl LasFile {
                                 for j in 0..num_points_in_block {
                                     vali32 = bor2.read_i32().expect("Error reading byte data.");
                                     val = vali32 + prev_val; // as f64 * self.header.y_scale_factor
-                                        // + self.header.y_offset;
+                                                             // + self.header.y_offset;
 
                                     // pt = point_num + j;
                                     // if pt >= 500_000 && pt < 500_100 {
@@ -2628,7 +2734,7 @@ impl LasFile {
 
                                     vali32 = bor2.read_i32().expect("Error reading byte data.");
                                     val = vali32 + prev_val; // as f64 * self.header.z_scale_factor
-                                        // + self.header.z_offset;
+                                                             // + self.header.z_offset;
                                     self.point_data[pt].z = val;
 
                                     if self.point_data[pt].is_late_return() {
@@ -3407,7 +3513,6 @@ impl LasFile {
     }
 
     fn write_laz_data(&mut self) -> Result<(), Error> {
-
         // let mut reader = Reader::from_path(&input_file).expect("Error reading LAS file.");
         // let in_header = reader.header();
         let mut builder = Builder::from((1, 4));
@@ -3417,22 +3522,31 @@ impl LasFile {
         format.is_compressed = true;
         builder.point_format = format;
         builder.generating_software = "WhiteboxTools".to_string();
-        let transforms: las::Vector<las::Transform> = las::Vector{ 
-            x: las::Transform {scale: self.header.x_scale_factor, offset: self.header.x_offset }, 
-            y: las::Transform {scale: self.header.y_scale_factor, offset: self.header.y_offset }, 
-            z: las::Transform {scale: self.header.z_scale_factor, offset: self.header.z_offset }
+        let transforms: las::Vector<las::Transform> = las::Vector {
+            x: las::Transform {
+                scale: self.header.x_scale_factor,
+                offset: self.header.x_offset,
+            },
+            y: las::Transform {
+                scale: self.header.y_scale_factor,
+                offset: self.header.y_offset,
+            },
+            z: las::Transform {
+                scale: self.header.z_scale_factor,
+                offset: self.header.z_offset,
+            },
         };
         builder.transforms = transforms.clone();
-        
+
         for vlr in &self.vlr_data {
             let mut vlr2 = las::Vlr::default();
             vlr2.user_id = vlr.user_id.clone();
             vlr2.record_id = vlr.record_id;
             vlr2.description = vlr2.description.clone();
             vlr2.data = vlr.binary_data.clone();
-        //     while vlr2.description.len() > 32 {
-        //         vlr2.description.pop();
-        //     }
+            //     while vlr2.description.len() > 32 {
+            //         vlr2.description.pop();
+            //     }
             builder.vlrs.push(vlr2.clone());
         }
 
@@ -3458,7 +3572,11 @@ impl LasFile {
             let flags = if self.header.point_format < 6 {
                 las::raw::point::Flags::TwoByte(pd.point_bit_field, pd.class_bit_field)
             } else {
-                las::raw::point::Flags::ThreeByte(pd.point_bit_field, pd.class_bit_field, pd.classification)
+                las::raw::point::Flags::ThreeByte(
+                    pd.point_bit_field,
+                    pd.class_bit_field,
+                    pd.classification,
+                )
             };
             raw_point.flags = flags;
 
@@ -3469,7 +3587,7 @@ impl LasFile {
             } else {
                 raw_point.scan_angle = las::raw::point::ScanAngle::Scaled(pd.scan_angle);
             }
-            
+
             raw_point.point_source_id = pd.point_source_id;
 
             // GPS time information
@@ -3481,10 +3599,10 @@ impl LasFile {
 
             // Colour information
             if self.has_rgb() {
-                let colour = las::Color { 
+                let colour = las::Color {
                     red: self.colour_data[point_num].red,
                     green: self.colour_data[point_num].green,
-                    blue: self.colour_data[point_num].blue
+                    blue: self.colour_data[point_num].blue,
                 };
                 raw_point.color = Some(colour);
 
@@ -3498,13 +3616,20 @@ impl LasFile {
             }
 
             // Waveform information
-            if self.header.point_format == 4 || self.header.point_format == 5 ||
-            self.header.point_format == 9 || self.header.point_format == 10 {
+            if self.header.point_format == 4
+                || self.header.point_format == 5
+                || self.header.point_format == 9
+                || self.header.point_format == 10
+            {
                 let wf = las::raw::point::Waveform {
-                    wave_packet_descriptor_index: self.waveform_data[point_num].packet_descriptor_index,
-                    byte_offset_to_waveform_data: self.waveform_data[point_num].offset_to_waveform_data,
-                    waveform_packet_size_in_bytes: self.waveform_data[point_num].waveform_packet_size,
-                    return_point_waveform_location: self.waveform_data[point_num].ret_point_waveform_loc,
+                    wave_packet_descriptor_index: self.waveform_data[point_num]
+                        .packet_descriptor_index,
+                    byte_offset_to_waveform_data: self.waveform_data[point_num]
+                        .offset_to_waveform_data,
+                    waveform_packet_size_in_bytes: self.waveform_data[point_num]
+                        .waveform_packet_size,
+                    return_point_waveform_location: self.waveform_data[point_num]
+                        .ret_point_waveform_loc,
                     x_t: self.waveform_data[point_num].xt,
                     y_t: self.waveform_data[point_num].yt,
                     z_t: self.waveform_data[point_num].zt,
@@ -3515,11 +3640,13 @@ impl LasFile {
             }
 
             point = las::point::Point::new(raw_point, &transforms);
-            writer.write(point.clone()).expect("Error writing point data");
+            writer
+                .write(point.clone())
+                .expect("Error writing point data");
         }
 
         writer.close().unwrap();
-        
+
         Ok(())
     }
 
@@ -3797,27 +3924,20 @@ impl LasFile {
         // }
 
         let compression_method = match self.compression {
-            ZlidarCompression::Deflate { level: _ } => {
-                0u8
-            },
-            ZlidarCompression::Brotli { level: _ } => {
-                1u8
-            }
-            _ => { 1u8 }
+            ZlidarCompression::Deflate { level: _ } => 0u8,
+            ZlidarCompression::Brotli { level: _ } => 1u8,
+            _ => 1u8,
         };
 
         let compression_level = match self.compression {
-            ZlidarCompression::Deflate { level } => {
-                level
-            },
-            ZlidarCompression::Brotli { level } => {
-                level
-            }
-            _ => { 5u8 }
+            ZlidarCompression::Deflate { level } => level,
+            ZlidarCompression::Brotli { level } => level,
+            _ => 5u8,
         };
 
-        let compression_byte = ((compression_level & 0b0001_1111) << 3) | (compression_method & 0b000_0111);
-        
+        let compression_byte =
+            ((compression_level & 0b0001_1111) << 3) | (compression_method & 0b000_0111);
+
         writer
             .write_u8(compression_byte)
             .expect("Error writing byte data to file.");
@@ -3858,7 +3978,9 @@ impl LasFile {
             let mut scanner_chan_index = [block_start, block_start, block_start, block_start];
 
             // Change byte
-            writer.write_u8(0u8).expect("Error writing byte data to file."); // Field code
+            writer
+                .write_u8(0u8)
+                .expect("Error writing byte data to file."); // Field code
             current_offset += 1;
 
             let mut change_data = Vec::with_capacity(block_size);
@@ -3947,7 +4069,9 @@ impl LasFile {
             current_offset += data_length_in_bytes as u64;
 
             // Scanner channel
-            writer.write_u8(1u8).expect("Error writing byte data to file."); // Field code
+            writer
+                .write_u8(1u8)
+                .expect("Error writing byte data to file."); // Field code
             current_offset += 1;
 
             let mut data = Vec::with_capacity(block_size / 4 + 1);
@@ -4003,7 +4127,9 @@ impl LasFile {
             current_offset += data_length_in_bytes as u64;
 
             // Return number
-            writer.write_u8(2u8).expect("Error writing byte data to file."); // Field code
+            writer
+                .write_u8(2u8)
+                .expect("Error writing byte data to file."); // Field code
             current_offset += 1;
 
             let mut data = Vec::with_capacity(block_size);
@@ -4063,7 +4189,9 @@ impl LasFile {
             current_offset += data_length_in_bytes as u64;
 
             // Number of returns
-            writer.write_u8(3u8).expect("Error writing byte data to file."); // Field code
+            writer
+                .write_u8(3u8)
+                .expect("Error writing byte data to file."); // Field code
             current_offset += 1;
 
             let mut data = Vec::with_capacity(block_size);
@@ -4128,9 +4256,10 @@ impl LasFile {
                 .expect("Error writing byte data to file.");
             current_offset += data_length_in_bytes as u64;
 
-
             // x
-            writer.write_u8(4u8).expect("Error writing byte data to file."); // Field code
+            writer
+                .write_u8(4u8)
+                .expect("Error writing byte data to file."); // Field code
             current_offset += 1;
 
             let mut delta_values = Vec::with_capacity(block_size);
@@ -4275,7 +4404,9 @@ impl LasFile {
             current_offset += data_length_in_bytes as u64;
 
             // y
-            writer.write_u8(5u8).expect("Error writing byte data to file."); // Field code
+            writer
+                .write_u8(5u8)
+                .expect("Error writing byte data to file."); // Field code
             current_offset += 1;
 
             let mut delta_values = Vec::with_capacity(block_size);
@@ -4419,9 +4550,10 @@ impl LasFile {
                 .expect("Error writing byte data to file.");
             current_offset += data_length_in_bytes as u64;
 
-
             // z
-            writer.write_u8(6u8).expect("Error writing byte data to file."); // Field code
+            writer
+                .write_u8(6u8)
+                .expect("Error writing byte data to file."); // Field code
             current_offset += 1;
             let mut data = Vec::with_capacity(block_size / 4 + 1);
             let mut data2 = Vec::with_capacity(block_size * 4);
@@ -4534,7 +4666,7 @@ impl LasFile {
                 .write_all(&compressed_change_bits)
                 .expect("Error writing byte data to file.");
             current_offset += data_length_in_bytes as u64;
-            
+
             writer
                 .write_u64::<LittleEndian>(current_offset + 16)
                 .expect("Error writing byte data to file."); // FileOffset to data byte
@@ -4556,16 +4688,19 @@ impl LasFile {
                 .expect("Error writing byte data to file.");
             current_offset += data_length_in_bytes as u64;
 
-
             // intensity
             if self.use_point_intensity {
-                writer.write_u8(7u8).expect("Error writing byte data to file."); // Field code
+                writer
+                    .write_u8(7u8)
+                    .expect("Error writing byte data to file."); // Field code
                 current_offset += 1;
 
                 let mut data2 = Vec::with_capacity(block_size * 2);
                 let mut val: u16;
-                data2.write_u16::<LittleEndian>(self.point_data[block_start].intensity).expect("Error writing byte data.");
-                for i in block_start+1..block_end {
+                data2
+                    .write_u16::<LittleEndian>(self.point_data[block_start].intensity)
+                    .expect("Error writing byte data.");
+                for i in block_start + 1..block_end {
                     val = self.point_data[i].intensity;
                     if val < 256 {
                         data2.write_u8(val as u8).expect("Error writing byte data.");
@@ -4614,7 +4749,9 @@ impl LasFile {
             }
 
             // Flags
-            writer.write_u8(8u8).expect("Error writing byte data to file."); // Field code
+            writer
+                .write_u8(8u8)
+                .expect("Error writing byte data to file."); // Field code
             current_offset += 1;
 
             let mut data = Vec::with_capacity(block_size);
@@ -4692,7 +4829,9 @@ impl LasFile {
             current_offset += data_length_in_bytes as u64;
 
             // Classification byte
-            writer.write_u8(9u8).expect("Error writing byte data to file."); // Field code
+            writer
+                .write_u8(9u8)
+                .expect("Error writing byte data to file."); // Field code
             current_offset += 1;
 
             let mut data = Vec::with_capacity(block_size);
@@ -4745,7 +4884,9 @@ impl LasFile {
 
             // user data
             if self.use_point_userdata {
-                writer.write_u8(10u8).expect("Error writing byte data to file."); // Field code
+                writer
+                    .write_u8(10u8)
+                    .expect("Error writing byte data to file."); // Field code
                 current_offset += 1;
 
                 let mut data = Vec::with_capacity(block_size / 8 + 1);
@@ -4828,7 +4969,7 @@ impl LasFile {
                     .write_all(&compressed_change_bits)
                     .expect("Error writing byte data to file.");
                 current_offset += data_length_in_bytes as u64;
-                
+
                 writer
                     .write_u64::<LittleEndian>(current_offset + 16)
                     .expect("Error writing byte data to file."); // FileOffset to data byte
@@ -4852,7 +4993,9 @@ impl LasFile {
             }
 
             // Scan angle
-            writer.write_u8(11u8).expect("Error writing byte data to file."); // Field code
+            writer
+                .write_u8(11u8)
+                .expect("Error writing byte data to file."); // Field code
             current_offset += 1;
 
             let mut data = Vec::with_capacity(block_size * 2);
@@ -4905,9 +5048,10 @@ impl LasFile {
                 .expect("Error writing byte data to file.");
             current_offset += data_length_in_bytes as u64;
 
-
             // point_source_id
-            writer.write_u8(12u8).expect("Error writing byte data to file."); // Field code
+            writer
+                .write_u8(12u8)
+                .expect("Error writing byte data to file."); // Field code
             current_offset += 1;
 
             let mut data = Vec::with_capacity(block_size / 8 + 1);
@@ -4992,7 +5136,7 @@ impl LasFile {
                 .write_all(&compressed_change_bits)
                 .expect("Error writing byte data to file.");
             current_offset += data_length_in_bytes as u64;
-            
+
             writer
                 .write_u64::<LittleEndian>(current_offset + 16)
                 .expect("Error writing byte data to file."); // FileOffset to data byte
@@ -5015,7 +5159,9 @@ impl LasFile {
             current_offset += data_length_in_bytes as u64;
 
             // GPS time
-            writer.write_u8(13u8).expect("Error writing byte data to file."); // Field code
+            writer
+                .write_u8(13u8)
+                .expect("Error writing byte data to file."); // Field code
             current_offset += 1;
 
             let mut data = Vec::with_capacity(block_size * 8);
@@ -5097,7 +5243,6 @@ impl LasFile {
                 .expect("Error writing byte data to file.");
             current_offset += data_length_in_bytes as u64;
 
-
             // RGB data
             if self.header.point_format == 2
                 || self.header.point_format == 3
@@ -5129,7 +5274,9 @@ impl LasFile {
                 } else {
                     panic!("Unrecognized compression method.");
                 };
-                writer.write_u8(14u8).expect("Error writing byte data to file."); // Field code
+                writer
+                    .write_u8(14u8)
+                    .expect("Error writing byte data to file."); // Field code
                 current_offset += 1;
                 writer
                     .write_u64::<LittleEndian>(current_offset + 16)
@@ -5151,7 +5298,6 @@ impl LasFile {
                     .write_all(&compressed)
                     .expect("Error writing byte data to file.");
                 current_offset += data_length_in_bytes as u64;
-
 
                 // g
                 let compressed = if compression_method == 0 {
@@ -5163,7 +5309,9 @@ impl LasFile {
                 } else {
                     panic!("Unrecognized compression method.");
                 };
-                writer.write_u8(15u8).expect("Error writing byte data to file."); // Field code
+                writer
+                    .write_u8(15u8)
+                    .expect("Error writing byte data to file."); // Field code
                 current_offset += 1;
                 writer
                     .write_u64::<LittleEndian>(current_offset + 16)
@@ -5186,7 +5334,6 @@ impl LasFile {
                     .expect("Error writing byte data to file.");
                 current_offset += data_length_in_bytes as u64;
 
-
                 // b
                 let compressed = if compression_method == 0 {
                     // DEFLATE
@@ -5197,7 +5344,9 @@ impl LasFile {
                 } else {
                     panic!("Unrecognized compression method.");
                 };
-                writer.write_u8(16u8).expect("Error writing byte data to file."); // Field code
+                writer
+                    .write_u8(16u8)
+                    .expect("Error writing byte data to file."); // Field code
                 current_offset += 1;
                 writer
                     .write_u64::<LittleEndian>(current_offset + 16)
@@ -5221,7 +5370,6 @@ impl LasFile {
                 current_offset += data_length_in_bytes as u64;
             }
 
-
             // NIR data
             if self.header.point_format == 8 {
                 let mut data_nir = Vec::with_capacity(block_size * 2);
@@ -5239,7 +5387,9 @@ impl LasFile {
                 } else {
                     panic!("Unrecognized compression method.");
                 };
-                writer.write_u8(17u8).expect("Error writing byte data to file."); // Field code
+                writer
+                    .write_u8(17u8)
+                    .expect("Error writing byte data to file."); // Field code
                 current_offset += 1;
                 writer
                     .write_u64::<LittleEndian>(current_offset + 16)
@@ -6633,9 +6783,9 @@ fn brotli_decompress(input: &[u8]) -> Vec<u8> {
     //             }
     //         }
     //     }
-    // } 
-    // output 
-    
+    // }
+    // output
+
     if input.len() == 0 {
         panic!("Zero-length input for Brotli decompression");
     }

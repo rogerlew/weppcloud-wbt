@@ -5174,6 +5174,26 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         return self.run_tool('find_parallel_flow', args, callback) # returns 1 if error
 
+    def find_outlet(self, d8_pntr, streams, watershed, output, esri_pntr=False, callback=None):
+        """Identifies an outlet stream cell for a watershed mask and writes a pour point GeoJSON.
+
+        Keyword arguments:
+
+        d8_pntr -- Input raster D8 pointer file. 
+        streams -- Input raster streams file (1=stream, 0=non-stream). 
+        watershed -- Input watershed mask raster file (1=inside, 0=outside). 
+        output -- Output GeoJSON pour point file. 
+        esri_pntr -- D8 pointer uses the ESRI style scheme. 
+        callback -- Custom function for handling tool text outputs.
+        """
+        args = []
+        args.append("--d8_pntr='{}'".format(d8_pntr))
+        args.append("--streams='{}'".format(streams))
+        args.append("--watershed='{}'".format(watershed))
+        args.append("--output='{}'".format(output))
+        if esri_pntr: args.append("--esri_pntr")
+        return self.run_tool('find_outlet', args, callback) # returns 1 if error
+
     def flatten_lakes(self, dem, lakes, output, callback=None):
         """Flattens lake polygons in a raster DEM.
 

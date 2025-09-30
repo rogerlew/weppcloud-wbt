@@ -9,7 +9,6 @@ NOTE: This algorithm can't easily be parallelized because the output raster must
 and written to during the same loop. Doing so would involve using a mutex.
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -19,6 +18,7 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_raster::*;
 
 /// This image processing tool reduces all polygons in a Boolean raster image to their single-cell wide skeletons.
 /// This operation is sometimes called line thinning or skeletonization. In fact, the input image need not be truly
@@ -164,11 +164,18 @@ impl WhiteboxTool for LineThinning {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

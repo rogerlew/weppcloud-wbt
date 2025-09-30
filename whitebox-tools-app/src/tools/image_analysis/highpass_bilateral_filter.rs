@@ -6,7 +6,6 @@ Last Modified: 30/01/2020
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -17,6 +16,7 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_raster::*;
 
 /// This tool can be used to perform a high-pass bilateral filter. A high-pass filter is one which emphasizes short-scale
 /// variation within an image, usually by differencing the input image value from the result of a low-pass, smoothing filter.
@@ -24,10 +24,10 @@ use std::thread;
 /// often dominated by edges (transitions from high values to low values or vice versa) within an image. Because the
 /// bilateral filter is an edge-preserving filter, the high-pass bilateral filter output is not dominated by edges, instead
 /// emphasizing local-scale image texture patters. This filter is excellent for mapping image textures.
-/// 
-/// The size of the filter is determined  by setting the standard deviation distance parameter (`--sigma_dist`); the 
-/// larger the standard deviation the larger the resulting filter kernel. The standard deviation can be any number in 
-/// the range 0.5-20 and is specified in the unit of pixels. The standard deviation intensity parameter (`--sigma_int`), 
+///
+/// The size of the filter is determined  by setting the standard deviation distance parameter (`--sigma_dist`); the
+/// larger the standard deviation the larger the resulting filter kernel. The standard deviation can be any number in
+/// the range 0.5-20 and is specified in the unit of pixels. The standard deviation intensity parameter (`--sigma_int`),
 /// specified in the same units as the image values, determines the intensity domain contribution to kernel weightings.
 /// If the input image is an RGB composite, the intensity value is filtered, and the intensity parameter should
 /// lie 0 > parameter < 1, with typical values ranging from 0.05 to 0.25. If the input image is not an RGB colour
@@ -212,11 +212,18 @@ impl WhiteboxTool for HighPassBilateralFilter {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

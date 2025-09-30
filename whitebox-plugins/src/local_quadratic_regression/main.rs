@@ -6,7 +6,6 @@ Last Modified: 22/06/2020
 License: MIT
 */
 
-use whitebox_raster::*;
 use nalgebra::{Matrix5, RowVector5, Vector5};
 use num_cpus;
 use std::env;
@@ -18,6 +17,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Instant;
 use whitebox_common::utils::get_formatted_elapsed_time;
+use whitebox_raster::*;
 
 /// This tool is an implementation of the constrained quadratic regression algorithm
 /// using a flexible window size described in Wood (1996). A quadratic surface is fit
@@ -157,7 +157,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             } else {
                 output_file = args[i + 1].to_string();
             }
-        }  else if flag_val == "-filter" {
+        } else if flag_val == "-filter" {
             if keyval {
                 filter_size = vec[1]
                     .to_string()
@@ -174,18 +174,27 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         }
     }
 
-    if filter_size < 3 { filter_size = 3; }
+    if filter_size < 3 {
+        filter_size = 3;
+    }
     // The filter dimensions must be odd numbers such that there is a middle pixel
     if (filter_size as f64 / 2f64).floor() == (filter_size as f64 / 2f64) {
         filter_size += 1;
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -215,14 +224,38 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
     let path_parts: Vec<&str> = output_file.rsplitn(2, ".").collect();
     let mut outputs: [Raster; 8] = [
-        Raster::initialize_using_file(&format!("{}_{}.{}", &path_parts[1], "Slp", &path_parts[0]), &input),
-        Raster::initialize_using_file(&format!("{}_{}.{}", &path_parts[1], "Asp", &path_parts[0]), &input),
-        Raster::initialize_using_file(&format!("{}_{}.{}", &path_parts[1], "ProC", &path_parts[0]), &input),
-        Raster::initialize_using_file(&format!("{}_{}.{}", &path_parts[1], "PlaC", &path_parts[0]), &input),
-        Raster::initialize_using_file(&format!("{}_{}.{}", &path_parts[1], "LonC", &path_parts[0]), &input),
-        Raster::initialize_using_file(&format!("{}_{}.{}", &path_parts[1], "CrsC", &path_parts[0]), &input),
-        Raster::initialize_using_file(&format!("{}_{}.{}", &path_parts[1], "PrCM", &path_parts[0]), &input),
-        Raster::initialize_using_file(&format!("{}_{}.{}", &path_parts[1], "GoF", &path_parts[0]), &input)
+        Raster::initialize_using_file(
+            &format!("{}_{}.{}", &path_parts[1], "Slp", &path_parts[0]),
+            &input,
+        ),
+        Raster::initialize_using_file(
+            &format!("{}_{}.{}", &path_parts[1], "Asp", &path_parts[0]),
+            &input,
+        ),
+        Raster::initialize_using_file(
+            &format!("{}_{}.{}", &path_parts[1], "ProC", &path_parts[0]),
+            &input,
+        ),
+        Raster::initialize_using_file(
+            &format!("{}_{}.{}", &path_parts[1], "PlaC", &path_parts[0]),
+            &input,
+        ),
+        Raster::initialize_using_file(
+            &format!("{}_{}.{}", &path_parts[1], "LonC", &path_parts[0]),
+            &input,
+        ),
+        Raster::initialize_using_file(
+            &format!("{}_{}.{}", &path_parts[1], "CrsC", &path_parts[0]),
+            &input,
+        ),
+        Raster::initialize_using_file(
+            &format!("{}_{}.{}", &path_parts[1], "PrCM", &path_parts[0]),
+            &input,
+        ),
+        Raster::initialize_using_file(
+            &format!("{}_{}.{}", &path_parts[1], "GoF", &path_parts[0]),
+            &input,
+        ),
     ];
 
     let start = Instant::now();
@@ -253,12 +286,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         let tx = tx.clone();
         // let a_decomp = a_decomp.clone();
         thread::spawn(move || {
-
             let mut z: f64;
             let mut zi: f64;
 
             for row in (0..rows).filter(|r| r % num_procs == tid) {
-
                 let mut slopes = vec![nodata; columns as usize];
                 let mut aspects = vec![nodata; columns as usize];
                 let mut prof_cs = vec![nodata; columns as usize];
@@ -269,16 +300,16 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 let mut gofs = vec![nodata; columns as usize];
 
                 for col in 0..columns {
-
                     z = input[(row, col)];
 
                     if z != nodata {
-
-                        let (mut zx2, mut zy2, mut zxy, mut zx, mut zy, mut _zw) = (0f64,0f64,0f64,0f64,0f64,0f64);
+                        let (mut zx2, mut zy2, mut zxy, mut zx, mut zy, mut _zw) =
+                            (0f64, 0f64, 0f64, 0f64, 0f64, 0f64);
                         let (mut x2, mut x2y2, mut x4) = (0f64, 0f64, 0f64);
                         let mut num_valid = 0usize;
                         let (mut z_pred, mut z_act): (f64, f64);
-                        let (mut sum_x, mut sum_y, mut sum_xy, mut sum_xx, mut sum_yy) = (0f64, 0f64, 0f64, 0f64, 0f64);
+                        let (mut sum_x, mut sum_y, mut sum_xy, mut sum_xx, mut sum_yy) =
+                            (0f64, 0f64, 0f64, 0f64, 0f64);
                         let (r, n): (f64, f64);
 
                         let mut xs = vec![];
@@ -295,7 +326,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                             }
                         }
 
-                        if num_valid >= 8 {//6 { // need at least six samples
+                        if num_valid >= 8 {
+                            //6 { // need at least six samples
                             // compute sums
                             for i in 0..num_valid {
                                 zx2 += zs[i] * xs[i].powi(2);
@@ -313,7 +345,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                             let a = Matrix5::from_rows(&[
                                 RowVector5::new(x4, x2y2, 0f64, 0f64, 0f64),
                                 RowVector5::new(x2y2, x4, 0f64, 0f64, 0f64),
-                                RowVector5::new(0f64,0f64,x2y2, 0f64, 0f64),
+                                RowVector5::new(0f64, 0f64, x2y2, 0f64, 0f64),
                                 RowVector5::new(0f64, 0f64, 0f64, x2, 0f64),
                                 RowVector5::new(0f64, 0f64, 0f64, 0f64, x2),
                             ]);
@@ -336,7 +368,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
                             n = num_valid as f64;
                             let noom = n * sum_xy - (sum_x * sum_y);
-                            let den = (n * sum_xx - (sum_x * sum_x)).sqrt() * ((n * sum_yy - (sum_y * sum_y)).sqrt());
+                            let den = (n * sum_xx - (sum_x * sum_x)).sqrt()
+                                * ((n * sum_yy - (sum_y * sum_y)).sqrt());
                             if noom == 0f64 || den == 0f64 {
                                 r = 0f64;
                             } else {
@@ -355,18 +388,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                     }
                 }
 
-                tx.send(
-                    (row,
-                    slopes,
-                    aspects,
-                    prof_cs,
-                    plan_cs,
-                    long_cs,
-                    cross_cs,
-                    procmin_cs,
-                    gofs)
-                ).unwrap();
-
+                tx.send((
+                    row, slopes, aspects, prof_cs, plan_cs, long_cs, cross_cs, procmin_cs, gofs,
+                ))
+                .unwrap();
             }
         });
     }
@@ -399,17 +424,14 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
     for o in 0..outputs.len() {
         outputs[o].configs.palette = "grey.plt".to_string();
-        outputs[o].add_metadata_entry(format!(
-            "Created by whitebox_tools\' {} tool",
-            tool_name
-        ));
+        outputs[o].add_metadata_entry(format!("Created by whitebox_tools\' {} tool", tool_name));
         outputs[o].add_metadata_entry(format!("Input file: {}", input_file));
         outputs[o].add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed_time));
 
         let _ = match outputs[o].write() {
             Ok(_) => {
                 if configurations.verbose_mode {
-                    println!("Output file {:?} written", o+1);
+                    println!("Output file {:?} written", o + 1);
                 }
             }
             Err(e) => return Err(e),
@@ -434,7 +456,7 @@ struct Quadratic2d {
     c: f64,
     d: f64,
     e: f64,
-    f: f64
+    f: f64,
 }
 
 impl Quadratic2d {
@@ -445,7 +467,7 @@ impl Quadratic2d {
             c: c,
             d: d,
             e: e,
-            f: f
+            f: f,
         }
     }
 
@@ -476,10 +498,10 @@ impl Quadratic2d {
                 *x.get(2).unwrap(), // c
                 *x.get(3).unwrap(), // d
                 *x.get(4).unwrap(), // e
-                0f64, //f
+                0f64,               //f
             )
         } else {
-            Quadratic2d::new(0f64,0f64,0f64,0f64,0f64,0f64)
+            Quadratic2d::new(0f64, 0f64, 0f64, 0f64, 0f64, 0f64)
         }
     }
     // fn from_decomposed_normals(
@@ -503,7 +525,7 @@ impl Quadratic2d {
 
     fn slope(&self) -> f64 {
         // (self.a*self.a + self.b*self.b).sqrt().atan().to_degrees()
-        (self.d*self.d + self.e*self.e).sqrt().atan()
+        (self.d * self.d + self.e * self.e).sqrt().atan()
     }
 
     fn aspect(&self) -> f64 {
@@ -515,8 +537,12 @@ impl Quadratic2d {
     }
 
     fn profile_convexity(&self) -> f64 {
-        let nu = -200f64 * ((self.a*self.d*self.d) + (self.b*self.e*self.e) + (self.c*self.d*self.e));
-        let de  = ((self.e*self.e) + (self.d*self.d)) * (1f64 + (self.d*self.d) + (self.e*self.e)).powf(1.5);
+        let nu = -200f64
+            * ((self.a * self.d * self.d)
+                + (self.b * self.e * self.e)
+                + (self.c * self.d * self.e));
+        let de = ((self.e * self.e) + (self.d * self.d))
+            * (1f64 + (self.d * self.d) + (self.e * self.e)).powf(1.5);
         if nu == 0f64 || de == 0f64 {
             0f64
         } else {
@@ -524,8 +550,10 @@ impl Quadratic2d {
         }
     }
     fn plan_convexity(&self) -> f64 {
-        let nu = 200f64 * ((self.b*self.d*self.d) + (self.a*self.e*self.e) - (self.c*self.d*self.e));
-        let de  = ((self.e*self.e) + (self.d*self.d)).powf(1.5);
+        let nu = 200f64
+            * ((self.b * self.d * self.d) + (self.a * self.e * self.e)
+                - (self.c * self.d * self.e));
+        let de = ((self.e * self.e) + (self.d * self.d)).powf(1.5);
         if nu == 0f64 || de == 0f64 {
             0f64
         } else {
@@ -533,21 +561,23 @@ impl Quadratic2d {
         }
     }
     fn longitudinal_curvature(&self) -> f64 {
-        let nu = (self.a*self.d*self.d) + (self.b*self.e*self.e) + (self.c*self.d*self.e);
-        let de = (self.d*self.d) + (self.e*self.e);
+        let nu =
+            (self.a * self.d * self.d) + (self.b * self.e * self.e) + (self.c * self.d * self.e);
+        let de = (self.d * self.d) + (self.e * self.e);
         if nu == 0f64 || de == 0f64 {
             0f64
-        } else{
-            -2f64*(nu / de)
+        } else {
+            -2f64 * (nu / de)
         }
     }
     fn cross_sectional_curvature(&self) -> f64 {
-        let nu = (self.b*self.d*self.d) + (self.a*self.e*self.e) - (self.c*self.d*self.e);
-        let de = (self.d*self.d) + (self.e*self.e);
+        let nu =
+            (self.b * self.d * self.d) + (self.a * self.e * self.e) - (self.c * self.d * self.e);
+        let de = (self.d * self.d) + (self.e * self.e);
         if nu == 0f64 || de == 0f64 {
             0f64
-        } else{
-            -2f64*(nu / de)
+        } else {
+            -2f64 * (nu / de)
         }
     }
     // fn max_prof_convexity(&self) -> f64 {
@@ -558,6 +588,11 @@ impl Quadratic2d {
     }
     fn solve(&self, x: f64, y: f64) -> f64 {
         // z(x,y) = ax^2 + by^2 + cxy + dx + ey + f
-        return (self.a*(x*x)) + (self.b*(y*y)) + (self.c*(x*y)) + (self.d*x) + (self.e*y) + self.f
+        return (self.a * (x * x))
+            + (self.b * (y * y))
+            + (self.c * (x * y))
+            + (self.d * x)
+            + (self.e * y)
+            + self.f;
     }
 }

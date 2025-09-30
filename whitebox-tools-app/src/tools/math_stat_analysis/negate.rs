@@ -9,7 +9,6 @@ NOTE: This tool differs from the Whitebox GAT equivalent in that in additional t
 of continuous data, it also handles Boolean data by reversing values (i.e. 0-1 to 1-0).
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -19,6 +18,7 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_raster::*;
 
 /// This tool creates a new raster in which each grid cell is equal to negative one times the corresponding
 /// grid cell in the input raster. This effectively changes the sign of values. This tool also handles Boolean
@@ -167,11 +167,18 @@ impl WhiteboxTool for Negate {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

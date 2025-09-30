@@ -6,15 +6,15 @@ Last Modified: 18/10/2019
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::{Array2D, Point2D};
 use crate::tools::*;
-use whitebox_vector::ShapefileGeometry;
-use whitebox_vector::*;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::structures::{Array2D, Point2D};
+use whitebox_raster::*;
+use whitebox_vector::ShapefileGeometry;
+use whitebox_vector::*;
 
 /// This tool converts a raster stream file into a vector file. The user must specify: 1)
 /// the name of the raster streams file, 2) the name of the D8 flow pointer file,
@@ -30,7 +30,7 @@ use std::path;
 /// number of vertices in the output file, and therefore reduced file sizes. However, the
 /// user can optionally override this behaviour by specifying the `--all_vertices` input
 /// parameter. If specified, this parameter has the effect of presering all of the verticies
-/// associated with grid cells in the input raster within the output vector file. 
+/// associated with grid cells in the input raster within the output vector file.
 ///
 /// # See Also
 /// `RasterizeStreams`, `RasterToVectorLines`
@@ -217,11 +217,18 @@ impl WhiteboxTool for RasterStreamsToVector {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

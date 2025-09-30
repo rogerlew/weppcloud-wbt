@@ -8,11 +8,11 @@ pub mod tiff_consts;
 use crate::geotiff::geokeys::*;
 use crate::geotiff::tiff_consts::*;
 use crate::*;
+use miniz_oxide::deflate::compress_to_vec_zlib;
+use miniz_oxide::inflate::decompress_to_vec_zlib;
 use whitebox_common::spatial_ref_system::esri_wkt_from_epsg;
 use whitebox_common::structures::{Point2D, PolynomialRegression2D};
 use whitebox_common::utils::{ByteOrderReader, ByteOrderWriter, Endianness};
-use miniz_oxide::deflate::compress_to_vec_zlib;
-use miniz_oxide::inflate::decompress_to_vec_zlib;
 // use libflate::zlib::Decoder;
 // use libflate::deflate::Encoder;
 use byteorder::{BigEndian, LittleEndian, WriteBytesExt};
@@ -791,8 +791,8 @@ pub fn read_geotiff<'a>(
             let val = ifd.interpret_as_u16()[0];
             let proj_linear_units_map = kw_map.get(&3076u16).unwrap();
             proj_linear_units_map.get(&val).unwrap().to_string()
-        },
-        None => "not specified".to_string()
+        }
+        None => "not specified".to_string(),
     };
 
     configs.z_units = match geokeys_map.get(&4099u16) {
@@ -800,8 +800,8 @@ pub fn read_geotiff<'a>(
             let val = ifd.interpret_as_u16()[0];
             let vertical_units_map = kw_map.get(&4099u16).unwrap();
             vertical_units_map.get(&val).unwrap().to_string()
-        },
-        None => "not specified".to_string()
+        }
+        None => "not specified".to_string(),
     };
 
     // Determine the image mode.
@@ -1701,7 +1701,6 @@ pub fn write_geotiff<'a>(r: &'a mut Raster) -> Result<(), Error> {
     let configs = whitebox_common::configs::get_configs()?;
     let use_compression = configs.compress_rasters;
 
-    
     // get the ByteOrderWriter
     let f = File::create(r.file_name.clone())?;
     let mut writer = BufWriter::new(f);
@@ -3029,10 +3028,7 @@ pub fn write_geotiff<'a>(r: &'a mut Raster) -> Result<(), Error> {
 
         // tGTCitationGeoKey (1026)
         let mut v = String::from(
-            *geographic_type_map
-                .get(&r.configs.epsg_code)
-                .unwrap()
-                // .clone(),
+            *geographic_type_map.get(&r.configs.epsg_code).unwrap(), // .clone(),
         );
         v.push_str("|");
         v = v.replace("_", " ");
@@ -3107,10 +3103,7 @@ pub fn write_geotiff<'a>(r: &'a mut Raster) -> Result<(), Error> {
 
         // PCSCitationGeoKey (3073)
         let mut v = String::from(
-            *projected_cs_type_map
-                .get(&r.configs.epsg_code)
-                .unwrap()
-                // .clone(),
+            *projected_cs_type_map.get(&r.configs.epsg_code).unwrap(), // .clone(),
         );
         v.push_str("|");
         v = v.replace("_", " ");

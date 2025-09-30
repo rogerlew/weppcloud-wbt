@@ -1,5 +1,4 @@
 use super::*;
-use whitebox_common::utils::Endianness;
 use std::f64;
 use std::fs::File;
 use std::io::prelude::*;
@@ -8,6 +7,7 @@ use std::io::BufWriter;
 use std::io::Error;
 use std::io::ErrorKind;
 use std::mem;
+use whitebox_common::utils::Endianness;
 
 pub fn read_idrisi(
     file_name: &String,

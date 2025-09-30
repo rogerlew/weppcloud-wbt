@@ -1,4 +1,4 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 25/08/2021
 Last Modified: 29/08/2021
@@ -7,28 +7,28 @@ License: MIT
 
 extern crate rand;
 
+use num_cpus;
+use rand::Rng;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
-use std::time::Instant;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
-use num_cpus;
-use rand::Rng;
-use whitebox_common::structures::{Array2D};
+use std::time::Instant;
+use whitebox_common::structures::Array2D;
 use whitebox_common::utils::get_formatted_elapsed_time;
 use whitebox_raster::*;
 
-/// This tool is used to generate a flow accumulation grid (i.e. contributing area) using the Fairfield and Leymarie (1991) 
+/// This tool is used to generate a flow accumulation grid (i.e. contributing area) using the Fairfield and Leymarie (1991)
 /// flow algorithm, often called Rho8. Like the D8 flow method, this algorithm is an examples of a single-flow-direction (SFD) method because the flow entering each
 /// grid cell is routed to only one downslope neighbour, i.e. flow *divergence* is not permitted. The user must specify the
 /// name of the input file (`--input`), which may be either a digital elevation model (DEM) or a Rho8 pointer file (see `Rho8Pointer`). If a DEM is input, it must have been hydrologically
 /// corrected to remove all spurious depressions and flat areas. DEM pre-processing is usually achieved using
-/// either the `BreachDepressions` (also `BreachDepressionsLeastCost`) or `FillDepressions` tool. 
-/// 
+/// either the `BreachDepressions` (also `BreachDepressionsLeastCost`) or `FillDepressions` tool.
+///
 /// In addition to the input and output (`--output`)files, the user must also specify the output type (`--out_type`). The output flow-accumulation
 /// can be: 1) `cells` (i.e. the number of inflowing grid cells), `catchment area` (i.e. the upslope area),
 /// or `specific contributing area` (i.e. the catchment area divided by the flow width). The default value
@@ -42,8 +42,8 @@ use whitebox_raster::*;
 /// however, log-transformed flow-accumulation grids must not be used to estimate other secondary terrain
 /// indices, such as the wetness index (`WetnessIndex`), or relative stream power index (`StreamPowerIndex`).
 ///
-/// If a Rho8 pointer is used as the input raster, the user must specify this (`--pntr`). Similarly, 
-/// if a pointer input is used and the pointer follows the Esri pointer convention, rather than the 
+/// If a Rho8 pointer is used as the input raster, the user must specify this (`--pntr`). Similarly,
+/// if a pointer input is used and the pointer follows the Esri pointer convention, rather than the
 /// default WhiteboxTools conversion for pointer files, then this must also be specified (`--esri_pntr`).
 ///
 /// # Reference
@@ -207,11 +207,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
     if configurations.verbose_mode {
         let tool_name = get_tool_name();
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -253,7 +260,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if !pntr_input {
-       let (tx, rx) = mpsc::channel();
+        let (tx, rx) = mpsc::channel();
         for tid in 0..num_procs {
             let input = input.clone();
             let tx1 = tx.clone();
@@ -424,8 +431,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                     if flow_dir.get_value(row, col) != -2i8 {
                         count = 0i8;
                         for i in 0..8 {
-                            if flow_dir.get_value(row + dy[i], col + dx[i]) == inflowing_vals[i]
-                            {
+                            if flow_dir.get_value(row + dy[i], col + dx[i]) == inflowing_vals[i] {
                                 count += 1;
                             }
                         }
@@ -525,8 +531,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                         output[(row, col)] =
                             (output[(row, col)] * cell_area / flow_widths[dir as usize]).ln();
                     } else {
-                        output[(row, col)] =
-                            (output[(row, col)] * cell_area / flow_widths[3]).ln();
+                        output[(row, col)] = (output[(row, col)] * cell_area / flow_widths[3]).ln();
                     }
                 }
             }
@@ -603,11 +608,17 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         );
     }
     if interior_pit_found {
-        println!("**********************************************************************************");
-        println!("WARNING: Interior pit cells were found within the input DEM. It is likely that the 
+        println!(
+            "**********************************************************************************"
+        );
+        println!(
+            "WARNING: Interior pit cells were found within the input DEM. It is likely that the 
         DEM needs to be processed to remove topographic depressions and flats prior to
-        running this tool.");
-        println!("**********************************************************************************");
+        running this tool."
+        );
+        println!(
+            "**********************************************************************************"
+        );
     }
 
     Ok(())

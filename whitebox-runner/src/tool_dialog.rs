@@ -1,17 +1,11 @@
-use crate::MyApp;
 use crate::toggle;
+use crate::tool_info::{ParameterFileType, ParameterType, ToolParameter, VectorGeometryType};
+use crate::MyApp;
 use case::CaseExt;
 use std::{f32, fs, path, path::Path};
 use whitebox_vector::{ShapeType, Shapefile};
-use crate::tool_info::{
-    ParameterFileType,
-    ParameterType,
-    ToolParameter,
-    VectorGeometryType,
-};
 
 impl MyApp {
-
     pub fn tool_dialog(&mut self, ctx: &egui::Context, tool_idx: usize) {
         let mut close_dialog = false;
         let mut wk_dir = String::new();
@@ -947,29 +941,31 @@ fn check_geometry_type(parameter: &mut ToolParameter, working_dir: &str) {
                         ret = true;
                     }
                     ret
-                },
+                }
                 VectorGeometryType::Line => {
                     let mut ret = false;
                     if base_shape_type != ShapeType::PolyLine {
                         ret = true;
                     }
                     ret
-                },
+                }
                 VectorGeometryType::Polygon => {
                     let mut ret = false;
                     if base_shape_type != ShapeType::Polygon {
                         ret = true;
                     }
                     ret
-                },
+                }
                 VectorGeometryType::LineOrPolygon => {
                     let mut ret = false;
-                    if base_shape_type != ShapeType::PolyLine && base_shape_type != ShapeType::Polygon {
+                    if base_shape_type != ShapeType::PolyLine
+                        && base_shape_type != ShapeType::Polygon
+                    {
                         ret = true;
                     }
                     ret
-                },
-                _ => { false }
+                }
+                _ => false,
             };
             if err_found {
                 if rfd::MessageDialog::new()
@@ -984,7 +980,7 @@ fn check_geometry_type(parameter: &mut ToolParameter, working_dir: &str) {
                     parameter.str_value = "".to_string();
                 }
             }
-        },
+        }
         Err(_) => {} // do nothing
     }
 }
@@ -993,29 +989,35 @@ fn get_file_extensions(pft: &ParameterFileType) -> Vec<&str> {
     match pft {
         ParameterFileType::Lidar => {
             vec!["las", "laz", "zLidar"]
-        },
+        }
         ParameterFileType::Raster => {
-            vec!["tif", "tiff", "bil", "hdr", "flt", "sdat", "sgrd", "rdc", "rst", "grd", "txt", "asc", "tas", "dep"]
-        },
+            vec![
+                "tif", "tiff", "bil", "hdr", "flt", "sdat", "sgrd", "rdc", "rst", "grd", "txt",
+                "asc", "tas", "dep",
+            ]
+        }
         ParameterFileType::Vector => {
             vec!["shp"]
-        },
+        }
         ParameterFileType::RasterAndVector => {
-            vec!["shp", "tif", "tiff", "bil", "hdr", "flt", "sdat", "sgrd", "rdc", "rst", "grd", "txt", "asc", "tas", "dep"]
-        },
+            vec![
+                "shp", "tif", "tiff", "bil", "hdr", "flt", "sdat", "sgrd", "rdc", "rst", "grd",
+                "txt", "asc", "tas", "dep",
+            ]
+        }
         ParameterFileType::Text => {
             vec!["txt"]
-        },
+        }
         ParameterFileType::Html => {
             vec!["html"]
-        },
+        }
         ParameterFileType::Csv => {
             vec!["csv"]
-        },
+        }
         ParameterFileType::Dat => {
             vec!["dat"]
-        },
-        _ => { 
+        }
+        _ => {
             vec![]
         }
     }
@@ -1023,45 +1025,34 @@ fn get_file_extensions(pft: &ParameterFileType) -> Vec<&str> {
 
 fn get_file_dialog(pft: &ParameterFileType) -> rfd::FileDialog {
     match pft {
-        ParameterFileType::Lidar => {
-            rfd::FileDialog::new()
+        ParameterFileType::Lidar => rfd::FileDialog::new()
             .add_filter("Lidar Files", &["las", "laz", "zLidar"])
             .add_filter("LAS Files", &["las"])
             .add_filter("LAZ Files", &["laz"])
-            .add_filter("zLidar Files", &["zLidar"])
-        },
-        ParameterFileType::Raster => {
-            rfd::FileDialog::new()
-            .add_filter("Raster Files", &["tif", "tiff", "bil", "hdr", "flt", "sdat", "sgrd", "rdc", "rst", "grd", "txt", "asc", "tas", "dep"])
-            .add_filter("GeoTIFF Files", &["tif", "tiff"])
-        },
-        ParameterFileType::Vector => {
-            rfd::FileDialog::new()
-            .add_filter("Vector Files", &["shp"])
-        },
-        ParameterFileType::RasterAndVector => {
-            rfd::FileDialog::new()
-            .add_filter("Raster Files", &["tif", "tiff", "bil", "hdr", "flt", "sdat", "sgrd", "rdc", "rst", "grd", "txt", "asc", "tas", "dep"])
-            .add_filter("Vector Files", &["shp"])
-        },
-        ParameterFileType::Text => {
-            rfd::FileDialog::new()
-            .add_filter("Test Files", &["txt"])
-        },
-        ParameterFileType::Html => {
-            rfd::FileDialog::new()
-            .add_filter("HTML Files", &["html"])
-        },
-        ParameterFileType::Csv => {
-            rfd::FileDialog::new()
-            .add_filter("CSV Files", &["csv"])
-        },
-        ParameterFileType::Dat => {
-            rfd::FileDialog::new()
-            .add_filter("DAT Files", &["dat"])
-        },
-        _ => { 
-            rfd::FileDialog::new()
-        }
+            .add_filter("zLidar Files", &["zLidar"]),
+        ParameterFileType::Raster => rfd::FileDialog::new()
+            .add_filter(
+                "Raster Files",
+                &[
+                    "tif", "tiff", "bil", "hdr", "flt", "sdat", "sgrd", "rdc", "rst", "grd", "txt",
+                    "asc", "tas", "dep",
+                ],
+            )
+            .add_filter("GeoTIFF Files", &["tif", "tiff"]),
+        ParameterFileType::Vector => rfd::FileDialog::new().add_filter("Vector Files", &["shp"]),
+        ParameterFileType::RasterAndVector => rfd::FileDialog::new()
+            .add_filter(
+                "Raster Files",
+                &[
+                    "tif", "tiff", "bil", "hdr", "flt", "sdat", "sgrd", "rdc", "rst", "grd", "txt",
+                    "asc", "tas", "dep",
+                ],
+            )
+            .add_filter("Vector Files", &["shp"]),
+        ParameterFileType::Text => rfd::FileDialog::new().add_filter("Test Files", &["txt"]),
+        ParameterFileType::Html => rfd::FileDialog::new().add_filter("HTML Files", &["html"]),
+        ParameterFileType::Csv => rfd::FileDialog::new().add_filter("CSV Files", &["csv"]),
+        ParameterFileType::Dat => rfd::FileDialog::new().add_filter("DAT Files", &["dat"]),
+        _ => rfd::FileDialog::new(),
     }
 }

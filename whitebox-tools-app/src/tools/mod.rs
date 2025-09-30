@@ -7,15 +7,15 @@ pub mod math_stat_analysis;
 pub mod stream_network_analysis;
 pub mod terrain_analysis;
 
-use whitebox_common::utils::get_formatted_elapsed_time;
 use serde_json;
-use std::io::{Error, ErrorKind};
-use std::time::Instant;
-use std::path;
-use std::fs;
 use std::collections::HashMap;
-use std::process::Command;
 use std::env;
+use std::fs;
+use std::io::{Error, ErrorKind};
+use std::path;
+use std::process::Command;
+use std::time::Instant;
+use whitebox_common::utils::get_formatted_elapsed_time;
 // use std::io;
 // use std::path::PathBuf;
 
@@ -181,6 +181,7 @@ impl ToolManager {
         tool_names.push("FillDepressionsWangAndLiu".to_string());
         tool_names.push("FillSingleCellPits".to_string());
         tool_names.push("FindNoFlowCells".to_string());
+        tool_names.push("FindOutlet".to_string());
         tool_names.push("FindParallelFlow".to_string());
         tool_names.push("FlattenLakes".to_string());
         tool_names.push("FloodOrder".to_string());
@@ -586,7 +587,9 @@ impl ToolManager {
             "createrectangularvectorgrid" => {
                 Some(Box::new(gis_analysis::CreateRectangularVectorGrid::new()))
             }
-            "deviationfromregionaldirection" => Some(Box::new(gis_analysis::DeviationFromRegionalDirection::new())), 
+            "deviationfromregionaldirection" => {
+                Some(Box::new(gis_analysis::DeviationFromRegionalDirection::new()))
+            }
             "difference" => Some(Box::new(gis_analysis::Difference::new())),
             "dissolve" => Some(Box::new(gis_analysis::Dissolve::new())),
             "edgeproportion" => Some(Box::new(gis_analysis::EdgeProportion::new())),
@@ -721,6 +724,7 @@ impl ToolManager {
             }
             "fillsinglecellpits" => Some(Box::new(hydro_analysis::FillSingleCellPits::new())),
             "findnoflowcells" => Some(Box::new(hydro_analysis::FindNoFlowCells::new())),
+            "findoutlet" => Some(Box::new(hydro_analysis::FindOutlet::new())),
             "findparallelflow" => Some(Box::new(hydro_analysis::FindParallelFlow::new())),
             "flattenlakes" => Some(Box::new(hydro_analysis::FlattenLakes::new())),
             "floodorder" => Some(Box::new(hydro_analysis::FloodOrder::new())),
@@ -792,7 +796,9 @@ impl ToolManager {
                 Some(Box::new(image_analysis::GaussianContrastStretch::new()))
             }
             "gaussianfilter" => Some(Box::new(image_analysis::GaussianFilter::new())),
-            "highpassbilateralfilter" => Some(Box::new(image_analysis::HighPassBilateralFilter::new())),
+            "highpassbilateralfilter" => {
+                Some(Box::new(image_analysis::HighPassBilateralFilter::new()))
+            }
             "highpassfilter" => Some(Box::new(image_analysis::HighPassFilter::new())),
             "highpassmedianfilter" => Some(Box::new(image_analysis::HighPassMedianFilter::new())),
             "histogramequalization" => Some(Box::new(image_analysis::HistogramEqualization::new())),
@@ -988,7 +994,9 @@ impl ToolManager {
             "kstestfornormality" => Some(Box::new(math_stat_analysis::KsTestForNormality::new())),
             "lessthan" => Some(Box::new(math_stat_analysis::LessThan::new())),
             "listuniquevalues" => Some(Box::new(math_stat_analysis::ListUniqueValues::new())),
-            "listuniquevaluesraster" => Some(Box::new(math_stat_analysis::ListUniqueValuesRaster::new())),
+            "listuniquevaluesraster" => {
+                Some(Box::new(math_stat_analysis::ListUniqueValuesRaster::new()))
+            }
             "log10" => Some(Box::new(math_stat_analysis::Log10::new())),
             "log2" => Some(Box::new(math_stat_analysis::Log2::new())),
             "ln" => Some(Box::new(math_stat_analysis::Ln::new())),
@@ -1063,10 +1071,10 @@ impl ToolManager {
             )),
             "removeshortstreams" => {
                 Some(Box::new(stream_network_analysis::RemoveShortStreams::new()))
-            },
-            "prunestrahlerstreamorder" => {
-                Some(Box::new(stream_network_analysis::PruneStrahlerStreamOrder::new()))
-            },
+            }
+            "prunestrahlerstreamorder" => Some(Box::new(
+                stream_network_analysis::PruneStrahlerStreamOrder::new(),
+            )),
             "shrevestreammagnitude" => Some(Box::new(
                 stream_network_analysis::ShreveStreamMagnitude::new(),
             )),
@@ -1087,11 +1095,11 @@ impl ToolManager {
             )),
             "tributaryidentifier" => {
                 Some(Box::new(stream_network_analysis::TributaryIdentifier::new()))
-            },
-            "streamjunctionidentifier" =>{
-                Some(Box::new(stream_network_analysis::StreamJunctionIdentifier::new()))
-            },
-            
+            }
+            "streamjunctionidentifier" => Some(Box::new(
+                stream_network_analysis::StreamJunctionIdentifier::new(),
+            )),
+
             // terrain_analysis
             "aspect" => Some(Box::new(terrain_analysis::Aspect::new())),
             "averagenormalvectorangulardeviation" => Some(Box::new(
@@ -1231,13 +1239,23 @@ impl ToolManager {
                     .to_str()
                     .expect("Error reading path string")
                     .to_string();
-                if s.to_lowercase().ends_with(".json") && !s.to_lowercase().contains("._") { // no hidden files!
-                    let contents = fs::read_to_string(s).expect("Something went wrong reading the file");
+                if s.to_lowercase().ends_with(".json") && !s.to_lowercase().contains("._") {
+                    // no hidden files!
+                    let contents =
+                        fs::read_to_string(s).expect("Something went wrong reading the file");
                     let mut v: serde_json::Value = serde_json::from_str(&contents)?;
                     v["plugin_directory"] = serde_json::json!(plugin_directory);
                     // println!("{}", v);
                     // plugin_names.push(contents);
-                    plugins.insert(String::from(v["tool_name"].as_str().unwrap_or("no toolName").to_lowercase()), v);
+                    plugins.insert(
+                        String::from(
+                            v["tool_name"]
+                                .as_str()
+                                .unwrap_or("no toolName")
+                                .to_lowercase(),
+                        ),
+                        v,
+                    );
                 }
             }
         }
@@ -1253,7 +1271,9 @@ impl ToolManager {
                 // if yes, then run it.
                 let plugin_list = self.get_plugin_list()?;
                 if plugin_list.contains_key(&tool_name.to_lowercase()) {
-                    let plugin_data = plugin_list.get(&tool_name.to_lowercase()).expect(&format!("Unrecognized plugin name {}.", tool_name));
+                    let plugin_data = plugin_list
+                        .get(&tool_name.to_lowercase())
+                        .expect(&format!("Unrecognized plugin name {}.", tool_name));
                     let ext = if cfg!(target_os = "windows") {
                         ".exe"
                     } else {
@@ -1266,15 +1286,16 @@ impl ToolManager {
                             args2.push(args[a].clone());
                         }
                     }
-                    let exe = format!("{}{}{}{}", 
+                    let exe = format!(
+                        "{}{}{}{}",
                         plugin_data["plugin_directory"]
-                        .as_str()
-                        .expect("Error: plugin executable name is unspecified."),
+                            .as_str()
+                            .expect("Error: plugin executable name is unspecified."),
                         &path::MAIN_SEPARATOR.to_string(),
                         plugin_data["exe"]
-                        .as_str()
-                        .expect("Error: plugin executable name is unspecified.")
-                        .replace("\"", ""),
+                            .as_str()
+                            .expect("Error: plugin executable name is unspecified.")
+                            .replace("\"", ""),
                         ext
                     );
                     let mut subcommand = vec!["run".to_string()];
@@ -1285,21 +1306,20 @@ impl ToolManager {
                         .spawn()
                         .expect("failed to execute process");
 
-                    let ecode = child.wait()
-                        .expect("failed to wait on child");
-                    
+                    let ecode = child.wait().expect("failed to wait on child");
+
                     if !ecode.success() {
                         println!("Failure to run plugin subprocess.");
                     }
                 } else {
-                    // We couldn't find an executable file for the tool, but still check to see if it's 
-                    // one of the extension plugins. If it is, issue a 'need valid license' warning. If 
+                    // We couldn't find an executable file for the tool, but still check to see if it's
+                    // one of the extension plugins. If it is, issue a 'need valid license' warning. If
                     // not, then issue an unrecognized tool error.
                     let plugin_names = vec![
                         "accumulationcurvature",
                         "assessroute",
                         "breaklinemapping",
-                        "cannyedgedetection", 
+                        "cannyedgedetection",
                         "colourizebasedonclass",
                         "colourizebasedonpointreturns",
                         "createscanelineinfo",
@@ -1307,7 +1327,7 @@ impl ToolManager {
                         "dbscan",
                         "depthtowater",
                         "differencecurvature",
-                        "evaluatetrainingsites", 
+                        "evaluatetrainingsites",
                         "filterlidar",
                         "fixdanglingarcs",
                         "generalizeclassifiedraster",
@@ -1317,7 +1337,7 @@ impl ToolManager {
                         "hydrologicconnectivity",
                         "imagesegmentation",
                         "imageslider",
-                        "inversepca", 
+                        "inversepca",
                         "knnclassification",
                         "knnregression",
                         "lastolaz",
@@ -1325,8 +1345,8 @@ impl ToolManager {
                         "lidarcontour",
                         "lidareigenvaluefeatures",
                         "lidarpointreturnanalysis",
-                        "lidarsibsoninterpolation", 
-                        "lidarsortbytime", 
+                        "lidarsibsoninterpolation",
+                        "lidarsortbytime",
                         "localhypsometricanalysis",
                         "logisticregression",
                         "lowpointsonheadwaterdivides",
@@ -1361,21 +1381,21 @@ impl ToolManager {
                         "verticalexcesscurvature",
                         "yieldfilter",
                         "yieldmap",
-                        "yieldnormalization"
+                        "yieldnormalization",
                     ];
                     if plugin_names.contains(&tool_name.to_lowercase().as_ref()) {
                         return Err(Error::new(
                             ErrorKind::NotFound,
                             format!("Invalid license: \nThis tool is part of a Whitebox extension product \nand there is a missing license. Please contact \nWhitebox Geospatial Inc. (support@whiteboxgeo.com) to obtain \na valid license key."),
-                        ))
+                        ));
                     } else {
                         return Err(Error::new(
                             ErrorKind::NotFound,
                             format!("Unrecognized tool name {}.", tool_name),
-                        ))
+                        ));
                     }
                 }
-                return Ok(())
+                return Ok(());
             }
         }
     }
@@ -1387,12 +1407,20 @@ impl ToolManager {
                 None => {
                     let plugin_list = self.get_plugin_list()?;
                     if plugin_list.contains_key(&tool_name.to_lowercase()) {
-                        let plugin_data = plugin_list.get(&tool_name.to_lowercase()).expect(&format!("Unrecognized plugin name {}.", tool_name));
+                        let plugin_data = plugin_list
+                            .get(&tool_name.to_lowercase())
+                            .expect(&format!("Unrecognized plugin name {}.", tool_name));
                         // println!("{}", plugin_data["help"].as_str().expect("Cannot locate plugin tool help."))
 
-                        let tool_name = plugin_data["tool_name"].as_str().expect("Cannot locate plugin tool name.");
-                        let description = plugin_data["short_description"].as_str().expect("Cannot locate plugin tool description.");
-                        let toolbox = plugin_data["toolbox"].as_str().expect("Cannot locate plugin toolbox.");
+                        let tool_name = plugin_data["tool_name"]
+                            .as_str()
+                            .expect("Cannot locate plugin tool name.");
+                        let description = plugin_data["short_description"]
+                            .as_str()
+                            .expect("Cannot locate plugin tool description.");
+                        let toolbox = plugin_data["toolbox"]
+                            .as_str()
+                            .expect("Cannot locate plugin toolbox.");
                         let a = plugin_data["parameters"].as_array().unwrap();
                         let mut p = String::new();
                         p.push_str("Flag               Description\n");
@@ -1409,13 +1437,16 @@ impl ToolManager {
                                 width = 18
                             ));
                         }
-                        let tmp_example = plugin_data["example"].as_str().unwrap_or("Example not located.");
+                        let tmp_example = plugin_data["example"]
+                            .as_str()
+                            .unwrap_or("Example not located.");
 
                         let sep: String = std::path::MAIN_SEPARATOR.to_string();
                         // let k = format!("{}", std::env::current_dir().unwrap().display());
                         let mut dir = env::current_exe()?;
                         dir.pop();
-                        let exe_directory = dir.to_str().unwrap_or("No exe path found.").to_string();
+                        let exe_directory =
+                            dir.to_str().unwrap_or("No exe path found.").to_string();
                         let e = format!("{}", std::env::current_exe().unwrap().display());
                         let mut short_exe = e
                             .replace(&exe_directory, "")
@@ -1426,23 +1457,25 @@ impl ToolManager {
                             short_exe += ".exe";
                         }
 
-                        let example = &tmp_example.replace("*", &sep).replace("EXE_NAME", &short_exe);
+                        let example = &tmp_example
+                            .replace("*", &sep)
+                            .replace("EXE_NAME", &short_exe);
 
                         let s: String;
                         if example.len() <= 1 {
                             s = format!(
-            "{}
+                                "{}
 
 Description:\n{}
 Toolbox: {}
 Parameters:\n
 {}
 ",
-                            tool_name, description, toolbox, p
-                        );
-                    } else {
-                s = format!(
-            "{}
+                                tool_name, description, toolbox, p
+                            );
+                        } else {
+                            s = format!(
+                                "{}
 Description:\n{}
 Toolbox: {}
 Parameters:\n
@@ -1455,12 +1488,11 @@ Example usage:
                             );
                         }
                         println!("{}", s);
-
                     } else {
                         return Err(Error::new(
                             ErrorKind::NotFound,
                             format!("Unrecognized tool name {}.", tool_name),
-                        ))
+                        ));
                     }
                 }
             }
@@ -1481,13 +1513,20 @@ Example usage:
             None => {
                 let plugin_list = self.get_plugin_list()?;
                 if plugin_list.contains_key(&tool_name.to_lowercase()) {
-                    let plugin_data = plugin_list.get(&tool_name.to_lowercase()).expect(&format!("Unrecognized plugin name {}.", tool_name));
-                    println!("{}", plugin_data["license"].as_str().expect("Cannot locate plugin tool license."));
+                    let plugin_data = plugin_list
+                        .get(&tool_name.to_lowercase())
+                        .expect(&format!("Unrecognized plugin name {}.", tool_name));
+                    println!(
+                        "{}",
+                        plugin_data["license"]
+                            .as_str()
+                            .expect("Cannot locate plugin tool license.")
+                    );
                 } else {
                     return Err(Error::new(
                         ErrorKind::NotFound,
                         format!("Unrecognized tool name {}.", tool_name),
-                    ))
+                    ));
                 }
             }
         }
@@ -1500,14 +1539,16 @@ Example usage:
             None => {
                 let plugin_list = self.get_plugin_list()?;
                 if plugin_list.contains_key(&tool_name.to_lowercase()) {
-                    let plugin_data = plugin_list.get(&tool_name.to_lowercase()).expect(&format!("Unrecognized plugin name {}.", tool_name));
+                    let plugin_data = plugin_list
+                        .get(&tool_name.to_lowercase())
+                        .expect(&format!("Unrecognized plugin name {}.", tool_name));
                     // println!("{:?}", plugin_data);
                     println!("{}", plugin_data);
                 } else {
                     return Err(Error::new(
                         ErrorKind::NotFound,
                         format!("Unrecognized tool name {}.", tool_name),
-                    ))
+                    ));
                 }
             }
         }
@@ -1521,14 +1562,18 @@ Example usage:
                 None => {
                     let plugin_list = self.get_plugin_list()?;
                     if plugin_list.contains_key(&tool_name.to_lowercase()) {
-                        let plugin_data = plugin_list.get(&tool_name.to_lowercase()).expect(&format!("Unrecognized plugin name {}.", tool_name));
-                        let toolbox = plugin_data["toolbox"].as_str().unwrap_or("Toolbox name not found.");
+                        let plugin_data = plugin_list
+                            .get(&tool_name.to_lowercase())
+                            .expect(&format!("Unrecognized plugin name {}.", tool_name));
+                        let toolbox = plugin_data["toolbox"]
+                            .as_str()
+                            .unwrap_or("Toolbox name not found.");
                         println!("{}", toolbox);
                     } else {
                         return Err(Error::new(
                             ErrorKind::NotFound,
                             format!("Unrecognized tool name {}.", tool_name),
-                        ))
+                        ));
                     }
                     // for (_key, plugin_data) in &plugin_list {
                     //     let tool = plugin_data["tool_name"].as_str().unwrap_or("Tool name not found.");
@@ -1554,8 +1599,12 @@ Example usage:
 
             let plugin_list = self.get_plugin_list()?;
             for (_key, plugin_data) in &plugin_list {
-                let tool = plugin_data["tool_name"].as_str().unwrap_or("Tool name not found.");
-                let toolbox = plugin_data["toolbox"].as_str().unwrap_or("Toolbox name not found.");
+                let tool = plugin_data["tool_name"]
+                    .as_str()
+                    .unwrap_or("Tool name not found.");
+                let toolbox = plugin_data["toolbox"]
+                    .as_str()
+                    .unwrap_or("Toolbox name not found.");
                 // println!("{}: {}\n", tool, toolbox);
                 tool_details.push((tool.to_string(), toolbox.to_string()));
             }
@@ -1580,8 +1629,12 @@ Example usage:
 
         let plugin_list = self.get_plugin_list().unwrap();
         for (_key, plugin_data) in &plugin_list {
-            let tool = plugin_data["tool_name"].as_str().unwrap_or("Tool name not found.");
-            let description = plugin_data["short_description"].as_str().unwrap_or("Tool description name not found.");
+            let tool = plugin_data["tool_name"]
+                .as_str()
+                .unwrap_or("Tool name not found.");
+            let description = plugin_data["short_description"]
+                .as_str()
+                .unwrap_or("Tool description name not found.");
             tool_details.push((tool.to_string(), description.to_string()));
         }
 
@@ -1618,8 +1671,12 @@ Example usage:
 
         let plugin_list = self.get_plugin_list().unwrap();
         for (_key, plugin_data) in &plugin_list {
-            let nm = plugin_data["tool_name"].as_str().unwrap_or("Tool name not found.");
-            let des = plugin_data["short_description"].as_str().unwrap_or("Tool description name not found.");
+            let nm = plugin_data["tool_name"]
+                .as_str()
+                .unwrap_or("Tool name not found.");
+            let des = plugin_data["short_description"]
+                .as_str()
+                .unwrap_or("Tool description name not found.");
             for kw in &keywords {
                 if nm.to_lowercase().contains(&(kw.to_lowercase()))
                     || des.to_lowercase().contains(&(kw.to_lowercase()))
@@ -1646,13 +1703,18 @@ Example usage:
                 let plugin_list = self.get_plugin_list()?;
                 let license: String;
                 if plugin_list.contains_key(&tool_name.to_lowercase()) {
-                    let plugin_data = plugin_list.get(&tool_name.to_lowercase()).expect(&format!("Unrecognized plugin name {}.", tool_name));
-                    license = plugin_data["license"].as_str().expect("Cannot locate plugin tool license.").to_lowercase();
+                    let plugin_data = plugin_list
+                        .get(&tool_name.to_lowercase())
+                        .expect(&format!("Unrecognized plugin name {}.", tool_name));
+                    license = plugin_data["license"]
+                        .as_str()
+                        .expect("Cannot locate plugin tool license.")
+                        .to_lowercase();
                 } else {
                     return Err(Error::new(
                         ErrorKind::NotFound,
                         format!("Unrecognized tool name {}.", tool_name),
-                    ))
+                    ));
                 }
                 // let license = self.tool_license(tool_name.clone()).to_lowercase();
                 if !license.contains("proprietary") {

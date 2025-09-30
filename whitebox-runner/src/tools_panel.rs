@@ -1,5 +1,5 @@
 use crate::MyApp;
-use egui::{ CollapsingHeader, ScrollArea };
+use egui::{CollapsingHeader, ScrollArea};
 
 impl MyApp {
     pub fn tools_panel(&mut self, ctx: &egui::Context) {

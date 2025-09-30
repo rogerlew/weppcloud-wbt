@@ -1,4 +1,4 @@
-/* 
+/*
 Authors: Whitebox Geospatial Inc. (c)
 Developer: Dr. John Lindsay
 Created: 03/06/2023
@@ -6,41 +6,40 @@ Last Modified: 03/06/2023
 License: Whitebox Geospatial Inc. License Agreement
 */
 
+use num_cpus;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
-use std::time::Instant;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use std::time::Instant;
 use whitebox_common::utils::get_formatted_elapsed_time;
 use whitebox_raster::*;
-use num_cpus;
 
 /// This tool uses [Ostu's method](https://en.wikipedia.org/wiki/Otsu%27s_method) for optimal automatic binary thresholding,
-/// transforming an input image (`--input`) into background and foreground pixels (`--output`). Otsu’s method uses the grayscale 
+/// transforming an input image (`--input`) into background and foreground pixels (`--output`). Otsu’s method uses the grayscale
 /// image histogram to detect an optimal threshold value that separates two regions with maximum inter-class variance.
 /// The process begins by calculating the image histogram of the input.
 ///
 /// # References
-/// Otsu, N., 1979. A threshold selection method from gray-level histograms. IEEE transactions on 
+/// Otsu, N., 1979. A threshold selection method from gray-level histograms. IEEE transactions on
 /// systems, man, and cybernetics, 9(1), pp.62-66.
 ///
 /// # See Also
 /// `ImageSegmentation`
 fn main() {
-
     let args: Vec<String> = env::args().collect();
 
     if args[1].trim() == "run" {
         match run(&args) {
-            Ok(_) => {}, 
+            Ok(_) => {}
             Err(e) => panic!("{:?}", e),
         }
     }
-    
+
     if args.len() <= 1 || args[1].trim() == "help" {
         // print help
         help();
@@ -50,7 +49,6 @@ fn main() {
         // print version information
         version();
     }
-    
 }
 
 fn help() {
@@ -84,8 +82,8 @@ fn help() {
     Note: Use of this tool requires a valid license. To obtain a license,
     contact Whitebox Geospatial Inc. (support@whiteboxgeo.com).
     "#
-            .replace("*", &sep)
-            .replace("EXE_NAME", exe_name);
+    .replace("*", &sep)
+    .replace("EXE_NAME", exe_name);
     println!("{}", s);
 }
 
@@ -147,27 +145,34 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             } else {
                 args[i + 1].to_string()
             };
-        // } else if flag_val == "-num_bins" {
-        //     num_bins = if keyval {
-        //         vec[1]
-        //             .to_string()
-        //             .parse::<usize>()
-        //             .expect(&format!("Error parsing {}", flag_val))
-        //     } else {
-        //         args[i + 1]
-        //             .to_string()
-        //             .parse::<usize>()
-        //             .expect(&format!("Error parsing {}", flag_val))
-        //     };
+            // } else if flag_val == "-num_bins" {
+            //     num_bins = if keyval {
+            //         vec[1]
+            //             .to_string()
+            //             .parse::<usize>()
+            //             .expect(&format!("Error parsing {}", flag_val))
+            //     } else {
+            //         args[i + 1]
+            //             .to_string()
+            //             .parse::<usize>()
+            //             .expect(&format!("Error parsing {}", flag_val))
+            //     };
         }
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -184,7 +189,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         output_file = format!("{}{}", working_directory, output_file);
     }
 
-
     // Read in the input raster
     let input = Raster::new(&input_file, "r")?;
     let configs = input.configs.clone();
@@ -197,7 +201,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     /////////////////////////////
     // Calculate the histogram //
     /////////////////////////////
-    
+
     let is_rgb_image = if input.configs.data_type == DataType::RGB24
         || input.configs.data_type == DataType::RGBA32
         || input.configs.photometric_interp == PhotometricInterpretation::RGB
@@ -206,13 +210,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     } else {
         false
     };
-    
 
     if configurations.verbose_mode {
         println!("Calculating histogram...");
     }
-
-
 
     // create the histogram
     let mut num_bins = 1024usize;
@@ -237,7 +238,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     if max_procs > 0 && max_procs < num_procs {
         num_procs = max_procs;
     }
-    
+
     let (tx, rx) = mpsc::channel();
     for tid in 0..num_procs {
         let input = input.clone();
@@ -294,9 +295,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         }
     }
 
-    
-
-
     let mut cumulative_histo = Vec::with_capacity(num_bins);
     for bin in 0..num_bins {
         if bin > 0 {
@@ -305,31 +303,42 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             cumulative_histo.push(histo[bin]);
         }
     }
-    let cdf: Vec<f64> = cumulative_histo.into_iter().map(|x| x as f64 / total_cells as f64).collect();
-    
+    let cdf: Vec<f64> = cumulative_histo
+        .into_iter()
+        .map(|x| x as f64 / total_cells as f64)
+        .collect();
+
     let (mut w0, mut w1): (f64, f64);
     let (mut m0, mut m1): (f64, f64);
     let mut var: f64;
     let mut max_var = 0f64;
     let mut max_i = 0;
-    for bin in 0..num_bins-1 {
+    for bin in 0..num_bins - 1 {
         w0 = cdf[bin];
         w1 = 1.0 - w0;
-        m0 = (0..=bin).into_iter().map(|i| i * histo[i]).sum::<usize>() as f64 / (w0 * total_cells as f64);
-        m1 = (bin+1..num_bins).into_iter().map(|i| i * histo[i]).sum::<usize>() as f64 / (w1 * total_cells as f64);
+        m0 = (0..=bin).into_iter().map(|i| i * histo[i]).sum::<usize>() as f64
+            / (w0 * total_cells as f64);
+        m1 = (bin + 1..num_bins)
+            .into_iter()
+            .map(|i| i * histo[i])
+            .sum::<usize>() as f64
+            / (w1 * total_cells as f64);
         var = w0 * w1 * (m0 - m1).powi(2);
-        if var > max_var { 
-            max_var = var; 
+        if var > max_var {
+            max_var = var;
             max_i = bin;
         }
     }
-    
+
     if configurations.verbose_mode {
-        println!("Max variance: {:.2?}\nGreytone bin of max variance: {max_i} of {num_bins} bins", max_var);
+        println!(
+            "Max variance: {:.2?}\nGreytone bin of max variance: {max_i} of {num_bins} bins",
+            max_var
+        );
     }
-    
+
     let out_nodata = -32768.0;
-    
+
     let (tx, rx) = mpsc::channel();
     for tid in 0..num_procs {
         let input = input.clone();
@@ -374,7 +383,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     out_configs.nodata = out_nodata;
     out_configs.photometric_interp = PhotometricInterpretation::Categorical;
     let mut output = Raster::initialize_using_config(&output_file, &out_configs);
-    
+
     for r in 0..rows {
         let (row, data) = rx.recv().expect("Error receiving data from thread.");
         output.set_row_data(row, data);
@@ -390,7 +399,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
     drop(input);
 
-    
     //////////////////////
     // Output the image //
     //////////////////////

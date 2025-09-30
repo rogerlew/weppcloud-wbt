@@ -7,12 +7,7 @@ License: MIT
 */
 extern crate kdtree;
 
-use whitebox_common::algorithms::{
-    find_split_points_at_line_intersections, is_clockwise_order, poly_in_poly,
-};
-use whitebox_common::structures::{BoundingBox, Polyline, Point2D};
 use crate::tools::*;
-use whitebox_vector::*;
 use kdtree::distance::squared_euclidean;
 use kdtree::KdTree;
 use std::cmp::Ordering;
@@ -20,6 +15,11 @@ use std::collections::{BinaryHeap, HashSet};
 use std::env;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::algorithms::{
+    find_split_points_at_line_intersections, is_clockwise_order, poly_in_poly,
+};
+use whitebox_common::structures::{BoundingBox, Point2D, Polyline};
+use whitebox_vector::*;
 
 const EPSILON: f64 = std::f64::EPSILON; //1.0e-7f64;
 
@@ -184,11 +184,18 @@ impl WhiteboxTool for Polygonize {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

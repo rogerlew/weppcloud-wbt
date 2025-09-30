@@ -1,10 +1,10 @@
 use super::Ifd;
-use whitebox_common::spatial_ref_system;
-use whitebox_common::utils::{ByteOrderReader, Endianness};
 use std::collections::HashMap;
 use std::fmt;
 use std::io::Cursor;
 use std::mem::transmute;
+use whitebox_common::spatial_ref_system;
+use whitebox_common::utils::{ByteOrderReader, Endianness};
 
 macro_rules! hashmap {
     ($( $key: expr => $val: expr ),*) => {{

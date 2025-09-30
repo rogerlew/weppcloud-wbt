@@ -6,8 +6,6 @@ Last Modified: 24/07/2020
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -19,6 +17,8 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 
 /// This tool can be used to divide a landscape into a group of nearly equal-sized watersheds, known as *isobasins*.
 /// The user must specify the name (`--dem`) of a digital elevation model (DEM), the output raster name (`--output`),
@@ -200,11 +200,18 @@ impl WhiteboxTool for Isobasins {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -368,7 +375,6 @@ impl WhiteboxTool for Isobasins {
                 }
             }
         }
-
 
         /////////////////////////////////
         // Find and ID the pour points //
@@ -538,7 +544,7 @@ impl WhiteboxTool for Isobasins {
         }
 
         if output_connections {
-            let mut connections_table = vec![-1isize; num_outlets+1];
+            let mut connections_table = vec![-1isize; num_outlets + 1];
             let dx = [1, 1, 1, 0, -1, -1, -1, 0];
             let dy = [-1, 0, 1, 1, 1, 0, -1, -1];
             let mut z_n: f64;
@@ -580,17 +586,16 @@ impl WhiteboxTool for Isobasins {
                 .write_all("UPSTREAM,DOWNSTREAM,OUTLET_ROW,OUTLET_COL,ACCUM,FLOW_DIR\n".as_bytes())
                 .expect("Error while writing to CSV file.");
             for i in 1..=num_outlets {
-                row_n = outlet_row[i-1];
-                col_n = outlet_col[i-1];
-                fa = outlet_fa[i-1];
+                row_n = outlet_row[i - 1];
+                col_n = outlet_col[i - 1];
+                fa = outlet_fa[i - 1];
                 dir = flow_dir.get_value(row_n, col_n);
-                let fd = if dir >= 0 {
-                    2i32.pow(dir as u32)
-                } else {
-                    0i32
-                };
+                let fd = if dir >= 0 { 2i32.pow(dir as u32) } else { 0i32 };
                 if connections_table[i] != -1 {
-                    let s = format!("{},{},{},{},{},{}\n", i, connections_table[i], row_n, col_n, fa, fd);
+                    let s = format!(
+                        "{},{},{},{},{},{}\n",
+                        i, connections_table[i], row_n, col_n, fa, fd
+                    );
                     writer
                         .write_all(s.as_bytes())
                         .expect("Error while writing to CSV file.");

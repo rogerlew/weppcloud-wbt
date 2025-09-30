@@ -1,25 +1,25 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 09/07/2021
 Last Modified: 15/07/2021
 License: MIT
 */
 
+use num_cpus;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
-use std::time::Instant;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
-use num_cpus;
-use whitebox_common::structures::{Array2D};
+use std::time::Instant;
+use whitebox_common::structures::Array2D;
 use whitebox_common::utils::get_formatted_elapsed_time;
 use whitebox_raster::*;
 
-/// This tool is used to generate a flow accumulation grid (i.e. contributing area) using the Quinn et al. (1995) 
+/// This tool is used to generate a flow accumulation grid (i.e. contributing area) using the Quinn et al. (1995)
 /// flow algorithm, sometimes called QMFD or QMFD2, and not to be confused with the similarly named `QinFlowAccumulation` tool. This algorithm is an examples of a multiple-flow-direction (MFD) method because the flow entering each
 /// grid cell is routed to more than one downslope neighbour, i.e. flow *divergence* is permitted. The user must specify the
 /// name (`--dem`) of the input digital elevation model (DEM). The DEM must have been hydrologically
@@ -27,7 +27,7 @@ use whitebox_raster::*;
 /// either the `BreachDepressions` (also `BreachDepressionsLeastCost`) or `FillDepressions` tool. A value must also be specified for the exponent parameter
 /// (`--exponent`), a number that controls the degree of dispersion in the resulting flow-accumulation grid. A lower
 /// value yields greater apparent flow dispersion across divergent hillslopes. The exponent value (*h*) should probably be
-/// less than 50.0, as higher values may cause numerical instability, and values between 1 and 2 are most common. 
+/// less than 50.0, as higher values may cause numerical instability, and values between 1 and 2 are most common.
 /// The following equations are used to calculate the portion flow (*F<sub>i</sub>*) given to each neighbour, *i*:
 ///
 /// > *F<sub>i</sub>* = *L<sub>i</sub>*(tan&beta;)<sup>*p*</sup> / &Sigma;<sub>*i*=1</sub><sup>*n*</sup>[*L<sub>i</sub>*(tan&beta;)<sup>*p*</sup>]
@@ -35,15 +35,15 @@ use whitebox_raster::*;
 /// > *p* = (*A* / *threshold* + 1)<sup>*h*</sup>
 ///
 /// Where *L<sub>i</sub>* is the contour length, and is 0.5&times;cell size for cardinal directions and 0.354&times;cell size for
-/// diagonal directions, *n* = 8, and represents each of the eight neighbouring grid cells, and, *A* is the flow accumulation value assigned to the current grid cell, that is being 
-/// apportioned downslope. The non-dispersive, channel initiation *threshold* (`--threshold`) is a flow-accumulation 
-/// value (measured in upslope grid cells, which is directly proportional to area) above which flow dispersion is 
-/// no longer permitted. Grid cells with flow-accumulation values above this threshold will have their flow routed 
-/// in a manner that is similar to the D8 single-flow-direction algorithm, directing all flow towards the steepest 
-/// downslope neighbour. This is usually done under the assumption that flow dispersion, whilst appropriate on 
-/// hillslope areas, is not realistic once flow becomes channelized. Importantly, the `--threshold` parameter sets 
-/// the spatial extent of the stream network, with lower values resulting in more extensive networks. 
-/// 
+/// diagonal directions, *n* = 8, and represents each of the eight neighbouring grid cells, and, *A* is the flow accumulation value assigned to the current grid cell, that is being
+/// apportioned downslope. The non-dispersive, channel initiation *threshold* (`--threshold`) is a flow-accumulation
+/// value (measured in upslope grid cells, which is directly proportional to area) above which flow dispersion is
+/// no longer permitted. Grid cells with flow-accumulation values above this threshold will have their flow routed
+/// in a manner that is similar to the D8 single-flow-direction algorithm, directing all flow towards the steepest
+/// downslope neighbour. This is usually done under the assumption that flow dispersion, whilst appropriate on
+/// hillslope areas, is not realistic once flow becomes channelized. Importantly, the `--threshold` parameter sets
+/// the spatial extent of the stream network, with lower values resulting in more extensive networks.
+///
 /// In addition to the input DEM, output file (`--output`), and exponent, the user must also specify the output type (`--out_type`). The output flow-accumulation
 /// can be: 1) `cells` (i.e. the number of inflowing grid cells), `catchment area` (i.e. the upslope area),
 /// or `specific contributing area` (i.e. the catchment area divided by the flow width). The default value
@@ -59,7 +59,7 @@ use whitebox_raster::*;
 /// Quinn et al. (1995) algorithm is commonly used to calculate wetness index.
 ///
 /// # Reference
-/// Quinn, P. F., K. J. Beven, Lamb, R. 1995. The in (a/tanβ) index: How to calculate it and how to use it within 
+/// Quinn, P. F., K. J. Beven, Lamb, R. 1995. The in (a/tanβ) index: How to calculate it and how to use it within
 /// the topmodel framework. *Hydrological Processes* 9(2): 161-182.
 ///
 /// # See Also
@@ -248,11 +248,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -422,8 +429,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                     zn *= z_factor;
                     slope = (z - zn) / grid_lengths[i];
                     f = (fa / convergence_threshold + 1f64).powf(exponent);
-                    if f > 50.0 { 
-                        is_converged = true; 
+                    if f > 50.0 {
+                        is_converged = true;
                         break;
                     }
                     weights[i] = contour_lengths[i] * slope.powf(f);
@@ -584,11 +591,17 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if interior_pit_found {
-        println!("**********************************************************************************");
-        println!("WARNING: Interior pit cells were found within the input DEM. It is likely that the 
+        println!(
+            "**********************************************************************************"
+        );
+        println!(
+            "WARNING: Interior pit cells were found within the input DEM. It is likely that the 
         DEM needs to be processed to remove topographic depressions and flats prior to
-        running this tool.");
-        println!("**********************************************************************************");
+        running this tool."
+        );
+        println!(
+            "**********************************************************************************"
+        );
     }
 
     Ok(())

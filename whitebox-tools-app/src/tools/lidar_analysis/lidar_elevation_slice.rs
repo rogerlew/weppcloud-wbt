@@ -6,12 +6,12 @@ Last Modified: 18/10/2019
 License: MIT
 */
 
-use whitebox_lidar::*;
 use crate::tools::*;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_lidar::*;
 
 /// This tool can be used to either extract or classify the elevation values (z) of LiDAR points within
 /// a specified elevation range (slice). In addition to the names of the input and output LiDAR files
@@ -325,7 +325,7 @@ impl WhiteboxTool for LidarElevationSlice {
         } else {
             for i in 0..input.header.number_of_points as usize {
                 let mut class_val = out_class_value; // outside elevation slice
-                // z = input.get_point_info(i).z;
+                                                     // z = input.get_point_info(i).z;
                 z = input.get_transformed_coords(i).z;
                 if z >= minz && z <= maxz {
                     class_val = in_class_value; // inside elevation slice

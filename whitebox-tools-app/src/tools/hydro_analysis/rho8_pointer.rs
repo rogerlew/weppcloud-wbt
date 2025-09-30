@@ -6,7 +6,6 @@ Last Modified: 18/10/2019
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
 use rand::prelude::*;
@@ -18,13 +17,14 @@ use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
 use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 
 /// This tool is used to generate a flow pointer grid (i.e. flow direction) using the stochastic
 /// Rho8 (J. Fairfield and P. Leymarie, 1991) algorithm. Like the D8 flow algorithm (`D8Pointer`),
 /// Rho8 is a single-flow-direction (SFD) method because the flow entering each grid cell is routed
 /// to only one downslope neighbour, i.e. flow divergence is not permitted. The user must specify the
 /// name of a digital elevation model (DEM) file (`--dem`) that has been hydrologically corrected to
-/// remove all spurious depressions and flat areas (`BreachDepressions`, `FillDepressions`). The 
+/// remove all spurious depressions and flat areas (`BreachDepressions`, `FillDepressions`). The
 /// output of this tool (`--output`) is often used as the input to the `Rho8FlowAccumulation` tool.
 ///
 /// By default, the Rho8 flow pointers use the following clockwise, base-2 numeric index convention:
@@ -43,7 +43,7 @@ use whitebox_common::structures::Array2D;
 ///
 /// # Memory Usage
 /// The peak memory usage of this tool is approximately 10 bytes per grid cell.
-/// 
+///
 /// # References
 /// Fairfield, J., and Leymarie, P. 1991. Drainage networks from grid digital elevation models. *Water
 /// Resources Research*, 27(5), 709-717.
@@ -203,11 +203,18 @@ impl WhiteboxTool for Rho8Pointer {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

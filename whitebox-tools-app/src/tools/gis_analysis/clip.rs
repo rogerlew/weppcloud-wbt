@@ -7,13 +7,7 @@ License: MIT
 */
 extern crate kdtree;
 
-use whitebox_common::algorithms::{
-    find_split_points_at_line_intersections, interior_point, is_clockwise_order, point_in_poly,
-    poly_in_poly, poly_overlaps_poly,
-};
-use whitebox_common::structures::{BoundingBox, Point2D, Polyline};
 use crate::tools::*;
-use whitebox_vector::*;
 use kdtree::distance::squared_euclidean;
 use kdtree::KdTree;
 use num_cpus;
@@ -25,6 +19,12 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::algorithms::{
+    find_split_points_at_line_intersections, interior_point, is_clockwise_order, point_in_poly,
+    poly_in_poly, poly_overlaps_poly,
+};
+use whitebox_common::structures::{BoundingBox, Point2D, Polyline};
+use whitebox_vector::*;
 
 // const EPSILON: f64 = 0.000000001f64; //std::f64::EPSILON;
 const EPSILON: f64 = std::f64::EPSILON;
@@ -208,11 +208,18 @@ impl WhiteboxTool for Clip {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

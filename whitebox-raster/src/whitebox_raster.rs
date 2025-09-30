@@ -1,5 +1,4 @@
 use super::*;
-use whitebox_common::utils::Endianness;
 use byteorder::{LittleEndian, WriteBytesExt};
 use std::f64;
 use std::fs::File;
@@ -9,6 +8,7 @@ use std::io::ErrorKind;
 use std::io::{BufReader, BufWriter, Cursor};
 use std::mem;
 use std::path::Path;
+use whitebox_common::utils::Endianness;
 
 pub fn read_whitebox(
     file_name: &String,

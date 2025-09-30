@@ -23,7 +23,7 @@ from shutil import copyfile, copytree, make_archive, rmtree
 # python3 build.py do_clean exclude_runner zip
 
 
-def build(do_clean=False, exclude_runner=False, create_zip_artifact=False):
+def build(do_clean=False, exclude_runner=True, create_zip_artifact=False):
     # Set the directory variables
     app_dir = os.path.dirname(os.path.abspath(__file__))
     output_dir = os.path.join(app_dir, 'WBT')

@@ -6,13 +6,13 @@ Last Modified: 13/05/2020
 License: MIT
 */
 
-use whitebox_lidar::*;
 use crate::tools::*;
 use std;
 use std::io::{Error, ErrorKind};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::{env, fs, path, thread};
+use whitebox_lidar::*;
 
 /// This tool can be used to convert one or more *zLidar* files ('*.zlidar') files into the *LAS*
 /// LiDAR data format. [zLidar](https://jblindsay.github.io/zLidar_spec/intro.html) files are a compressed
@@ -166,11 +166,18 @@ impl WhiteboxTool for ZlidarToLas {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

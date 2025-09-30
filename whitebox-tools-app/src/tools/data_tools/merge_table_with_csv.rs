@@ -7,7 +7,6 @@ License: MIT
 */
 
 use crate::tools::*;
-use whitebox_vector::{AttributeField, FieldData, FieldDataType, Shapefile};
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
@@ -15,6 +14,7 @@ use std::io::prelude::*;
 use std::io::{BufReader, Error, ErrorKind};
 use std::path;
 use std::{f64, i32};
+use whitebox_vector::{AttributeField, FieldData, FieldDataType, Shapefile};
 
 /// This tool can be used to merge a vector's attribute table with data contained within a comma
 /// separated values (CSV) text file. CSV files stores tabular data (numbers and text) in plain-text
@@ -245,11 +245,18 @@ impl WhiteboxTool for MergeTableWithCsv {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

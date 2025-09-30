@@ -6,16 +6,16 @@ Last Modified: 04/02/2022
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_raster::*;
 
 /// This tool multiplies a stack of raster images (`--inputs`) on a pixel-by-pixel basis. This tool is particularly
-/// well suited when you need to create a masking layer from the combination of several Boolean rasters, i.e. 
-/// for constraint mapping applications. NoData values in any of the input images will result in a NoData pixel in 
+/// well suited when you need to create a masking layer from the combination of several Boolean rasters, i.e.
+/// for constraint mapping applications. NoData values in any of the input images will result in a NoData pixel in
 /// the output image (`--output`).
 ///
 /// # Warning
@@ -153,11 +153,18 @@ impl WhiteboxTool for MultiplyOverlay {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

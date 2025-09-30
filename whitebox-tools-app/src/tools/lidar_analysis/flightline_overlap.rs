@@ -6,36 +6,36 @@ Last Modified: 24/03/2022
 License: MIT
 */
 
-use kd_tree::{KdPoint, KdTree};
-use whitebox_common::structures::Point3D;
-use whitebox_lidar::*;
-use whitebox_raster::*;
 use crate::tools::*;
+use kd_tree::{KdPoint, KdTree};
 use std::env;
 use std::f64;
 use std::fs;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::structures::Point3D;
+use whitebox_lidar::*;
+use whitebox_raster::*;
 
-/// This tool can be used to map areas of overlapping flightlines in an input LiDAR (LAS) file (`--input`). 
+/// This tool can be used to map areas of overlapping flightlines in an input LiDAR (LAS) file (`--input`).
 /// The output raster file (`--output`) will contain the number of different flightlines that are contained
-/// within each grid cell. The user must specify the desired cell size (`--resolution`). The flightline 
+/// within each grid cell. The user must specify the desired cell size (`--resolution`). The flightline
 /// associated with a LiDAR point is assumed to be contained within the point's `Point Source ID` property.
 /// Thus, the tool essentially counts the number of different Point Source ID values among the points contained
 /// within each grid cell. If the Point Source ID property is not set, or has been lost, users may with to
 /// apply the `RecoverFlightlineInfo` tool prior to running `FlightlineOverlap`.
-/// 
+///
 /// It is important to set the `--resolution` parameter appropriately, as setting this value too high will
 /// yield the mis-characterization of non-overlap areas, and setting the resolution to low will result in
 /// fewer than expected overlap areas. An appropriate resolution size value may require experimentation,
 /// however a value that is 2-3 times the nominal point spacing has been previously recommended. The nominal
 /// point spacing can be determined using the `LidarInfo` tool.
-/// 
+///
 /// Note that this tool is intended to be applied to LiDAR tile data containing points that have been merged
 /// from multiple overlapping flightlines. It is commonly the case that airborne LiDAR data from each of the
 /// flightlines from a survey are merged and then tiled into 1 km<sup>2</sup> tiles, which are the target
 /// dataset for this tool.
-/// 
+///
 /// Like many of the LiDAR related tools, the input and output file parameters are optional. If left unspecified,
 /// the tool will locate all valid LiDAR files within the current Whitebox working directory and use these
 /// for calculation (specifying the output raster file name based on the associated input LiDAR file). This can
@@ -280,11 +280,18 @@ impl WhiteboxTool for FlightlineOverlap {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -335,7 +342,10 @@ impl WhiteboxTool for FlightlineOverlap {
             for i in 0..n_points {
                 if !input[i].withheld() {
                     p = input.get_transformed_coords(i);
-                    points.push( TreeItem { point: [p.x, p.y ], id: i } );
+                    points.push(TreeItem {
+                        point: [p.x, p.y],
+                        id: i,
+                    });
                 }
             }
             // build the tree
@@ -343,7 +353,6 @@ impl WhiteboxTool for FlightlineOverlap {
                 println!("Building kd-tree...");
             }
             let kdtree: KdTree<TreeItem> = KdTree::build_by_ordered_float(points);
-
 
             let west: f64 = input.header.min_x; // - 0.5 * grid_res;
             let north: f64 = input.header.max_y; // + 0.5 * grid_res;
@@ -399,7 +408,7 @@ impl WhiteboxTool for FlightlineOverlap {
                             pt_src_ids.sort();
                             let mut num_flightlines = 1.0;
                             for j in 1..pt_src_ids.len() {
-                                if pt_src_ids[j] != pt_src_ids[j-1] {
+                                if pt_src_ids[j] != pt_src_ids[j - 1] {
                                     num_flightlines += 1.0;
                                 }
                             }
@@ -462,5 +471,7 @@ struct TreeItem {
 impl KdPoint for TreeItem {
     type Scalar = f64;
     type Dim = typenum::U2; // 3 dimensional tree.
-    fn at(&self, k: usize) -> f64 { self.point[k] }
+    fn at(&self, k: usize) -> f64 {
+        self.point[k]
+    }
 }

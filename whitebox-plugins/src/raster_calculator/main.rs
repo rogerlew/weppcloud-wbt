@@ -1,21 +1,21 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 21/07/2021
 Last Modified: 21/07/2021
 License: MIT
 */
 
+use num_cpus;
 use std::collections::{BTreeMap, HashSet};
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
-use std::time::Instant;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
-use num_cpus;
+use std::time::Instant;
 use whitebox_common::utils::get_formatted_elapsed_time;
 use whitebox_raster::*;
 // use v_eval::{Value, Eval};
@@ -24,14 +24,14 @@ use fasteval;
 /// The RasterCalculator tool can be used to perform a complex mathematical operations on one or more input
 /// raster images on a cell-to-cell basis. The user specifies the name of the output raster (`--output`)
 /// and a mathematical expression, or statement (`--statement`). Rasters are treated like variables (that
-/// change value with each grid cell) and are specified within the statement with the file name contained 
+/// change value with each grid cell) and are specified within the statement with the file name contained
 /// within either double or single quotation marks (e.g. "DEM.tif" > 500.0). Raster variables may or may not include the file directory.
 /// If unspecified, a raster is assumed to exist within the working directory. Similarly, if the file extension
 /// is unspecified, it is assumed to be '.tif'. **Note, all input rasters must share the same number of rows
 /// and columns and spatial extent. Use the `Resample` tool if this is not the case to convert the one raster's
 /// grid resolution to the others.
 ///
-/// The mathematical expression supports all of the standard algebraic unary and binary operators (+ - * / ^ %), 
+/// The mathematical expression supports all of the standard algebraic unary and binary operators (+ - * / ^ %),
 /// as well as comparisons (< <= == != >= >) and logical operators (&& ||) with short-circuit support. The
 /// order of operations, from highest to lowest is as follows.
 ///
@@ -51,27 +51,27 @@ use fasteval;
 /// |  
 ///
 /// Several common mathematical functions are also available for use in the input statement. For example:
-/// 
+///
 /// ```
 ///  * log(base=10, val) -- Logarithm with optional 'base' as first argument.
 ///  If not provided, 'base' defaults to '10'.
 ///  Example: log(100) + log(e(), 100)
-/// 
+///
 ///  * e()  -- Euler's number (2.718281828459045)
 ///  * pi() -- π (3.141592653589793)
-/// 
+///
 ///  * int(val)
 ///  * ceil(val)
 ///  * floor(val)
 ///  * round(modulus=1, val) -- Round with optional 'modulus' as first argument.
 ///      Example: round(1.23456) == 1 && round(0.001, 1.23456) == 1.235
-/// 
+///
 ///  * abs(val)
 ///  * sign(val)
-/// 
+///
 ///  * min(val, ...) -- Example: min(1, -2, 3, -4) == -4
 ///  * max(val, ...) -- Example: max(1, -2, 3, -4) == 3
-/// 
+///
 ///  * sin(radians)    * asin(val)
 ///  * cos(radians)    * acos(val)
 ///  * tan(radians)    * atan(val)
@@ -80,9 +80,9 @@ use fasteval;
 ///  * tanh(val)       * atanh(val)
 /// ```
 ///
-/// Notice that the constants pi and e must be specified as functions, `pi()` and `e()`. A number of global variables 
+/// Notice that the constants pi and e must be specified as functions, `pi()` and `e()`. A number of global variables
 /// are also available to build conditional statements. These include the following:
-/// 
+///
 /// **Special Variable Names For Use In Conditional Statements:**
 ///
 /// | Name | Description |
@@ -106,24 +106,24 @@ use fasteval;
 /// | `cellsize` | The input raster's average grid resolution. |
 ///
 /// The special variable names are case-sensitive. If there are more than one raster inputs used in the statement,
-/// the functional forms of the `nodata`, `null`, `minvalue`, and `maxvalue` variables should be used, e.g. 
-/// `nodata("InputRaster")`, otherwise the value is assumed to specify the attribute of the first raster in the 
+/// the functional forms of the `nodata`, `null`, `minvalue`, and `maxvalue` variables should be used, e.g.
+/// `nodata("InputRaster")`, otherwise the value is assumed to specify the attribute of the first raster in the
 /// statement. The following are examples of valid statements:
-/// 
+///
 /// ```
 ///  "raster" != 300.0
-/// 
+///
 ///  "raster" >= (minvalue + 35.0)
-/// 
+///
 ///  ("raster1" >= 25.0) && ("raster2" <= 75.0) -- Evaluates to 1 where both conditions are true.
-/// 
+///
 ///  tan("raster" * pi() / 180.0) > 1.0
-/// 
+///
 ///  "raster" == nodata
 /// ```
 ///
-/// Any grid cell in the input rasters containing the NoData value will be assigned NoData in the output raster, 
-/// unless a NoData grid cell value allows the statement to evaluate to True (i.e. the mathematical expression 
+/// Any grid cell in the input rasters containing the NoData value will be assigned NoData in the output raster,
+/// unless a NoData grid cell value allows the statement to evaluate to True (i.e. the mathematical expression
 /// includes the `nodata` value).
 ///
 /// # See Also
@@ -211,7 +211,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     // read the arguments
     let mut statement = String::new();
     let mut output_file: String = String::new();
-            
+
     if args.len() <= 1 {
         return Err(Error::new(
             ErrorKind::InvalidInput,
@@ -238,19 +238,27 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 args[i + 1].to_string()
             };
         } else if arg.contains("-statement") {
-            statement = arg.replace("--statement=", "")
-                           .replace("-statement=", "")
-                           .replace("--statement", "")
-                           .replace("-statement", "");
+            statement = arg
+                .replace("--statement=", "")
+                .replace("-statement=", "")
+                .replace("--statement", "")
+                .replace("-statement", "");
         }
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -271,10 +279,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         delimiter = "'";
         num_quotation_marks = statement.matches(delimiter).count();
         if num_quotation_marks == 0 {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "No rasters specified.",
-            ));
+            return Err(Error::new(ErrorKind::InvalidInput, "No rasters specified."));
         }
     }
     if num_quotation_marks % 2 != 0 {
@@ -296,7 +301,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
     let num_inputs = input_files.len();
     for i in 0..num_inputs {
-        statement = statement.replace(&format!("{}{}{}", delimiter, input_files[i], delimiter), &format!("value{}", i));
+        statement = statement.replace(
+            &format!("{}{}{}", delimiter, input_files[i], delimiter),
+            &format!("value{}", i),
+        );
     }
     statement = statement.replace("'", "");
 
@@ -374,7 +382,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     } else {
         false
     };
-    
+
     for i in 0..num_inputs {
         statement = statement.replace(&format!("nodata(value{})", i), &format!("{}", nodata[i]));
         statement = statement.replace("nodata()", &format!("{}", nodata[0]));
@@ -382,11 +390,23 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         statement = statement.replace(&format!("null(value{})", i), &format!("{}", nodata[i]));
         statement = statement.replace("null()", &format!("{}", nodata[0]));
         statement = statement.replace("null", &format!("{}", nodata[0]));
-        statement = statement.replace(&format!("minvalue(value{})", i), &format!("{}", input_raster[i].configs.minimum));
-        statement = statement.replace("minvalue()", &format!("{}", input_raster[0].configs.minimum));
+        statement = statement.replace(
+            &format!("minvalue(value{})", i),
+            &format!("{}", input_raster[i].configs.minimum),
+        );
+        statement = statement.replace(
+            "minvalue()",
+            &format!("{}", input_raster[0].configs.minimum),
+        );
         statement = statement.replace("minvalue", &format!("{}", input_raster[0].configs.minimum));
-        statement = statement.replace(&format!("maxvalue(value{})", i), &format!("{}", input_raster[i].configs.maximum));
-        statement = statement.replace("maxvalue()", &format!("{}", input_raster[0].configs.maximum));
+        statement = statement.replace(
+            &format!("maxvalue(value{})", i),
+            &format!("{}", input_raster[i].configs.maximum),
+        );
+        statement = statement.replace(
+            "maxvalue()",
+            &format!("{}", input_raster[0].configs.maximum),
+        );
         statement = statement.replace("maxvalue", &format!("{}", input_raster[0].configs.maximum));
     }
 
@@ -403,11 +423,11 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         .replace("ROW", "row")
         .replace("Row", "row");
 
-    
-    let mut output = Raster::initialize_using_config(&output_file, &input_raster[0].configs.clone());
+    let mut output =
+        Raster::initialize_using_config(&output_file, &input_raster[0].configs.clone());
     let out_nodata = -32_768f64;
     output.configs.nodata = out_nodata;
-    
+
     let mut num_procs = num_cpus::get() as isize;
     if max_procs > 0 && max_procs < num_procs {
         num_procs = max_procs;
@@ -425,16 +445,25 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         thread::spawn(move || {
             let mut value: f64;
             let mut is_nodata: bool;
-            let mut map : BTreeMap<String, f64> = BTreeMap::new();
+            let mut map: BTreeMap<String, f64> = BTreeMap::new();
             map.insert("rows".to_string(), rows as f64);
             map.insert("columns".to_string(), columns as f64);
             map.insert("north".to_string(), input_raster[0].configs.north);
             map.insert("south".to_string(), input_raster[0].configs.south);
             map.insert("east".to_string(), input_raster[0].configs.east);
             map.insert("west".to_string(), input_raster[0].configs.west);
-            map.insert("cellsizex".to_string(), input_raster[0].configs.resolution_x);
-            map.insert("cellsizey".to_string(), input_raster[0].configs.resolution_y);
-            map.insert("cellsize".to_string(), (input_raster[0].configs.resolution_x + input_raster[0].configs.resolution_y)/2.0);
+            map.insert(
+                "cellsizex".to_string(),
+                input_raster[0].configs.resolution_x,
+            );
+            map.insert(
+                "cellsizey".to_string(),
+                input_raster[0].configs.resolution_y,
+            );
+            map.insert(
+                "cellsize".to_string(),
+                (input_raster[0].configs.resolution_x + input_raster[0].configs.resolution_y) / 2.0,
+            );
 
             for row in (0..rows).filter(|r| r % num_procs == tid) {
                 let mut data: Vec<f64> = vec![out_nodata; columns as usize];
@@ -442,11 +471,16 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 map.insert("rowy".to_string(), input_raster[0].get_y_from_row(row));
                 for col in 0..columns {
                     map.insert("column".to_string(), col as f64);
-                    map.insert("columnx".to_string(), input_raster[0].get_x_from_column(col));
+                    map.insert(
+                        "columnx".to_string(),
+                        input_raster[0].get_x_from_column(col),
+                    );
                     is_nodata = false;
                     for i in 0..num_inputs {
                         value = input_raster[i].get_value(row, col);
-                        if value == nodata[i] { is_nodata = true; }
+                        if value == nodata[i] {
+                            is_nodata = true;
+                        }
                         map.insert(format!("value{}", i), value);
                     }
                     if !is_nodata || statement_contains_nodata {
@@ -457,8 +491,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                         }
                     }
                 }
-                tx.send((row, data))
-                    .expect("Error sending data to thread.");
+                tx.send((row, data)).expect("Error sending data to thread.");
             }
         });
     }
@@ -466,7 +499,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let mut is_float_data = false;
     for r in 0..rows {
         let (row, data) = rx.recv().expect("Error receiving data from thread.");
-        
+
         if !is_float_data {
             for i in 0..data.len() {
                 if data[i] != nodata[0] {
@@ -507,13 +540,15 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         output.update_min_max();
         if output.configs.minimum >= -32_768f64 && output.configs.maximum <= 32_767f64 {
             output.configs.data_type = DataType::I16;
-        } else if output.configs.minimum >= -2_147_483_648f64 && output.configs.maximum <= 2_147_483_647f64 {
+        } else if output.configs.minimum >= -2_147_483_648f64
+            && output.configs.maximum <= 2_147_483_647f64
+        {
             output.configs.data_type = DataType::I32;
         } else {
             output.configs.data_type = DataType::I64;
         }
     }
-    
+
     if configurations.verbose_mode {
         println!("Saving data...")
     };

@@ -6,7 +6,6 @@ Last Modified: 29/02/2020
 License: MIT
 */
 
-use whitebox_lidar::*;
 use crate::tools::*;
 use std;
 use std::env;
@@ -15,6 +14,7 @@ use std::io::prelude::*;
 use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_lidar::*;
 
 /// This tool can be used to convert one or more LAS file, containing LiDAR data, into ASCII files. The user must
 /// specify the name(s) of the input LAS file(s) (`--inputs`). Each input file will have a correspondingly named
@@ -157,11 +157,18 @@ impl WhiteboxTool for LasToAscii {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

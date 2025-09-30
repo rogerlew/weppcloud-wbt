@@ -10,7 +10,6 @@ NOTES: 1. The tool should be updated to take multiple file inputs.
           this tool will operate on RGB images in addition to greyscale images.
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -21,6 +20,7 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_raster::*;
 
 /// This tool performs a minimum-maximum contrast stretch on a raster image. This operation maps each grid cell
 /// value in the input raster image (z) onto a new scale that ranges from the user-specified lower-tail clip
@@ -244,11 +244,18 @@ impl WhiteboxTool for MinMaxContrastStretch {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

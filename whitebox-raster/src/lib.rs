@@ -36,8 +36,6 @@ use self::surfer7_raster::*;
 use self::surfer_ascii_raster::*;
 use self::whitebox_raster::*;
 use num_traits::cast::AsPrimitive;
-use whitebox_common::structures::{Array2D, BoundingBox};
-use whitebox_common::utils::*;
 use std::cmp::Ordering::Equal;
 use std::default::Default;
 use std::f64;
@@ -51,6 +49,8 @@ use std::path::Path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::structures::{Array2D, BoundingBox};
+use whitebox_common::utils::*;
 // use rayon::prelude::*;
 
 /// Raster is a common data structure that abstracts over several raster data formats,
@@ -182,7 +182,7 @@ impl Raster {
                 }
             }
 
-            // The nodata value can't be NaN or Inf because Rust does not handle equality using == with either. 
+            // The nodata value can't be NaN or Inf because Rust does not handle equality using == with either.
             // If the nodata value is either, modify it in memory so that the various tools will work as expected.
             if r.configs.nodata.is_nan() || r.configs.nodata.is_infinite() {
                 r.configs.nodata = -32768.0;
@@ -259,7 +259,11 @@ impl Raster {
 
     /// Creates a new in-memory `Raster` object with grid extent and location
     /// based on specified configurations contained within a `RasterConfigs`.
-    pub fn initialize_using_array2d<'a, T: AsPrimitive<f64> + Copy + AddAssign + SubAssign>(file_name: &'a str, configs: &'a RasterConfigs, data: Array2D<T>) -> Raster {
+    pub fn initialize_using_array2d<'a, T: AsPrimitive<f64> + Copy + AddAssign + SubAssign>(
+        file_name: &'a str,
+        configs: &'a RasterConfigs,
+        data: Array2D<T>,
+    ) -> Raster {
         let new_file_name = if file_name.contains(".") {
             file_name.to_string()
         } else {
@@ -311,7 +315,9 @@ impl Raster {
         // output.data = vec![output.configs.nodata; output.configs.rows * output.configs.columns];
         for row in 0..output.configs.rows {
             for col in 0..output.configs.columns {
-                output.data.push(data.get_value(row as isize, col as isize).as_());
+                output
+                    .data
+                    .push(data.get_value(row as isize, col as isize).as_());
             }
         }
 
@@ -633,7 +639,7 @@ impl Raster {
     }
 
     pub fn get_data_as_f32_array2d(&self) -> Array2D<f32> {
-        let out_nodata = self.configs.nodata as f32; 
+        let out_nodata = self.configs.nodata as f32;
         let mut data: Array2D<f32> = Array2D::new(
             self.configs.rows as isize,
             self.configs.columns as isize,
@@ -1485,7 +1491,7 @@ impl DataType {
         match *self {
             DataType::F64 => true,
             DataType::F32 => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -1499,7 +1505,7 @@ impl DataType {
             DataType::I32 => true,
             DataType::I16 => true,
             DataType::I8 => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -1509,7 +1515,7 @@ impl DataType {
             DataType::U32 => true,
             DataType::U16 => true,
             DataType::U8 => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -1519,7 +1525,7 @@ impl DataType {
             DataType::I32 => true,
             DataType::I16 => true,
             DataType::I8 => true,
-            _ => false
+            _ => false,
         }
     }
 }

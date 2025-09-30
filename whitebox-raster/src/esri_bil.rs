@@ -1,10 +1,10 @@
 use super::*;
-use whitebox_common::utils::Endianness;
 use std::convert::TryInto;
 use std::f64;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{BufReader, BufWriter, Error, SeekFrom};
+use whitebox_common::utils::Endianness;
 
 pub fn read_esri_bil(
     file_name: &String,

@@ -1,39 +1,39 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 05/03/2023
 Last Modified: 05/03/2023
 License: MIT
 */
 
+use kd_tree::{KdPoint, KdTree};
+use num_cpus;
 use std::env;
 use std::f64;
 use std::fs;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
-use std::time::Instant;
-use whitebox_lidar::*;
-use whitebox_vector::*;
-use whitebox_common::utils::get_formatted_elapsed_time;
-use whitebox_common::structures::Point3D;
-use kd_tree::{KdPoint, KdTree};
-use num_cpus;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use std::time::Instant;
+use whitebox_common::structures::Point3D;
+use whitebox_common::utils::get_formatted_elapsed_time;
+use whitebox_lidar::*;
+use whitebox_vector::*;
 
 /// This tool can be used to identify points in a LiDAR point cloud that are associated with the tops of individual trees. The
 /// tool takes a LiDAR point cloud as an input (`input_lidar`) and it is best if the input file has been normalized using the
-/// `NormalizeLidar` or `LidarTophatTransform` tools, such that points record height above the ground surface. Note that the `input` 
-/// parameter is optional and if left unspecified the tool will search for all valid LiDAR (*.las, *.laz, *.zlidar) files 
-/// contained within the current working directory. This 'batch mode' operation is common among many of the LiDAR processing 
+/// `NormalizeLidar` or `LidarTophatTransform` tools, such that points record height above the ground surface. Note that the `input`
+/// parameter is optional and if left unspecified the tool will search for all valid LiDAR (*.las, *.laz, *.zlidar) files
+/// contained within the current working directory. This 'batch mode' operation is common among many of the LiDAR processing
 /// tools. Output vectors are saved to disc automatically for each processed LiDAR file when operating in batch mode.
-/// 
+///
 /// The tool will evaluate the points within a local neighbourhood around each point in the input point cloud and determine
 /// if it is the highest point within the neighbourhood. If a point is the highest local point, it will be entered into the
 /// output vector file (`output`). The neighbourhood size can vary, with higher canopy positions generally associated with larger
-/// neighbourhoods. The user specifies the `min_search_radius` and `min_height` parameters, which default to 1 m and 0 m 
-/// respectively. If the `min_height` parameter is greater than zero, all points that are less than this value above the 
+/// neighbourhoods. The user specifies the `min_search_radius` and `min_height` parameters, which default to 1 m and 0 m
+/// respectively. If the `min_height` parameter is greater than zero, all points that are less than this value above the
 /// ground (assuming the input point cloud measures this height parameter) are ignored, which can be a useful mechanism
 /// for removing shorter trees and other vegetation from the analysis. If the user specifies the `max_search_radius` and
 /// `max_height` parameters, the search radius will be determined by linearly interpolation based on point height and the
@@ -41,13 +41,13 @@ use std::thread;
 /// with search neighbourhoods sized `max_search_radius`. If the max radius and height parameters are unspecified, they
 /// are set to the same values as the minimum radius and height parameters, i.e., the neighbourhood size does not increase
 /// with canopy height.
-/// 
+///
 /// If the point cloud contains point classifications, it may be useful to exclude all non-vegetation points. To do this
 /// simply set the `only_use_veg` parameter to True. This parameter should only be set to True when you know that the
 /// input file contains point classifications, otherwise the tool may generate an empty output vector file.
-/// 
+///
 /// ![](../../doc_img/IndividualTreeDetection.png)
-/// 
+///
 /// # See Also
 /// `NormalizeLidar`, `LidarTophatTransform`
 fn main() {
@@ -234,23 +234,37 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let start = Instant::now();
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
 
-    if max_search_radius < 0f64 { max_search_radius = min_search_radius; }
-    if max_height < 0f64 { max_height = min_height; }
+    if max_search_radius < 0f64 {
+        max_search_radius = min_search_radius;
+    }
+    if max_height < 0f64 {
+        max_height = min_height;
+    }
 
     let radius_range = max_search_radius - min_search_radius;
     let height_range = max_height - min_height;
-    
+
     if min_search_radius <= 0f64 || max_search_radius <= 0f64 {
-        return Err(Error::new(ErrorKind::InvalidInput, "The search radius parameters must be larger than zero."));
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "The search radius parameters must be larger than zero.",
+        ));
     }
 
     if input_file.trim().is_empty() {
@@ -298,12 +312,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 }
             }
         } else {
-            return Err(Error::new(ErrorKind::InvalidInput, format!("The input directory ({}) is incorrect.", working_directory)));
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                format!("The input directory ({}) is incorrect.", working_directory),
+            ));
         }
 
         let num_tiles = inputs.len();
         if num_tiles == 0 {
-            return Err(Error::new(ErrorKind::InvalidInput,"No input files could be located."));
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "No input files could be located.",
+            ));
         }
 
         let inputs = Arc::new(inputs);
@@ -314,10 +334,12 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             let tx = tx.clone();
             thread::spawn(move || {
                 for tile in (0..num_tiles).filter(|t| t % num_procs as usize == tid) {
-                    let mut input = LasFile::new(&inputs[tile], "r").expect("Error reading input file");
+                    let mut input =
+                        LasFile::new(&inputs[tile], "r").expect("Error reading input file");
                     let n_points = input.header.number_of_points as usize;
-                    
-                    let mut output = Shapefile::new(&outputs[tile], ShapeType::Point).expect("Error creating vector file.");
+
+                    let mut output = Shapefile::new(&outputs[tile], ShapeType::Point)
+                        .expect("Error creating vector file.");
                     output.projection = input.get_wkt();
 
                     // add the attributes
@@ -343,9 +365,15 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                     let mut pd: PointData;
                     for i in 0..n_points {
                         pd = input[i];
-                        if !pd.withheld() && !pd.is_classified_noise() && (!only_use_veg || pd.is_classified_vegetation()) {
+                        if !pd.withheld()
+                            && !pd.is_classified_noise()
+                            && (!only_use_veg || pd.is_classified_vegetation())
+                        {
                             p = input.get_transformed_coords(i);
-                            points.push( TreeItem { point: [p.x, p.y], id: i } );
+                            points.push(TreeItem {
+                                point: [p.x, p.y],
+                                id: i,
+                            });
                         }
                     }
 
@@ -366,7 +394,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                     let mut index_n: usize;
                     for point_num in 0..n_points {
                         pd = input[point_num];
-                        if !pd.withheld() && !pd.is_classified_noise() && (!only_use_veg || pd.is_classified_vegetation()) {
+                        if !pd.withheld()
+                            && !pd.is_classified_noise()
+                            && (!only_use_veg || pd.is_classified_vegetation())
+                        {
                             p = input.get_transformed_coords(point_num);
                             if p.z >= min_height {
                                 radius = if p.z < min_height {
@@ -374,7 +405,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                                 } else if p.z > max_height {
                                     max_search_radius
                                 } else {
-                                    min_search_radius + (p.z - min_height) / height_range * radius_range
+                                    min_search_radius
+                                        + (p.z - min_height) / height_range * radius_range
                                 };
                                 let found = kdtree.within_radius(&[p.x, p.y], radius);
                                 is_highest_pt = true;
@@ -392,7 +424,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                                     output.attributes.add_record(
                                         vec![
                                             FieldData::Int(point_num as i32 + 1i32),
-                                            FieldData::Real(p.z)
+                                            FieldData::Real(p.z),
                                         ],
                                         false,
                                     );
@@ -407,7 +439,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 }
             });
         }
-        
+
         let mut progress: i32;
         let mut old_progress: i32 = -1;
         for tile in 0..num_tiles {
@@ -452,23 +484,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         let n_points = input.header.number_of_points as usize;
         let num_points: f64 = (input.header.number_of_points - 1) as f64; // used for progress calculation only
 
-        let mut output = Shapefile::new(&output_file, ShapeType::Point).expect("Error creating vector file.");
+        let mut output =
+            Shapefile::new(&output_file, ShapeType::Point).expect("Error creating vector file.");
         output.projection = input.get_wkt();
 
         // add the attributes
-        output.attributes.add_field(&AttributeField::new(
-            "FID",
-            FieldDataType::Int,
-            7u8,
-            0u8,
-        ));
+        output
+            .attributes
+            .add_field(&AttributeField::new("FID", FieldDataType::Int, 7u8, 0u8));
 
-        output.attributes.add_field(&AttributeField::new(
-            "Z",
-            FieldDataType::Real,
-            12u8,
-            5u8,
-        ));
+        output
+            .attributes
+            .add_field(&AttributeField::new("Z", FieldDataType::Real, 12u8, 5u8));
 
         if configurations.verbose_mode {
             println!("Reading lidar points...");
@@ -478,9 +505,15 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         let mut pd: PointData;
         for i in 0..n_points {
             pd = input[i];
-            if !pd.withheld() && !pd.is_classified_noise() && (!only_use_veg || pd.is_classified_vegetation()) {
+            if !pd.withheld()
+                && !pd.is_classified_noise()
+                && (!only_use_veg || pd.is_classified_vegetation())
+            {
                 p = input.get_transformed_coords(i);
-                points.push( TreeItem { point: [p.x, p.y], id: i } );
+                points.push(TreeItem {
+                    point: [p.x, p.y],
+                    id: i,
+                });
             }
         }
 
@@ -488,7 +521,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             if only_use_veg {
                 return Err(Error::new(ErrorKind::InvalidInput, "No points were added to the kd-tree. It is possible that the points are unclassified; use only_use_veg = False instead.".to_string()));
             } else {
-                return Err(Error::new(ErrorKind::InvalidInput, "No points were added to the kd-tree.".to_string()));
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    "No points were added to the kd-tree.".to_string(),
+                ));
             }
         }
 
@@ -517,7 +553,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 let mut index_n: usize;
                 for point_num in (0..n_points).filter(|t| t % num_procs as usize == tid) {
                     pd = input[point_num];
-                    if !pd.withheld() && !pd.is_classified_noise() && (!only_use_veg || pd.is_classified_vegetation()) {
+                    if !pd.withheld()
+                        && !pd.is_classified_noise()
+                        && (!only_use_veg || pd.is_classified_vegetation())
+                    {
                         p = input.get_transformed_coords(point_num);
                         if p.z >= min_height {
                             radius = if p.z < min_height {
@@ -561,10 +600,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 p = input.get_transformed_coords(data.0);
                 output.add_point_record(p.x, p.y);
                 output.attributes.add_record(
-                    vec![
-                        FieldData::Int(data.0 as i32 + 1i32),
-                        FieldData::Real(p.z)
-                    ],
+                    vec![FieldData::Int(data.0 as i32 + 1i32), FieldData::Real(p.z)],
                     false,
                 );
             }
@@ -584,7 +620,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
         output.write().expect("Error writing vector file.");
     }
-        
+
     Ok(())
 }
 
@@ -596,5 +632,7 @@ struct TreeItem {
 impl KdPoint for TreeItem {
     type Scalar = f64;
     type Dim = typenum::U2; // 2 dimensional tree.
-    fn at(&self, k: usize) -> f64 { self.point[k] }
+    fn at(&self, k: usize) -> f64 {
+        self.point[k]
+    }
 }

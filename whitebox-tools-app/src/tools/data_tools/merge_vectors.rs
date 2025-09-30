@@ -7,10 +7,10 @@ License: MIT
 */
 
 use crate::tools::*;
-use whitebox_vector::*;
 use std::env;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_vector::*;
 
 /// Combines two or more input vectors of the same ShapeType creating a single, new output
 /// vector. Importantly, the attribute table of the output vector will contain the ubiquitous
@@ -182,11 +182,18 @@ impl WhiteboxTool for MergeVectors {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -266,7 +273,9 @@ impl WhiteboxTool for MergeVectors {
                     atts.intersection(input.attributes.get_fields());
                 }
 
-                if input.header.shape_type.base_shape_type() != output.header.shape_type.base_shape_type() {
+                if input.header.shape_type.base_shape_type()
+                    != output.header.shape_type.base_shape_type()
+                {
                     return Err(Error::new(
                         ErrorKind::InvalidInput,
                         "Each of the input files must be of the same ShapeType.",

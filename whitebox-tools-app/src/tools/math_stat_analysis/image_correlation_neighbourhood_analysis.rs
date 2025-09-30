@@ -6,7 +6,6 @@ Last Modified: 06/12/2019
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use statrs::distribution::{ContinuousCDF, StudentsT};
 use std::cmp::Ordering::Equal;
@@ -17,6 +16,7 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_raster::*;
 
 /// This tool can be used to perform nieghbourhood-based (i.e. using roving search windows applied to each
 /// grid cell) correlation analysis on two input rasters (`--input1` and `--input2`). The tool outputs a
@@ -256,11 +256,18 @@ impl WhiteboxTool for ImageCorrelationNeighbourhoodAnalysis {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

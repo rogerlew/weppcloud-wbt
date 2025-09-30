@@ -1,60 +1,60 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 21/07/2021
 Last Modified: 21/07/2021
 License: MIT
 */
 
+use num_cpus;
 use std::collections::BTreeMap;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
-use std::time::Instant;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
-use num_cpus;
+use std::time::Instant;
 use whitebox_common::utils::get_formatted_elapsed_time;
 use whitebox_raster::*;
 // use v_eval::{Value, Eval};
 use fasteval;
 
-/// The ConditionalEvaluation tool can be used to perform an if-then-else style conditional evaluation 
-/// on a raster image on a cell-to-cell basis. The user specifies the names of an input raster image (`--input`) 
-/// and an output raster (`--output`), along with a conditional statement (`--statement`). The grid cell values 
-/// in the output image will be determined by the TRUE and FALSE values and conditional statement. The conditional 
-/// statement is a logical expression that must evaluate to either a Boolean, i.e. TRUE or FALSE. Then depending on 
+/// The ConditionalEvaluation tool can be used to perform an if-then-else style conditional evaluation
+/// on a raster image on a cell-to-cell basis. The user specifies the names of an input raster image (`--input`)
+/// and an output raster (`--output`), along with a conditional statement (`--statement`). The grid cell values
+/// in the output image will be determined by the TRUE and FALSE values and conditional statement. The conditional
+/// statement is a logical expression that must evaluate to either a Boolean, i.e. TRUE or FALSE. Then depending on
 /// how this statement evaluates for each grid cell, the TRUE or FALSE values will be assigned to the corresponding  
-/// grid cells of the output raster. The TRUE or FALSE values may take the form of either a constant numerical value 
+/// grid cells of the output raster. The TRUE or FALSE values may take the form of either a constant numerical value
 /// or a raster image (which may be the same image as the input). These are specified by the `--true` and `--false`
 /// parameters, which can be either a file name pointing to existing rasters, or numerical values.
 ///
 /// The conditional statement is a single-line logical condition. In addition to the common comparison and logical  
 /// operators, i.e. < > <= >= == (EQUAL TO) != (NOT EQUAL TO) || (OR) && (AND), conditional statements may contain a  
 /// number of valid mathematical functions. For example:
-/// 
+///
 /// ```
 ///  * log(base=10, val) -- Logarithm with optional 'base' as first argument.
 ///  If not provided, 'base' defaults to '10'.
 ///  Example: log(100) + log(e(), 100)
-/// 
+///
 ///  * e()  -- Euler's number (2.718281828459045)
 ///  * pi() -- π (3.141592653589793)
-/// 
+///
 ///  * int(val)
 ///  * ceil(val)
 ///  * floor(val)
 ///  * round(modulus=1, val) -- Round with optional 'modulus' as first argument.
 ///      Example: round(1.23456) == 1 && round(0.001, 1.23456) == 1.235
-/// 
+///
 ///  * abs(val)
 ///  * sign(val)
-/// 
+///
 ///  * min(val, ...) -- Example: min(1, -2, 3, -4) == -4
 ///  * max(val, ...) -- Example: max(1, -2, 3, -4) == 3
-/// 
+///
 ///  * sin(radians)    * asin(val)
 ///  * cos(radians)    * acos(val)
 ///  * tan(radians)    * atan(val)
@@ -63,9 +63,9 @@ use fasteval;
 ///  * tanh(val)       * atanh(val)
 /// ```
 ///
-/// Notice that the constants Pi and e must be specified as functions, pi() and e(). A number of 
+/// Notice that the constants Pi and e must be specified as functions, pi() and e(). A number of
 /// global variables are also available to build conditional statements. These include the following:
-/// 
+///
 /// **Special Variable Names For Use In Conditional Statements:**
 ///
 /// | Name | Description |
@@ -89,27 +89,27 @@ use fasteval;
 /// | `cellsizey` | The input raster's grid resolution in the y-direction. |
 /// | `cellsize` | The input raster's average grid resolution. |
 ///
-/// The special variable names are case-sensitive. Each of the special variable names can also be used as valid 
+/// The special variable names are case-sensitive. Each of the special variable names can also be used as valid
 /// TRUE or FALSE constant values.
 ///
 /// The following are examples of valid conditional statements:
-/// 
+///
 /// ```
 /// value != 300.0
-/// 
+///
 /// row > (rows / 2)
-/// 
+///
 /// value >= (minvalue + 35.0)
-/// 
+///
 /// (value >= 25.0) && (value <= 75.0)
-/// 
+///
 /// tan(value * pi() / 180.0) > 1.0
-/// 
+///
 /// value == nodata
 /// ```
 ///
-/// Any grid cell in the input raster containing the NoData value will be assigned NoData in the output raster, 
-/// unless a NoData grid cell value allows the conditional statement to evaluate to True (i.e. the conditional 
+/// Any grid cell in the input raster containing the NoData value will be assigned NoData in the output raster,
+/// unless a NoData grid cell value allows the conditional statement to evaluate to True (i.e. the conditional
 /// statement includes the NoData value), in which case the True value will be assigned to the output.
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -200,7 +200,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let mut true_value = String::new();
     let mut false_value = String::new();
     let mut output_file: String = String::new();
-            
+
     if args.len() <= 1 {
         return Err(Error::new(
             ErrorKind::InvalidInput,
@@ -237,10 +237,11 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
         //     println!("{}", con_statement);
         } else if arg.contains("-statement") {
-            con_statement = arg.replace("--statement=", "")
-                           .replace("-statement=", "")
-                           .replace("--statement", "")
-                           .replace("-statement", "");
+            con_statement = arg
+                .replace("--statement=", "")
+                .replace("-statement=", "")
+                .replace("--statement", "")
+                .replace("-statement", "");
         } else if flag_val == "-true" {
             true_value = if keyval {
                 vec[1].to_string()
@@ -263,11 +264,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -301,9 +309,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         Err(_) => false,
     };
     if !is_true_a_constant {
-        if true_value.trim().is_empty() || 
-        true_value.trim().to_lowercase() == "nodata" ||
-        true_value.trim().to_lowercase() == "null" {
+        if true_value.trim().is_empty()
+            || true_value.trim().to_lowercase() == "nodata"
+            || true_value.trim().to_lowercase() == "null"
+        {
             true_constant = nodata;
             is_true_a_constant = true;
         } else if !true_value.contains(&sep) && !true_value.contains("/") {
@@ -320,9 +329,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         Err(_) => false,
     };
     if !is_false_a_constant {
-        if false_value.trim().is_empty() || 
-        false_value.trim().to_lowercase() == "nodata" ||
-        false_value.trim().to_lowercase() == "null" {
+        if false_value.trim().is_empty()
+            || false_value.trim().to_lowercase() == "nodata"
+            || false_value.trim().to_lowercase() == "null"
+        {
             false_constant = nodata;
             is_false_a_constant = true;
         } else if !false_value.contains(&sep) && !false_value.contains("/") {
@@ -363,7 +373,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         false
     };
 
-    
     let mut output = Raster::initialize_using_config(&output_file, &header);
 
     let true_raster = if !is_true_a_constant {
@@ -410,7 +419,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             // let mut ret: Option<Value>;
             let mut true_val: f64;
             let mut false_val: f64;
-            let mut map : BTreeMap<String, f64> = BTreeMap::new();
+            let mut map: BTreeMap<String, f64> = BTreeMap::new();
             map.insert("nodata".to_string(), nodata);
             map.insert("rows".to_string(), rows as f64);
             map.insert("columns".to_string(), columns as f64);
@@ -420,7 +429,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             map.insert("west".to_string(), input.configs.west);
             map.insert("cellsizex".to_string(), input.configs.resolution_x);
             map.insert("cellsizey".to_string(), input.configs.resolution_y);
-            map.insert("cellsize".to_string(), (input.configs.resolution_x + input.configs.resolution_y)/2.0);
+            map.insert(
+                "cellsize".to_string(),
+                (input.configs.resolution_x + input.configs.resolution_y) / 2.0,
+            );
             map.insert("minvalue".to_string(), input.configs.minimum);
             map.insert("maxvalue".to_string(), input.configs.maximum);
 
@@ -495,8 +507,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                         // }
                     }
                 }
-                tx.send((row, data))
-                    .expect("Error sending data to thread.");
+                tx.send((row, data)).expect("Error sending data to thread.");
             }
         });
     }
@@ -513,7 +524,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             }
         }
     }
-    
+
     if configurations.verbose_mode {
         println!("Saving data...")
     };

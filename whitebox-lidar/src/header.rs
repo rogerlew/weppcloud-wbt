@@ -1,10 +1,10 @@
 use super::las::GlobalEncodingField;
-use whitebox_common::utils::{ByteOrderReader, Endianness};
-use std::fmt;
 use std::f64;
+use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{Cursor, Error, ErrorKind};
+use whitebox_common::utils::{ByteOrderReader, Endianness};
 
 #[derive(Clone, Debug)]
 pub struct LasHeader {
@@ -49,7 +49,7 @@ pub struct LasHeader {
 }
 
 impl Default for LasHeader {
-    fn default() -> Self { 
+    fn default() -> Self {
         LasHeader {
             file_signature: String::from(""),
             file_source_id: 0u16,

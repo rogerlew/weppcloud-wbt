@@ -6,7 +6,6 @@ Last Modified: 12/10/2018
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use std::cmp::max;
 use std::cmp::min;
@@ -18,6 +17,7 @@ use std::io::{Error, ErrorKind};
 use std::path;
 use std::path::Path;
 use std::process::Command;
+use whitebox_raster::*;
 
 /// This tool calculates the [Kappa index of agreement](https://en.wikipedia.org/wiki/Cohen%27s_kappa) (KIA), or
 /// Cohen's Kappa, for two categorical input raster images (`--input1` and `--input2`). The KIA is a measure of inter-rater
@@ -192,11 +192,18 @@ impl WhiteboxTool for KappaIndex {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

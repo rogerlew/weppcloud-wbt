@@ -6,8 +6,8 @@ Last Modified: 30/01/2022
 License: MIT
 */
 
-use whitebox_lidar::*;
 use crate::tools::*;
+use whitebox_lidar::*;
 // use whitebox_common::structures::Point3D;
 use std;
 use std::env;
@@ -18,8 +18,8 @@ use std::io::{Error, ErrorKind};
 use std::path;
 use std::process::Command;
 use std::u16;
-use whitebox_common::structures::{ Point2D, Point3D };
-use whitebox_common::algorithms::{ convex_hull, polygon_area };
+use whitebox_common::algorithms::{convex_hull, polygon_area};
+use whitebox_common::structures::{Point2D, Point3D};
 
 /// This tool can be used to print basic information about the data contained within a LAS file, used to store LiDAR
 /// data. The reported information will include including data on the header, point return frequency, and classification
@@ -211,11 +211,18 @@ impl WhiteboxTool for LidarInfo {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -230,7 +237,11 @@ impl WhiteboxTool for LidarInfo {
         }
 
         if output_file.is_empty() {
-            let extension: String = match path::Path::new(&input_file).extension().expect("Error: the input file name must have an extension").to_str() {
+            let extension: String = match path::Path::new(&input_file)
+                .extension()
+                .expect("Error: the input file name must have an extension")
+                .to_str()
+            {
                 Some(n) => format!(".{}", n.to_string()),
                 None => "".to_string(),
             };
@@ -328,7 +339,7 @@ impl WhiteboxTool for LidarInfo {
         let mut points: Vec<Point2D> = Vec::with_capacity(input.header.number_of_points as usize);
         let mut p: Point3D;
         for i in 0..input.header.number_of_points as usize {
-            pd = input[i]; 
+            pd = input[i];
             p = input.get_transformed_coords(i);
             points.push(Point2D::new(p.x, p.y));
             ret = pd.return_number();
@@ -493,7 +504,9 @@ impl WhiteboxTool for LidarInfo {
             let spacing = 1f64 / density.sqrt();
 
             let s1 = &format!("<p>Average point density: {:.3} pts / m<sup>2</sup><br>Nominal point spacing: {:.4} m</p>", density, spacing);
-            writer.write_all(s1.as_bytes()).expect("Error writing to file.");
+            writer
+                .write_all(s1.as_bytes())
+                .expect("Error writing to file.");
         }
 
         if show_vlrs {

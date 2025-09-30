@@ -1,29 +1,29 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 26/02/2022
 Last Modified: 26/02/2022
 License: MIT
 */
 
+use num_cpus;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
-use std::time::Instant;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
-use num_cpus;
-use whitebox_common::structures::{Array2D};
+use std::time::Instant;
+use whitebox_common::structures::Array2D;
 use whitebox_common::utils::get_formatted_elapsed_time;
 use whitebox_raster::*;
 
 /// This tool is used to can be used calculate the maximum upslope value, based on the values within an
 /// input values raster (`--values`), along flow-paths, as calculated using the D8 flow method. The user must
-/// specify the names of the input digital elevation model (DEM) file (`--dem`), from which the D8 flow 
+/// specify the names of the input digital elevation model (DEM) file (`--dem`), from which the D8 flow
 /// direction data will be calculated internally, and the output file (`--output`).
-/// 
+///
 /// # See Also
 /// `D8FlowAccumulation`, `D8Pointer`
 fn main() {
@@ -110,7 +110,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let mut dem_file = String::new();
     let mut values_file: String = String::new();
     let mut output_file: String = String::new();
-    
+
     if args.len() <= 1 {
         return Err(Error::new(
             ErrorKind::InvalidInput,
@@ -149,11 +149,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -176,7 +183,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     // println!("{dem_file}");
     // println!("{values_file}");
     // println!("{output_file}");
-    
 
     let input = Arc::new(Raster::new(&dem_file, "r")?);
 
@@ -272,7 +278,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     drop(input);
 
     let values = Arc::new(Raster::new(&values_file, "r")?);
-    
+
     let mut output = Raster::initialize_using_file(&output_file, &values);
     let out_nodata = -32768f64;
     output.configs.nodata = out_nodata;
@@ -304,8 +310,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                     if flow_dir.get_value(row, col) != -2i8 {
                         count = 0i8;
                         for i in 0..8 {
-                            if flow_dir.get_value(row + dy[i], col + dx[i]) == inflowing_vals[i]
-                            {
+                            if flow_dir.get_value(row + dy[i], col + dx[i]) == inflowing_vals[i] {
                                 count += 1;
                             }
                         }
@@ -377,10 +382,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     let elapsed_time = get_formatted_elapsed_time(start);
-    output.add_metadata_entry(format!(
-        "Created by whitebox_tools\' {} tool",
-        tool_name
-    ));
+    output.add_metadata_entry(format!("Created by whitebox_tools\' {} tool", tool_name));
     output.add_metadata_entry(format!("Input file: {}", dem_file));
     output.add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed_time));
 
@@ -398,11 +400,17 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         );
     }
     if interior_pit_found {
-        println!("**********************************************************************************");
-        println!("WARNING: Interior pit cells were found within the input DEM. It is likely that the 
+        println!(
+            "**********************************************************************************"
+        );
+        println!(
+            "WARNING: Interior pit cells were found within the input DEM. It is likely that the 
         DEM needs to be processed to remove topographic depressions and flats prior to
-        running this tool.");
-        println!("**********************************************************************************");
+        running this tool."
+        );
+        println!(
+            "**********************************************************************************"
+        );
     }
 
     Ok(())

@@ -1,5 +1,4 @@
 use super::*;
-use whitebox_common::utils::Endianness;
 use std::convert::TryInto;
 use std::f64;
 use std::fs::File;
@@ -8,6 +7,7 @@ use std::io::BufReader;
 use std::io::BufWriter;
 use std::io::Error;
 use std::mem;
+use whitebox_common::utils::Endianness;
 
 pub fn read_arcbinary(
     file_name: &String,

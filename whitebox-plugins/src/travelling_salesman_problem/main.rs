@@ -1,4 +1,4 @@
-/* 
+/*
 Authors: Prof. John Lindsay
 Created: 23/02/2022
 Last Modified: 06/05/2022
@@ -6,8 +6,6 @@ License: MIT
 */
 extern crate tsp_rs;
 
-use tsp_rs::Tour;
-use tsp_rs::Metrizable;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
@@ -17,14 +15,18 @@ use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
 use std::time::Instant;
+use tsp_rs::Metrizable;
+use tsp_rs::Tour;
 use whitebox_common::structures::Point2D;
-use whitebox_common::utils::{haversine_distance, get_formatted_elapsed_time};
-use whitebox_vector::{AttributeField, FieldData, FieldDataType, Shapefile, ShapefileGeometry, ShapeType};
+use whitebox_common::utils::{get_formatted_elapsed_time, haversine_distance};
+use whitebox_vector::{
+    AttributeField, FieldData, FieldDataType, ShapeType, Shapefile, ShapefileGeometry,
+};
 
-/// This tool finds approximate solutions to [travelling salesman problems](https://en.wikipedia.org/wiki/Travelling_salesman_problem), 
+/// This tool finds approximate solutions to [travelling salesman problems](https://en.wikipedia.org/wiki/Travelling_salesman_problem),
 /// the goal of which is to identify the shortest route connecting a set of locations. The tool uses
-/// an algorithm that applies a [2-opt heuristic](https://en.wikipedia.org/wiki/2-opt) and a 
-/// [3-opt](https://en.wikipedia.org/wiki/3-opt) heuristic as a fall-back if the initial approach 
+/// an algorithm that applies a [2-opt heuristic](https://en.wikipedia.org/wiki/2-opt) and a
+/// [3-opt](https://en.wikipedia.org/wiki/3-opt) heuristic as a fall-back if the initial approach
 /// takes too long. The user must specify the names of the input points vector (`--input`) and output lines
 /// vector file (`--output`), as well as the duration, in seconds, over which the algorithm is allowed to search
 /// for improved solutions (`--duration`). The tool works in parallel to find more optimal solutions.
@@ -161,11 +163,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -193,7 +202,11 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         ));
     }
 
-    let is_geographic_proj = if input.header.x_min.abs() <= 180.0 && input.header.x_max.abs() <= 180.0 && input.header.y_min.abs() < 90.0 && input.header.y_max.abs() <= 90.0 {
+    let is_geographic_proj = if input.header.x_min.abs() <= 180.0
+        && input.header.x_max.abs() <= 180.0
+        && input.header.y_min.abs() < 90.0
+        && input.header.y_max.abs() <= 90.0
+    {
         true
     } else {
         false
@@ -205,16 +218,15 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         if record.shape_type != ShapeType::Null {
             for i in 0..record.num_points as usize {
                 tour.push(Point::new(
-                    record.points[i].x, 
+                    record.points[i].x,
                     record.points[i].y,
-                    is_geographic_proj
+                    is_geographic_proj,
                 ));
             }
         }
 
         if configurations.verbose_mode {
-            progress =
-                (100.0_f64 * (record_num + 1) as f64 / input.num_records as f64) as usize;
+            progress = (100.0_f64 * (record_num + 1) as f64 / input.num_records as f64) as usize;
             if progress != old_progress {
                 println!("Progress: {}%", progress);
                 old_progress = progress;
@@ -249,8 +261,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     for n in 0..num_procs {
         let tour_route = rx.recv().unwrap();
         let tour_len = tour_route.tour_len();
-        if tour_len < min_len { 
-            min_len = tour_len; 
+        if tour_len < min_len {
+            min_len = tour_len;
             min_len_tour = tour_route.clone();
         }
         if configurations.verbose_mode {
@@ -267,10 +279,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     // create output file
-    let mut output = Shapefile::new(&output_file, ShapeType::PolyLine).expect("Error creating shapefile");
+    let mut output =
+        Shapefile::new(&output_file, ShapeType::PolyLine).expect("Error creating shapefile");
     output.projection = input.projection.clone();
-    output.attributes.add_field(&AttributeField::new("FID", FieldDataType::Int, 3u8, 0u8));
-    output.attributes.add_field(&AttributeField::new("LENGTH", FieldDataType::Real, 9u8, 3u8));
+    output
+        .attributes
+        .add_field(&AttributeField::new("FID", FieldDataType::Int, 3u8, 0u8));
+    output.attributes.add_field(&AttributeField::new(
+        "LENGTH",
+        FieldDataType::Real,
+        9u8,
+        3u8,
+    ));
 
     let mut vec_pts = vec![];
     let first_pt = min_len_tour.path[0].clone();
@@ -299,7 +319,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         );
     }
 
-    
     Ok(())
 }
 
@@ -312,7 +331,11 @@ pub struct Point {
 
 impl Point {
     pub fn new(x: f64, y: f64, is_geographic_proj: bool) -> Point {
-        Point { x, y, is_geographic_proj }
+        Point {
+            x,
+            y,
+            is_geographic_proj,
+        }
     }
 }
 
@@ -322,7 +345,7 @@ impl Metrizable for Point {
             return haversine_distance((self.y, self.x), (other.y, other.x));
         }
 
-        ((self.x - other.x)*(self.x - other.x) + (self.y - other.y)*(self.y - other.y)).sqrt()
+        ((self.x - other.x) * (self.x - other.x) + (self.y - other.y) * (self.y - other.y)).sqrt()
     }
 }
 

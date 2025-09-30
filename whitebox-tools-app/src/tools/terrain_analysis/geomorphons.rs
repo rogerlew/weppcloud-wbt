@@ -7,17 +7,17 @@ Last Modified By: Dan Newman
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
+use nalgebra::{Matrix3, Vector3};
 use num_cpus;
 use std::env;
-use std::path;
 use std::f64;
-use std::sync::Arc;
-use std::sync::mpsc;
-use std::thread;
 use std::io::{Error, ErrorKind};
-use nalgebra::{Vector3, Matrix3};
+use std::path;
+use std::sync::mpsc;
+use std::sync::Arc;
+use std::thread;
+use whitebox_raster::*;
 //use std::collections::HashSet;
 
 /// This tool can be used to perform a geomorphons landform classification based on an input digital elevation
@@ -82,40 +82,41 @@ impl Geomorphons {
         let description = "Computes geomorphon patterns.".to_string();
 
         let mut parameters = vec![];
-        parameters.push(ToolParameter{
+        parameters.push(ToolParameter {
             name: "Input DEM file.".to_owned(),
             flags: vec!["-i".to_owned(), "--dem".to_owned()],
             description: "Input raster DEM file.".to_owned(),
             parameter_type: ParameterType::ExistingFile(ParameterFileType::Raster),
             default_value: None,
-            optional: false
+            optional: false,
         });
 
-        parameters.push(ToolParameter{
+        parameters.push(ToolParameter {
             name: "Output file.".to_owned(),
             flags: vec!["-o".to_owned(), "--output".to_owned()],
             description: "Output raster file.".to_owned(),
             parameter_type: ParameterType::NewFile(ParameterFileType::Raster),
             default_value: None,
-            optional: false
+            optional: false,
         });
 
-        parameters.push(ToolParameter{
+        parameters.push(ToolParameter {
             name: "Search distance (cells).".to_owned(),
             flags: vec!["--search".to_owned()],
             description: "Look up distance (in cells).".to_owned(),
             parameter_type: ParameterType::Integer,
             default_value: Some("50".to_owned()),
-            optional: false
+            optional: false,
         });
 
-        parameters.push(ToolParameter{
+        parameters.push(ToolParameter {
             name: "Flatness threshold (degrees).".to_owned(),
             flags: vec!["--threshold".to_owned()],
-            description: "Flatness threshold for the classification function (in degrees).".to_owned(),
+            description: "Flatness threshold for the classification function (in degrees)."
+                .to_owned(),
             parameter_type: ParameterType::Float,
             default_value: Some("0.0".to_owned()),
-            optional: false
+            optional: false,
         });
 
         parameters.push(ToolParameter{
@@ -127,13 +128,13 @@ impl Geomorphons {
             optional: false
         });
 
-        parameters.push(ToolParameter{
+        parameters.push(ToolParameter {
             name: "Skip distance (cells).".to_owned(),
             flags: vec!["--skip".to_owned()],
             description: "Distance (in cells) to begin calculating lines-of-sight.".to_owned(),
             parameter_type: ParameterType::Integer,
             default_value: Some("0".to_owned()),
-            optional: false
+            optional: false,
         });
 
         parameters.push(ToolParameter{
@@ -145,13 +146,13 @@ impl Geomorphons {
             optional: true
         });
 
-        parameters.push(ToolParameter{
+        parameters.push(ToolParameter {
             name: "Analyze residuals".to_owned(),
             flags: vec!["--residuals".to_owned()],
             description: "Convert elevation to residuals of a linear model.".to_owned(),
             parameter_type: ParameterType::Boolean,
             default_value: Some("false".to_owned()),
-            optional: true
+            optional: true,
         });
 
         let sep: String = path::MAIN_SEPARATOR.to_string();
@@ -159,7 +160,11 @@ impl Geomorphons {
         let mut parent = env::current_exe().unwrap();
         parent.pop();
         let p = format!("{}", parent.display());
-        let mut short_exe = e.replace(&p, "").replace(".exe", "").replace(".", "").replace(&sep, "");
+        let mut short_exe = e
+            .replace(&p, "")
+            .replace(".exe", "")
+            .replace(".", "")
+            .replace(&sep, "");
         if e.contains(".exe") {
             short_exe += ".exe";
         }
@@ -170,7 +175,7 @@ impl Geomorphons {
             description: description,
             toolbox: toolbox,
             parameters: parameters,
-            example_usage: usage
+            example_usage: usage,
         }
     }
 }
@@ -210,7 +215,12 @@ impl WhiteboxTool for Geomorphons {
         self.toolbox.clone()
     }
 
-    fn run<'a>(&self, args: Vec<String>, working_directory: &'a str, verbose: bool) -> Result<(), Error> {
+    fn run<'a>(
+        &self,
+        args: Vec<String>,
+        working_directory: &'a str,
+        verbose: bool,
+    ) -> Result<(), Error> {
         let mut input_file = String::new();
         let mut output_file = String::new();
         let mut search_radius_cells: usize = 1;
@@ -221,8 +231,10 @@ impl WhiteboxTool for Geomorphons {
         let mut use_residuals = false;
 
         if args.len() == 0 {
-            return Err(Error::new(ErrorKind::InvalidInput,
-                                "Tool run with no parameters."));
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "Tool run with no parameters.",
+            ));
         }
         for i in 0..args.len() {
             let mut arg = args[i].replace("\"", "");
@@ -238,43 +250,52 @@ impl WhiteboxTool for Geomorphons {
                 input_file = if keyval {
                     vec[1].to_string()
                 } else {
-                    args[i+1].to_string()
+                    args[i + 1].to_string()
                 };
             } else if flag_val == "-o" || flag_val == "-output" {
                 output_file = if keyval {
                     vec[1].to_string()
                 } else {
-                    args[i+1].to_string()
+                    args[i + 1].to_string()
                 };
             } else if flag_val == "-search" {
                 search_radius_cells = if keyval {
-                    vec[1].to_string().parse::<isize>()
+                    vec[1]
+                        .to_string()
+                        .parse::<isize>()
                         .expect(&format!("Error parsing {}", flag_val))
                         .abs() as usize
                 } else {
-                    args[i+1].to_string().parse::<isize>().unwrap().abs() as usize
+                    args[i + 1].to_string().parse::<isize>().unwrap().abs() as usize
                 };
             } else if flag_val == "-threshold" {
                 flat_thresh = if keyval {
-                    vec[1].to_string().parse::<f64>().expect(&format!("Error parsing {}", flag_val))
+                    vec[1]
+                        .to_string()
+                        .parse::<f64>()
+                        .expect(&format!("Error parsing {}", flag_val))
                 } else {
-                    args[i+1].to_string().parse::<f64>().unwrap()
+                    args[i + 1].to_string().parse::<f64>().unwrap()
                 };
             } else if flag_val == "-fdist" {
                 flat_dist_cells = if keyval {
-                    vec[1].to_string().parse::<isize>()
+                    vec[1]
+                        .to_string()
+                        .parse::<isize>()
                         .expect(&format!("Error parsing {}", flag_val))
                         .abs() as usize
                 } else {
-                    args[i+1].to_string().parse::<isize>().unwrap().abs() as usize
+                    args[i + 1].to_string().parse::<isize>().unwrap().abs() as usize
                 };
             } else if flag_val == "-skip" {
                 skip_dist_cells = if keyval {
-                    vec[1].to_string().parse::<isize>()
+                    vec[1]
+                        .to_string()
+                        .parse::<isize>()
                         .expect(&format!("Error parsing {}", flag_val))
                         .abs() as usize
                 } else {
-                    args[i+1].to_string().parse::<isize>().unwrap().abs() as usize
+                    args[i + 1].to_string().parse::<isize>().unwrap().abs() as usize
                 };
             } else if flag_val == "-f" || flag_val == "-forms" {
                 if vec.len() == 1 || !vec[1].to_string().to_lowercase().contains("false") {
@@ -292,8 +313,15 @@ impl WhiteboxTool for Geomorphons {
             let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -310,7 +338,9 @@ impl WhiteboxTool for Geomorphons {
             output_file = format!("{}{}", working_directory, output_file);
         }
 
-        if verbose { println!("Reading data...") };
+        if verbose {
+            println!("Reading data...")
+        };
 
         let input = Arc::new(Raster::new(&input_file, "r")?);
         let mut output = Raster::initialize_using_file(&output_file, &input);
@@ -326,10 +356,14 @@ impl WhiteboxTool for Geomorphons {
         let flat_thresh = flat_thresh.to_radians();
 
         // in units cells
-        if search_radius_cells < 1 { search_radius_cells = 1; };
+        if search_radius_cells < 1 {
+            search_radius_cells = 1;
+        };
         if (flat_dist_cells > 0 && flat_dist_cells <= skip_dist_cells)
-                    || flat_dist_cells >= search_radius_cells
-        { flat_dist_cells = 0; }
+            || flat_dist_cells >= search_radius_cells
+        {
+            flat_dist_cells = 0;
+        }
 
         // in units resolution
         let search_length = search_radius_cells as f64 * grid_res;
@@ -382,7 +416,9 @@ impl WhiteboxTool for Geomorphons {
                         for i in 0..8 {
                             if (i as i32 - j) < 0i32 {
                                 k = j - 8i32;
-                            } else { k = j; }
+                            } else {
+                                k = j;
+                            }
                             tmp_pattern[i] = pattern[(i as i32 - k) as usize];
                             tmp_rev_pat[i] = rev_pattern[(i as i32 - k) as usize];
                             tmp_code += (tmp_pattern[i]) as i32 * power;
@@ -392,19 +428,25 @@ impl WhiteboxTool for Geomorphons {
                         // min of mirrored ternary code
                         if tmp_code < code {
                             code = tmp_code;
-                        } else { code = code; }
+                        } else {
+                            code = code;
+                        }
                         if tmp_rev_code < rev_code {
                             rev_code = tmp_rev_code;
-                        } else { rev_code = rev_code; }
+                        } else {
+                            rev_code = rev_code;
+                        }
                     }
                     //min of rotation and mirrored ternary codes
                     if code < rev_code {
                         data = code;
-                    } else { data = rev_code; }
+                    } else {
+                        data = rev_code;
+                    }
                     tx.send((val, data)).unwrap();
                 }
             });
-        };
+        }
 
         let mut gtc = [u16::MAX; 6561];
         for _ in 0..max_codes {
@@ -419,7 +461,9 @@ impl WhiteboxTool for Geomorphons {
 
         // transform input to residuals
         if use_residuals {
-            if verbose { println!("Calculating residuals..."); }
+            if verbose {
+                println!("Calculating residuals...");
+            }
             let (tx, rx) = mpsc::channel();
             for tid in 0..num_procs {
                 let input = input.clone();
@@ -441,7 +485,7 @@ impl WhiteboxTool for Geomorphons {
                         for col in 0..columns {
                             c = col as f64;
                             z = input.get_value(row, col);
-                            if z != nodata  {
+                            if z != nodata {
                                 sum_y += z;
                                 sum_xr_y += r * z;
                                 sum_xc_y += c * z;
@@ -454,11 +498,13 @@ impl WhiteboxTool for Geomorphons {
                             }
                         }
                     }
-                    tx.send((sum_y, sum_xr_y, sum_xc_y, sum_xr, sum_xc,
-                                sum_xr_xr, sum_xc_xc, sum_xr_xc, n)).unwrap();
+                    tx.send((
+                        sum_y, sum_xr_y, sum_xc_y, sum_xr, sum_xc, sum_xr_xr, sum_xc_xc, sum_xr_xc,
+                        n,
+                    ))
+                    .unwrap();
                 });
             }
-
 
             let mut sum_y = 0f64;
             let mut sum_xr_y = 0f64;
@@ -470,9 +516,8 @@ impl WhiteboxTool for Geomorphons {
             let mut sum_xr_xc = 0f64;
             let mut n = 0f64;
             for _ in 0..num_procs {
-                let (y, xry, xcy, xr, xc,
-                        xrxr, xcxc, xrxc, num) = rx.recv()
-                        .expect("Error receiving data from thread.");
+                let (y, xry, xcy, xr, xc, xrxr, xcxc, xrxc, num) =
+                    rx.recv().expect("Error receiving data from thread.");
                 sum_y += y;
                 sum_xr_y += xry;
                 sum_xc_y += xcy;
@@ -491,14 +536,10 @@ impl WhiteboxTool for Geomorphons {
             //     - (n*sum_xr_xc*sum_xr_xc) - (sum_xr*sum_xr*sum_xc_xc) - (sum_xc*sum_xr_xr*sum_xc)
 
             let yx = Vector3::new(sum_y, sum_xr_y, sum_xc_y);
-            let xtx = Matrix3::new
-                                (
-                                    n,      sum_xr,     sum_xc,
-                                    sum_xr, sum_xr_xr,  sum_xr_xc,
-                                    sum_xc, sum_xr_xc,  sum_xc_xc
-                                );
-            let solution = xtx.lu().solve(&yx)
-                            .expect("Linear resolution failed");
+            let xtx = Matrix3::new(
+                n, sum_xr, sum_xc, sum_xr, sum_xr_xr, sum_xr_xc, sum_xc, sum_xr_xc, sum_xc_xc,
+            );
+            let solution = xtx.lu().solve(&yx).expect("Linear resolution failed");
             let b0 = *solution.get(0).unwrap();
             let b1r = *solution.get(1).unwrap();
             let b1c = *solution.get(2).unwrap();
@@ -517,8 +558,8 @@ impl WhiteboxTool for Geomorphons {
                             c = col as f64;
                             z = input.get_value(row, col);
                             if z != nodata {
-                                data[col as usize] = z -
-                                    (b0 + (b1r * r) + (b1c * c)); // estimate
+                                data[col as usize] = z - (b0 + (b1r * r) + (b1c * c));
+                                // estimate
                             }
                         }
                         tx.send((row, data)).unwrap();
@@ -538,19 +579,23 @@ impl WhiteboxTool for Geomorphons {
         };
 
         // main loop
-        if verbose { println!("Computing geomorphons..."); }
+        if verbose {
+            println!("Computing geomorphons...");
+        }
 
-        let classes: [[u8; 9]; 9] = [ /* 0  1  2  3  4  5  6  7  8 */   // 1  = Flat
-                                /* 0*/  [1, 1, 1, 8, 8, 9, 9, 9,10],    // 2  = Peak // Summit
-                                /*-1*/  [1, 1, 8, 8, 8, 9, 9, 9, 0],    // 3  = Ridge
-                                /*-2*/  [1, 4, 6, 6, 7, 7, 9, 0, 0],    // 4  = Shoulder
-                                /*-3*/  [4, 4, 6, 6, 6, 7, 0, 0, 0],    // 5  = Convex // Spur
-                                /*-4*/  [4, 4, 5, 6, 6, 0, 0, 0, 0],    // 6  = Slope
-                                /*-5*/  [3, 3, 5, 5, 0, 0, 0, 0, 0],    // 7  = Concave // Hollow
-                                /*-6*/  [3, 3, 3, 0, 0, 0, 0, 0, 0],    // 8  = Footslope
-                                /*-7*/  [3, 3, 0, 0, 0, 0, 0, 0, 0],    // 9  = Valley
-                                /*-8*/  [2, 0, 0, 0, 0, 0, 0, 0, 0]     // 10 = Pit // Depression
-                                    ];                                  // 0  = Error
+        let classes: [[u8; 9]; 9] = [
+            /* 0  1  2  3  4  5  6  7  8 */   // 1  = Flat
+            /* 0*/
+            [1, 1, 1, 8, 8, 9, 9, 9, 10], // 2  = Peak // Summit
+            /*-1*/ [1, 1, 8, 8, 8, 9, 9, 9, 0], // 3  = Ridge
+            /*-2*/ [1, 4, 6, 6, 7, 7, 9, 0, 0], // 4  = Shoulder
+            /*-3*/ [4, 4, 6, 6, 6, 7, 0, 0, 0], // 5  = Convex // Spur
+            /*-4*/ [4, 4, 5, 6, 6, 0, 0, 0, 0], // 6  = Slope
+            /*-5*/ [3, 3, 5, 5, 0, 0, 0, 0, 0], // 7  = Concave // Hollow
+            /*-6*/ [3, 3, 3, 0, 0, 0, 0, 0, 0], // 8  = Footslope
+            /*-7*/ [3, 3, 0, 0, 0, 0, 0, 0, 0], // 9  = Valley
+            /*-8*/ [2, 0, 0, 0, 0, 0, 0, 0, 0], // 10 = Pit // Depression
+        ]; // 0  = Error
 
         let gtc = Arc::new(gtc);
         let mut num_procs = num_cpus::get() as isize;
@@ -559,7 +604,6 @@ impl WhiteboxTool for Geomorphons {
         if max_procs > 0 && max_procs < num_procs {
             num_procs = max_procs;
         }
-
 
         let (tx, rx) = mpsc::channel();
         for tid in 0..num_procs {
@@ -577,9 +621,9 @@ impl WhiteboxTool for Geomorphons {
                 let (mut code, mut power): (usize, usize);
                 let (mut count_pos, mut count_neg): (usize, usize);
 
-                let dx = [0,1,1,1,0,-1,-1,-1];  // | 8 | 1 | 2 |
-                let dy = [-1,-1,0,1,1,1,0,-1];  // | 7 | 0 | 3 |
-                let mut pattern: [u8; 8];       // | 6 | 5 | 4 |
+                let dx = [0, 1, 1, 1, 0, -1, -1, -1]; // | 8 | 1 | 2 |
+                let dy = [-1, -1, 0, 1, 1, 1, 0, -1]; // | 7 | 0 | 3 |
+                let mut pattern: [u8; 8]; // | 6 | 5 | 4 |
 
                 for row in (0..rows).filter(|r| r % num_procs == tid) {
                     let mut data = vec![nodatai16; columns as usize];
@@ -591,13 +635,16 @@ impl WhiteboxTool for Geomorphons {
                         count_neg = 0;
                         pattern = [1; 8]; // 0 for balanced ternary
 
-                        if row >= (skip) && row <= (rowslessone - skip)
-                            && col >= (skip) && col <= (columnslessone - skip) { // buffer for edges
+                        if row >= (skip)
+                            && row <= (rowslessone - skip)
+                            && col >= (skip)
+                            && col <= (columnslessone - skip)
+                        {
+                            // buffer for edges
                             y1 = input.get_y_from_row(row);
                             x1 = input.get_x_from_column(col);
                             z = input.get_value(row, col);
                             if z != nodata {
-
                                 // scan profile in 8 compass directions
                                 'directions: for dir in 0..8 {
                                     (zenith_distance, nadir_distance) = (0f64, 0f64);
@@ -610,21 +657,24 @@ impl WhiteboxTool for Geomorphons {
                                         // reached edge. new direction
                                         continue 'directions;
                                     }
-                                    z2 = input.get_value(r,c);
+                                    z2 = input.get_value(r, c);
                                     y2 = input.get_y_from_row(r);
                                     x2 = input.get_x_from_column(c);
                                     ydif = y2 - y1;
                                     xdif = x2 - x1;
-                                    distance = (ydif*ydif + xdif*xdif).sqrt();
+                                    distance = (ydif * ydif + xdif * xdif).sqrt();
 
                                     while distance < search_length {
-                                        if z2 != nodata { // line-of-sight exists
+                                        if z2 != nodata {
+                                            // line-of-sight exists
                                             angle = (z2 - z).atan2(distance);
-                                            if angle > zenith_angle { // get max angle
+                                            if angle > zenith_angle {
+                                                // get max angle
                                                 zenith_angle = angle;
                                                 zenith_distance = distance;
                                             }
-                                            if angle < nadir_angle { // get min angle
+                                            if angle < nadir_angle {
+                                                // get min angle
                                                 nadir_angle = angle;
                                                 nadir_distance = distance;
                                             }
@@ -636,25 +686,32 @@ impl WhiteboxTool for Geomorphons {
                                             // reached edge. new direction
                                             continue 'directions;
                                         }
-                                        z2 = input.get_value(r,c);
+                                        z2 = input.get_value(r, c);
                                         y2 = input.get_y_from_row(r);
                                         x2 = input.get_x_from_column(c);
                                         ydif = y2 - y1;
                                         xdif = x2 - x1;
-                                        distance = (ydif*ydif + xdif*xdif).sqrt();
+                                        distance = (ydif * ydif + xdif * xdif).sqrt();
                                     }
 
                                     // lower flatness threshold if distance exceeds flatness distance
                                     if flat_length < zenith_distance && flat_length > 0f64 {
-                                        zenith_threshold = flat_threshold_height.atan2(zenith_distance);
-                                    } else { zenith_threshold = flat_thresh; }
+                                        zenith_threshold =
+                                            flat_threshold_height.atan2(zenith_distance);
+                                    } else {
+                                        zenith_threshold = flat_thresh;
+                                    }
                                     if flat_length < nadir_distance && flat_length > 0f64 {
-                                        nadir_threshold = flat_threshold_height.atan2(nadir_distance);
-                                    } else { nadir_threshold = flat_thresh; }
+                                        nadir_threshold =
+                                            flat_threshold_height.atan2(nadir_distance);
+                                    } else {
+                                        nadir_threshold = flat_thresh;
+                                    }
 
                                     // classifier function
                                     if zenith_angle.abs() > zenith_threshold
-                                        || nadir_angle.abs() > nadir_threshold {
+                                        || nadir_angle.abs() > nadir_threshold
+                                    {
                                         if nadir_angle.abs() < zenith_angle.abs() {
                                             pattern[dir] = 2; // +1 in balanced ternary
                                             count_pos += 1;
@@ -704,7 +761,10 @@ impl WhiteboxTool for Geomorphons {
         output.configs.nodata = nodatai16;
         output.configs.data_type = DataType::I16;
         output.configs.palette = "qual.plt".to_string();
-        output.add_metadata_entry(format!("Created by whitebox_tools\' {} tool", self.get_tool_name()));
+        output.add_metadata_entry(format!(
+            "Created by whitebox_tools\' {} tool",
+            self.get_tool_name()
+        ));
         output.add_metadata_entry(format!("Input DEM file: {}", input_file));
         output.add_metadata_entry(format!("Search radius: {}", search_radius_cells));
         output.add_metadata_entry(format!("Flatness threshold: {}", flat_thresh));
@@ -712,10 +772,13 @@ impl WhiteboxTool for Geomorphons {
         output.add_metadata_entry(format!("Skip distance: {}", skip_dist_cells));
         if forms == true {
             output.add_metadata_entry(format!("Output: Forms"));
-        } else { output.add_metadata_entry(format!("Output: Ternary pattern")); }
+        } else {
+            output.add_metadata_entry(format!("Output: Ternary pattern"));
+        }
 
-        output.add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed_time)
-                                      .replace("PT", ""));
+        output.add_metadata_entry(
+            format!("Elapsed Time (excluding I/O): {}", elapsed_time).replace("PT", ""),
+        );
 
         if verbose {
             println!("Saving data...")
@@ -729,8 +792,10 @@ impl WhiteboxTool for Geomorphons {
             Err(e) => return Err(e),
         };
         if verbose {
-            println!("{}",
-                 &format!("Elapsed Time (excluding I/O): {}", elapsed_time).replace("PT", ""));
+            println!(
+                "{}",
+                &format!("Elapsed Time (excluding I/O): {}", elapsed_time).replace("PT", "")
+            );
         }
 
         Ok(())

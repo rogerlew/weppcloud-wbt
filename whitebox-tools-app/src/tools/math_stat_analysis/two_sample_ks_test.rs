@@ -6,9 +6,6 @@ Last Modified: 24/10/2019
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::rendering::html::*;
-use whitebox_common::rendering::LineGraph;
 use crate::tools::*;
 use rand::prelude::*;
 use std::cmp::Ordering::Equal;
@@ -20,6 +17,9 @@ use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::process::Command;
+use whitebox_common::rendering::html::*;
+use whitebox_common::rendering::LineGraph;
+use whitebox_raster::*;
 
 /// This tool will perform a two-sample Kolmogorov-Smirnov (K-S) test to evaluate whether a significant
 /// statistical difference exists between the frequency distributions of two rasters. The null hypothesis
@@ -214,11 +214,18 @@ impl WhiteboxTool for TwoSampleKsTest {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

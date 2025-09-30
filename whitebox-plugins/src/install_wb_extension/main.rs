@@ -1,22 +1,22 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 14/11/2022
 Last Modified: 14/11/2022
 License: MIT
 */
 use std::{
-    env, 
+    env,
     io::{Error, ErrorKind},
-    path, 
+    path,
     path::Path,
     process::Command,
 };
 
-/// This tool can be used to install the [Whitebox Toolset Extension](https://www.whiteboxgeo.com/whitebox-toolset-extension/) 
-/// (WTE). The WTE is a commercial add-on for the WhiteboxTools Open Core and contains more than 60 advanced tools for 
-/// geospatial data processing. The WTE easily integrates into your current WhiteboxTools environment. This tool will launch 
+/// This tool can be used to install the [Whitebox Toolset Extension](https://www.whiteboxgeo.com/whitebox-toolset-extension/)
+/// (WTE). The WTE is a commercial add-on for the WhiteboxTools Open Core and contains more than 60 advanced tools for
+/// geospatial data processing. The WTE easily integrates into your current WhiteboxTools environment. This tool will launch
 /// the Whitebox Runner, allowing users a convenient way to install the extension. While this tool will install the extension
-/// running the extension tools does require a valid license, which can be purchased from 
+/// running the extension tools does require a valid license, which can be purchased from
 /// [Whitebox Geospatial Inc.](https://www.whiteboxgeo.com/extension-pricing/).
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -121,9 +121,9 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     // check that it exists.
     if exe.exists() {
         let _output = Command::new(&exe)
-                .args([&format!("install_extension={}", extension_name)])
-                .output()
-                .expect("Failed to execute process");
+            .args([&format!("install_extension={}", extension_name)])
+            .output()
+            .expect("Failed to execute process");
     } else {
         println!("The Whitebox Runner app does not appear to be located within the WBT folder.");
     }

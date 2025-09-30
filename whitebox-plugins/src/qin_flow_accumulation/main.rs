@@ -1,31 +1,31 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 15/07/2021
 Last Modified: 15/07/2021
 License: MIT
 */
 
+use num_cpus;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
-use std::time::Instant;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
-use num_cpus;
-use whitebox_common::structures::{Array2D};
-use whitebox_common::utils::{ get_formatted_elapsed_time, wrapped_print };
+use std::time::Instant;
+use whitebox_common::structures::Array2D;
+use whitebox_common::utils::{get_formatted_elapsed_time, wrapped_print};
 use whitebox_raster::*;
 
-/// This tool is used to generate a flow accumulation grid (i.e. contributing area) using the Qin et al. (2007) 
-/// flow algorithm, not to be confused with the similarly named `QuinnFlowAccumulation` tool. This algorithm is an 
-/// examples of a multiple-flow-direction (MFD) method because the flow entering each grid cell is routed to more 
+/// This tool is used to generate a flow accumulation grid (i.e. contributing area) using the Qin et al. (2007)
+/// flow algorithm, not to be confused with the similarly named `QuinnFlowAccumulation` tool. This algorithm is an
+/// examples of a multiple-flow-direction (MFD) method because the flow entering each grid cell is routed to more
 /// than one downslope neighbour, i.e. flow *divergence* is permitted. It is based on a modification of the Freeman
-/// (1991; `FD8FlowAccumulation`) and Quinn et al. (1995; `QuinnFlowAccumulation`) methods. The Qin method relates 
-/// the degree of flow dispersion from a grid cell to the local maximum downslope gradient. Specifically, steeper 
-/// terrain experiences more convergent flow while flatter slopes experience more flow divergence. 
+/// (1991; `FD8FlowAccumulation`) and Quinn et al. (1995; `QuinnFlowAccumulation`) methods. The Qin method relates
+/// the degree of flow dispersion from a grid cell to the local maximum downslope gradient. Specifically, steeper
+/// terrain experiences more convergent flow while flatter slopes experience more flow divergence.
 ///
 /// The following equations are used to calculate the portion flow (*F<sub>i</sub>*)
 /// given to each neighbour, *i*:
@@ -37,26 +37,26 @@ use whitebox_raster::*;
 /// Where *L<sub>i</sub>* is the contour length, and is 0.5&times;cell size for cardinal directions and 0.354&times;cell size for
 /// diagonal directions, *n* = 8, and represents each of the eight neighbouring grid cells. The exponent *f(e)* controls
 /// the proportion of flow allocated to each downslope neighbour of a grid cell, based on the local maximum downslope
-/// gradient (*e*), and the user-specified upper boundary of *e* (*e<sub>U</sub>*; `--max_slope`), and the upper 
+/// gradient (*e*), and the user-specified upper boundary of *e* (*e<sub>U</sub>*; `--max_slope`), and the upper
 /// boundary of the exponent (*p<sub>U</sub>*; `--exponent`), *f(e)*. Note that the original Qin (2007)
-/// implementation allowed for user-specified lower boundaries on the slope (*e<sub>L</sub>*) and exponent (*p<sub>L</sub>*) 
+/// implementation allowed for user-specified lower boundaries on the slope (*e<sub>L</sub>*) and exponent (*p<sub>L</sub>*)
 /// parameters as well. In this implementation, these parameters are assumed to be 0.0 and 1.1 respectively, and are
 /// not user adjustable. Also note, the `--exponent` parameter should be less than 50.0, as higher values may cause
 /// numerical instability.
 ///
-/// The user must specify the  name (`--dem`) of the input digital elevation model (DEM) and the output file (`--output`). 
-/// The DEM must have been hydrologically corrected to remove all spurious depressions and flat areas. DEM 
-/// pre-processing is usually achieved using either the `BreachDepressions` (also `BreachDepressionsLeastCost`) or 
-/// `FillDepressions` tool. 
-/// 
-/// The user-specified non-dispersive, channel initiation *threshold* (`--threshold`) is a flow-accumulation 
-/// value (measured in upslope grid cells, which is directly proportional to area) above which flow dispersion is 
+/// The user must specify the  name (`--dem`) of the input digital elevation model (DEM) and the output file (`--output`).
+/// The DEM must have been hydrologically corrected to remove all spurious depressions and flat areas. DEM
+/// pre-processing is usually achieved using either the `BreachDepressions` (also `BreachDepressionsLeastCost`) or
+/// `FillDepressions` tool.
+///
+/// The user-specified non-dispersive, channel initiation *threshold* (`--threshold`) is a flow-accumulation
+/// value (measured in upslope grid cells, which is directly proportional to area) above which flow dispersion is
 /// no longer permitted. Grid cells with flow-accumulation values above this area threshold will have their flow
 /// routed in a manner that is similar to the D8 single-flow-direction algorithm, directing all flow towards the
 /// steepest downslope neighbour. This is usually done under the assumption that flow dispersion, whilst appropriate
-/// on hillslope areas, is not realistic once flow becomes channelized. Importantly, the `--threshold` parameter sets 
-/// the spatial extent of the stream network, with lower values resulting in more extensive networks. 
-/// 
+/// on hillslope areas, is not realistic once flow becomes channelized. Importantly, the `--threshold` parameter sets
+/// the spatial extent of the stream network, with lower values resulting in more extensive networks.
+///
 /// In addition to the input DEM, output file (`--output`), and exponent, the user must also specify the output type (`--out_type`). The output flow-accumulation
 /// can be: 1) `cells` (i.e. the number of inflowing grid cells), `catchment area` (i.e. the upslope area),
 /// or `specific contributing area` (i.e. the catchment area divided by the flow width). The default value
@@ -74,13 +74,13 @@ use whitebox_raster::*;
 /// Freeman, T. G. (1991). Calculating catchment area with divergent flow based on a regular grid. Computers and
 /// Geosciences, 17(3), 413-422.
 ///
-/// Qin, C., Zhu, A. X., Pei, T., Li, B., Zhou, C., & Yang, L. 2007. An adaptive approach to selecting a 
-/// flow‐partition exponent for a multiple‐flow‐direction algorithm. *International Journal of Geographical 
+/// Qin, C., Zhu, A. X., Pei, T., Li, B., Zhou, C., & Yang, L. 2007. An adaptive approach to selecting a
+/// flow‐partition exponent for a multiple‐flow‐direction algorithm. *International Journal of Geographical
 /// Information Science*, 21(4), 443-458.
 ///
-/// Quinn, P. F., K. J. Beven, Lamb, R. 1995. The in (a/tanβ) index: How to calculate it and how to use it within 
+/// Quinn, P. F., K. J. Beven, Lamb, R. 1995. The in (a/tanβ) index: How to calculate it and how to use it within
 /// the topmodel framework. *Hydrological Processes* 9(2): 161-182.
-/// 
+///
 /// # See Also
 /// `D8FlowAccumulation`, `QuinnFlowAccumulation`, `FD8FlowAccumulation`, `DInfFlowAccumulation`, `MDInfFlowAccumulation`, `Rho8Pointer`, `WetnessIndex`
 fn main() {
@@ -177,7 +177,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let mut upper_bound_exponent = 10f64;
     let lower_bound_exponent = 1.1f64;
     let mut upper_slope = 45f64; // Input in degrees, but gets converted to tan-slope later
-    // let lower_slope = 0f64;
+                                 // let lower_slope = 0f64;
     let mut z_factor = 1f64;
     let mut log_transform = false;
     let mut clip_max = false;
@@ -283,11 +283,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -297,21 +304,26 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
     let start = Instant::now();
 
-    if upper_slope > 90.0 { upper_slope = 90.0; }
+    if upper_slope > 90.0 {
+        upper_slope = 90.0;
+    }
     upper_slope = upper_slope.to_radians().tan();
 
     if upper_bound_exponent < lower_bound_exponent {
         if configurations.verbose_mode {
             wrapped_print("Warning: The upper-bound exponent parameter (--exponent) must be greater than 1.1.", 50);
         }
-        upper_bound_exponent = lower_bound_exponent; 
+        upper_bound_exponent = lower_bound_exponent;
     }
 
     if upper_bound_exponent >= 50.0 {
         if configurations.verbose_mode {
-            wrapped_print("Warning: The upper-bound exponent parameter (--exponent) must be less than 50.0.", 50);
+            wrapped_print(
+                "Warning: The upper-bound exponent parameter (--exponent) must be less than 50.0.",
+                50,
+            );
         }
-        upper_bound_exponent = 50.0; 
+        upper_bound_exponent = 50.0;
     }
 
     if !dem_file.contains(&sep) && !dem_file.contains("/") {
@@ -487,7 +499,9 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         if !is_converged {
             if max_slope > 0f64 {
                 f = if upper_slope > 0f64 {
-                    max_slope.min(upper_slope) / upper_slope * (upper_bound_exponent - lower_bound_exponent) + lower_bound_exponent
+                    max_slope.min(upper_slope) / upper_slope
+                        * (upper_bound_exponent - lower_bound_exponent)
+                        + lower_bound_exponent
                 } else {
                     upper_bound_exponent
                 };
@@ -639,11 +653,17 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if interior_pit_found {
-        println!("**********************************************************************************");
-        println!("WARNING: Interior pit cells were found within the input DEM. It is likely that the 
+        println!(
+            "**********************************************************************************"
+        );
+        println!(
+            "WARNING: Interior pit cells were found within the input DEM. It is likely that the 
         DEM needs to be processed to remove topographic depressions and flats prior to
-        running this tool.");
-        println!("**********************************************************************************");
+        running this tool."
+        );
+        println!(
+            "**********************************************************************************"
+        );
     }
 
     Ok(())

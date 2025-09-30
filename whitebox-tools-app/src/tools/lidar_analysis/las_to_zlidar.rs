@@ -6,13 +6,13 @@ Last Modified: 15/05/2020
 License: MIT
 */
 
-use whitebox_lidar::*;
 use crate::tools::*;
 use std;
 use std::io::{Error, ErrorKind};
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::{env, fs, path, thread};
+use whitebox_lidar::*;
 
 /// This tool can be used to convert one or more LAS files into the
 /// [*zLidar*](https://jblindsay.github.io/zLidar_spec/intro.html) compressed
@@ -61,18 +61,16 @@ impl LasToZlidar {
             optional: true,
         });
 
-        parameters.push(ToolParameter{
-            name: "Compression Method".to_owned(), 
-            flags: vec!["--compress".to_owned()], 
+        parameters.push(ToolParameter {
+            name: "Compression Method".to_owned(),
+            flags: vec!["--compress".to_owned()],
             description: "Compression method, including 'brotli' and 'deflate'.".to_owned(),
-            parameter_type: ParameterType::OptionList(
-                vec![
-                    "brotli".to_owned(), 
-                    "deflate".to_owned(),
-                ]
-            ),
+            parameter_type: ParameterType::OptionList(vec![
+                "brotli".to_owned(),
+                "deflate".to_owned(),
+            ]),
             default_value: Some("brotli".to_owned()),
-            optional: true
+            optional: true,
         });
 
         parameters.push(ToolParameter {
@@ -211,11 +209,18 @@ impl WhiteboxTool for LasToZlidar {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -335,9 +340,13 @@ impl WhiteboxTool for LasToZlidar {
                                     LasFile::initialize_using_file(&output_file, &input);
 
                                 output.compression = match compression_method.as_str() {
-                                    "brotli" => { ZlidarCompression::Brotli { level: compression_level } },
-                                    "deflate" => { ZlidarCompression::Deflate { level: compression_level }}
-                                    _ => panic!("Error: compression method is invalid")
+                                    "brotli" => ZlidarCompression::Brotli {
+                                        level: compression_level,
+                                    },
+                                    "deflate" => ZlidarCompression::Deflate {
+                                        level: compression_level,
+                                    },
+                                    _ => panic!("Error: compression method is invalid"),
                                 };
 
                                 let n_points = input.header.number_of_points as usize;

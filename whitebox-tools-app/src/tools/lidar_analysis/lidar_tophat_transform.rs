@@ -6,8 +6,6 @@ Last Modified: 24/04/2019
 License: MIT
 */
 
-use whitebox_lidar::*;
-use whitebox_common::structures::{DistanceMetric, FixedRadiusSearch2D};
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -17,16 +15,18 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::structures::{DistanceMetric, FixedRadiusSearch2D};
+use whitebox_lidar::*;
 
 /// This tool performs a white [top-hat transform](https://en.wikipedia.org/wiki/Top-hat_transform) on a LiDAR point cloud (`--input`).
 /// A top-hat transform is a common digital image processing operation used for various tasks, such
 /// as feature extraction, background equalization, and image enhancement. When applied to a LiDAR point cloud, the white
 /// top-hat transform provides an estimate of *height above ground*, which is useful for modelling the vegetation canopy.
-/// 
+///
 /// As an example, notice that the input point cloud on the top of the image below has a substantial amount of
-/// topographic variability. After applying the top-hat transform (bottom point cloud), all of this topographic 
+/// topographic variability. After applying the top-hat transform (bottom point cloud), all of this topographic
 /// variability has been removed and point elevations values effectively become height above ground.
-/// 
+///
 /// ![](../../doc_img/LidarTophatTransform.png)
 ///  
 /// The white top-hat transform is defined as the difference between a point's original elevation and its
@@ -35,11 +35,11 @@ use std::thread;
 /// `--radius` parameter. Setting this parameter can require some experimentation. Generally, it is appropriate to
 /// use a radius of a few meters in non-urban landscapes. However, in urban areas, the radius may need to be set
 /// much larger, reflective of the size of the largest building.
-/// 
+///
 /// If the input point cloud already has ground points classified, it may be better to use the `HeightAboveGround`,
 /// which simply measures the difference in height between each point and its nearest ground classified point within
 /// the search radius.
-/// 
+///
 /// # See Also
 /// `HeightAboveGround`, `TophatTransform`, `Closing`, `Opening`
 pub struct LidarTophatTransform {
@@ -201,11 +201,18 @@ impl WhiteboxTool for LidarTophatTransform {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -365,7 +372,8 @@ impl WhiteboxTool for LidarTophatTransform {
             let pr2: LidarPointRecord;
             match pr {
                 LidarPointRecord::PointRecord0 { mut point_data } => {
-                    point_data.z = ((residuals[i] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                    point_data.z = ((residuals[i] - input.header.z_offset)
+                        / input.header.z_scale_factor) as i32;
                     pr2 = LidarPointRecord::PointRecord0 {
                         point_data: point_data,
                     };
@@ -374,7 +382,8 @@ impl WhiteboxTool for LidarTophatTransform {
                     mut point_data,
                     gps_data,
                 } => {
-                    point_data.z = ((residuals[i] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                    point_data.z = ((residuals[i] - input.header.z_offset)
+                        / input.header.z_scale_factor) as i32;
                     pr2 = LidarPointRecord::PointRecord1 {
                         point_data: point_data,
                         gps_data: gps_data,
@@ -384,7 +393,8 @@ impl WhiteboxTool for LidarTophatTransform {
                     mut point_data,
                     colour_data,
                 } => {
-                    point_data.z = ((residuals[i] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                    point_data.z = ((residuals[i] - input.header.z_offset)
+                        / input.header.z_scale_factor) as i32;
                     pr2 = LidarPointRecord::PointRecord2 {
                         point_data: point_data,
                         colour_data: colour_data,
@@ -395,7 +405,8 @@ impl WhiteboxTool for LidarTophatTransform {
                     gps_data,
                     colour_data,
                 } => {
-                    point_data.z = ((residuals[i] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                    point_data.z = ((residuals[i] - input.header.z_offset)
+                        / input.header.z_scale_factor) as i32;
                     pr2 = LidarPointRecord::PointRecord3 {
                         point_data: point_data,
                         gps_data: gps_data,
@@ -407,7 +418,8 @@ impl WhiteboxTool for LidarTophatTransform {
                     gps_data,
                     wave_packet,
                 } => {
-                    point_data.z = ((residuals[i] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                    point_data.z = ((residuals[i] - input.header.z_offset)
+                        / input.header.z_scale_factor) as i32;
                     pr2 = LidarPointRecord::PointRecord4 {
                         point_data: point_data,
                         gps_data: gps_data,
@@ -420,7 +432,8 @@ impl WhiteboxTool for LidarTophatTransform {
                     colour_data,
                     wave_packet,
                 } => {
-                    point_data.z = ((residuals[i] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                    point_data.z = ((residuals[i] - input.header.z_offset)
+                        / input.header.z_scale_factor) as i32;
                     pr2 = LidarPointRecord::PointRecord5 {
                         point_data: point_data,
                         gps_data: gps_data,
@@ -432,7 +445,8 @@ impl WhiteboxTool for LidarTophatTransform {
                     mut point_data,
                     gps_data,
                 } => {
-                    point_data.z = ((residuals[i] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                    point_data.z = ((residuals[i] - input.header.z_offset)
+                        / input.header.z_scale_factor) as i32;
                     pr2 = LidarPointRecord::PointRecord6 {
                         point_data: point_data,
                         gps_data: gps_data,
@@ -443,7 +457,8 @@ impl WhiteboxTool for LidarTophatTransform {
                     gps_data,
                     colour_data,
                 } => {
-                    point_data.z = ((residuals[i] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                    point_data.z = ((residuals[i] - input.header.z_offset)
+                        / input.header.z_scale_factor) as i32;
                     pr2 = LidarPointRecord::PointRecord7 {
                         point_data: point_data,
                         gps_data: gps_data,
@@ -455,7 +470,8 @@ impl WhiteboxTool for LidarTophatTransform {
                     gps_data,
                     colour_data,
                 } => {
-                    point_data.z = ((residuals[i] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                    point_data.z = ((residuals[i] - input.header.z_offset)
+                        / input.header.z_scale_factor) as i32;
                     pr2 = LidarPointRecord::PointRecord8 {
                         point_data: point_data,
                         gps_data: gps_data,
@@ -467,7 +483,8 @@ impl WhiteboxTool for LidarTophatTransform {
                     gps_data,
                     wave_packet,
                 } => {
-                    point_data.z = ((residuals[i] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                    point_data.z = ((residuals[i] - input.header.z_offset)
+                        / input.header.z_scale_factor) as i32;
                     pr2 = LidarPointRecord::PointRecord9 {
                         point_data: point_data,
                         gps_data: gps_data,
@@ -480,7 +497,8 @@ impl WhiteboxTool for LidarTophatTransform {
                     colour_data,
                     wave_packet,
                 } => {
-                    point_data.z = ((residuals[i] - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                    point_data.z = ((residuals[i] - input.header.z_offset)
+                        / input.header.z_scale_factor) as i32;
                     pr2 = LidarPointRecord::PointRecord10 {
                         point_data: point_data,
                         gps_data: gps_data,

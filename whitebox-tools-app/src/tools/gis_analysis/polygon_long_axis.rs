@@ -6,15 +6,15 @@ Last Modified: 03/03/2020
 License: MIT
 */
 
-use whitebox_common::algorithms::{minimum_bounding_box, MinimizationCriterion};
-use whitebox_common::structures::Point2D;
 use crate::tools::*;
-use whitebox_vector::ShapefileGeometry;
-use whitebox_vector::*;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::algorithms::{minimum_bounding_box, MinimizationCriterion};
+use whitebox_common::structures::Point2D;
+use whitebox_vector::ShapefileGeometry;
+use whitebox_vector::*;
 
 /// This tool can be used to map the long axis of polygon features. The long axis is the
 /// longer of the two primary axes of the minimum bounding box (MBB), i.e. the smallest box
@@ -34,8 +34,7 @@ impl PolygonLongAxis {
         // public constructor
         let name = "PolygonLongAxis".to_string();
         let toolbox = "GIS Analysis".to_string();
-        let description =
-            "Used to map the long axis of polygon features.".to_string();
+        let description = "Used to map the long axis of polygon features.".to_string();
 
         let mut parameters = vec![];
         parameters.push(ToolParameter {
@@ -173,11 +172,18 @@ impl WhiteboxTool for PolygonLongAxis {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -200,7 +206,8 @@ impl WhiteboxTool for PolygonLongAxis {
         }
 
         // create output file
-        let mut output = Shapefile::initialize_using_file(&output_file, &input, ShapeType::PolyLine, false)?;
+        let mut output =
+            Shapefile::initialize_using_file(&output_file, &input, ShapeType::PolyLine, false)?;
 
         // add the attributes
         let mut fields_vec: Vec<AttributeField> = vec![];
@@ -211,14 +218,12 @@ impl WhiteboxTool for PolygonLongAxis {
             fields_vec.push(field.clone());
         }
 
-        fields_vec.push(
-            AttributeField::new(
-                "DIRECTION", 
-                FieldDataType::Real, 
-                7u8, 
-                2u8
-            )
-        );
+        fields_vec.push(AttributeField::new(
+            "DIRECTION",
+            FieldDataType::Real,
+            7u8,
+            2u8,
+        ));
 
         output.attributes.add_fields(&fields_vec);
 
@@ -264,7 +269,9 @@ impl WhiteboxTool for PolygonLongAxis {
             } else {
                 -((p1.y - p2.y).atan2(p1.x - p2.x)).to_degrees() + 90.0
             };
-            if orientation < 0.0 { orientation = 180.0 + orientation; }
+            if orientation < 0.0 {
+                orientation = 180.0 + orientation;
+            }
             let mut atts = input.attributes.get_record(record_num);
             atts.push(FieldData::Real(orientation));
             output.attributes.add_record(atts.clone(), false);

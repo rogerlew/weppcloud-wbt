@@ -60,7 +60,7 @@ impl<R: Read + Seek> ByteOrderReader<R> {
     pub fn len(&self) -> usize {
         self.len
     }
- 
+
     pub fn is_empty(&self) -> bool {
         if self.len() > 0 {
             return true;
@@ -216,7 +216,7 @@ impl Endianness {
         {
             return Endianness::LittleEndian;
         }
-        
+
         Endianness::BigEndian
     }
 }

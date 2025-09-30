@@ -3,7 +3,7 @@ use std::collections::HashMap;
 #[derive(Clone, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Tree {
-    pub label: String, 
+    pub label: String,
     pub children: Vec<Tree>,
 }
 
@@ -19,7 +19,10 @@ impl Tree {
         self.children.push(child);
     }
 
-    pub fn from_toolboxes_and_tools(toolboxes: Vec<&str>, toolbox_tools: HashMap<&str, Vec<&str>>) -> Self {
+    pub fn from_toolboxes_and_tools(
+        toolboxes: Vec<&str>,
+        toolbox_tools: HashMap<&str, Vec<&str>>,
+    ) -> Self {
         let mut ret = Tree {
             label: "Toolboxes".to_owned(),
             children: vec![],
@@ -29,10 +32,10 @@ impl Tree {
             let tools = &toolbox_tools[tb];
             if !tb.contains("/") {
                 let mut t = Tree::new(tb);
-                for j in i+1..toolboxes.len() {
+                for j in i + 1..toolboxes.len() {
                     if toolboxes[j].contains(tb) {
                         let sub_tb = toolboxes[j].split("/").collect::<Vec<&str>>();
-                        let mut subt = Tree::new((sub_tb[sub_tb.len()-1]).trim());
+                        let mut subt = Tree::new((sub_tb[sub_tb.len() - 1]).trim());
                         let tools2 = &toolbox_tools[toolboxes[j]];
                         for tl in tools2 {
                             subt.add_child(Tree::new(tl));
@@ -55,11 +58,11 @@ impl Tree {
     pub fn is_toolbox(&self) -> bool {
         self.children.len() > 0
     }
-    
+
     // pub fn ui(&mut self, ui: &mut egui::Ui) {
     //     self.ui_impl(ui)
     // }
-    
+
     // fn ui_impl(&mut self, ui: &mut egui::Ui) {
     //     if self.is_toolbox() {
     //         egui::CollapsingHeader::new(&self.label)

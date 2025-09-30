@@ -15,7 +15,14 @@ use std::f64::consts::PI;
 /// # Notes
 /// - Assumes valid f64 inputs (non-NaN, non-infinite).
 /// - Zero-length vectors (A=O or B=O) result in a 0.0 angle.
-pub fn calculate_rotation_degrees(a_x: f64, a_y: f64, o_x: f64, o_y: f64, b_x: f64, b_y: f64) -> f64 {
+pub fn calculate_rotation_degrees(
+    a_x: f64,
+    a_y: f64,
+    o_x: f64,
+    o_y: f64,
+    b_x: f64,
+    b_y: f64,
+) -> f64 {
     // Calculate vector components relative to origin
     let vec_a_x = a_x - o_x;
     let vec_a_y = a_y - o_y;
@@ -48,13 +55,21 @@ mod tests {
     #[test]
     fn test_right_angle_rotation() {
         let result = calculate_rotation_degrees(1.0, 0.0, 0.0, 0.0, 0.0, -1.0);
-        assert!((result - 90.0).abs() < 1e-10, "Expected 90.0, got {}", result);
+        assert!(
+            (result - 90.0).abs() < 1e-10,
+            "Expected 90.0, got {}",
+            result
+        );
     }
 
     #[test]
     fn test_180_degree_rotation() {
         let result = calculate_rotation_degrees(1.0, 0.0, 0.0, 0.0, -1.0, 0.0);
-        assert!((result - 180.0).abs() < 1e-10, "Expected 180.0, got {}", result);
+        assert!(
+            (result - 180.0).abs() < 1e-10,
+            "Expected 180.0, got {}",
+            result
+        );
     }
 
     #[test]
@@ -66,18 +81,30 @@ mod tests {
     #[test]
     fn test_arbitrary_rotation() {
         let result = calculate_rotation_degrees(1.0, 1.0, 0.0, 0.0, -1.0, 1.0);
-        assert!((result - 90.0).abs() < 1e-10, "Expected 90.0, got {}", result);
+        assert!(
+            (result - 90.0).abs() < 1e-10,
+            "Expected 90.0, got {}",
+            result
+        );
     }
 
     #[test]
     fn test_non_zero_origin() {
         let result = calculate_rotation_degrees(2.0, 1.0, 1.0, 1.0, 1.0, 0.0);
-        assert!((result - 90.0).abs() < 1e-10, "Expected 90.0, got {}", result);
+        assert!(
+            (result - 90.0).abs() < 1e-10,
+            "Expected 90.0, got {}",
+            result
+        );
     }
 
     #[test]
     fn test_zero_length_vector() {
         let result = calculate_rotation_degrees(0.0, 0.0, 0.0, 0.0, 1.0, 1.0);
-        assert!((result - 0.0).abs() < 1e-10, "Expected 0.0 for zero-length vector, got {}", result);
+        assert!(
+            (result - 0.0).abs() < 1e-10,
+            "Expected 0.0 for zero-length vector, got {}",
+            result
+        );
     }
 }

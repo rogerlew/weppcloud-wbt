@@ -6,7 +6,6 @@ Last Modified: 18/10/2019
 License: MIT
 */
 
-use whitebox_raster::*;
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -17,6 +16,7 @@ use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
 use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 
 /// This tool is used to generate a flow pointer grid using the simple D8 (O'Callaghan and Mark, 1984) algorithm. The
 /// user must specify the name (`--dem`) of a digital elevation model (DEM) that has been hydrologically
@@ -41,7 +41,7 @@ use whitebox_common::structures::Array2D;
 ///
 /// # Memory Usage
 /// The peak memory usage of this tool is approximately 10 bytes per grid cell.
-/// 
+///
 /// # Reference
 /// O'Callaghan, J. F., & Mark, D. M. (1984). The extraction of drainage networks from digital elevation data.
 /// Computer vision, graphics, and image processing, 28(3), 323-344.
@@ -200,11 +200,18 @@ impl WhiteboxTool for D8Pointer {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

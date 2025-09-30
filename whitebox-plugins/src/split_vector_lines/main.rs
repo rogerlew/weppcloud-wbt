@@ -1,4 +1,4 @@
-/* 
+/*
 Authors: Prof. John Lindsay
 Created: 23/04/2021
 Last Modified: 23/04/2021
@@ -11,9 +11,11 @@ use std::io::{Error, ErrorKind};
 use std::path;
 use std::str;
 use std::time::Instant;
-use whitebox_common::structures::{Point2D};
+use whitebox_common::structures::Point2D;
 use whitebox_common::utils::get_formatted_elapsed_time;
-use whitebox_vector::{AttributeField, FieldData, FieldDataType, Shapefile, ShapefileGeometry, ShapeType};
+use whitebox_vector::{
+    AttributeField, FieldData, FieldDataType, ShapeType, Shapefile, ShapefileGeometry,
+};
 
 /// This tool can be used to divide longer vector lines (`--input`) into segments of a maximum specified length
 /// (`--length`).
@@ -148,11 +150,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -180,29 +189,20 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         ));
     }
 
-
     // create output file
-    let mut output = Shapefile::initialize_using_file(&output_file, &input, ShapeType::PolyLine, false)?;
+    let mut output =
+        Shapefile::initialize_using_file(&output_file, &input, ShapeType::PolyLine, false)?;
 
     // add the attributes
     let mut fields_vec: Vec<AttributeField> = vec![];
-    fields_vec.push(
-        AttributeField::new(
-            "FID", 
-            FieldDataType::Int, 
-            7u8, 
-            0u8
-        )
-    );
+    fields_vec.push(AttributeField::new("FID", FieldDataType::Int, 7u8, 0u8));
 
-    fields_vec.push(
-        AttributeField::new(
-            "PARENT_ID", 
-            FieldDataType::Int, 
-            7u8, 
-            0u8
-        )
-    );
+    fields_vec.push(AttributeField::new(
+        "PARENT_ID",
+        FieldDataType::Int,
+        7u8,
+        0u8,
+    ));
 
     let in_atts = input.attributes.clone();
     let mut parent_fid_att = 999;
@@ -231,7 +231,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let mut fid = 1i32;
     let mut att_data: Vec<FieldData>;
     for record_num in 0..input.num_records {
-        let record = input.get_record(record_num);        
+        let record = input.get_record(record_num);
         for part in 0..record.num_parts as usize {
             let mut sfg = ShapefileGeometry::new(ShapeType::PolyLine);
 
@@ -246,11 +246,11 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             points.push(record.points[0].clone());
             dist = 0f64;
 
-            let mut i = part_start+1;
+            let mut i = part_start + 1;
             while i <= part_end {
-                x1 = points[points.len()-1].x;
-                y1 = points[points.len()-1].y;
-                
+                x1 = points[points.len() - 1].x;
+                y1 = points[points.len() - 1].y;
+
                 x2 = record.points[i].x;
                 y2 = record.points[i].y;
 
@@ -277,7 +277,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                         }
                     }
                     output.attributes.add_record(att_data.clone(), false);
-                    
+
                     // reinitialize
                     sfg = ShapefileGeometry::new(ShapeType::PolyLine);
                     points = vec![];
@@ -309,8 +309,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         }
 
         if configurations.verbose_mode {
-            progress =
-                (100.0_f64 * (record_num + 1) as f64 / input.num_records as f64) as usize;
+            progress = (100.0_f64 * (record_num + 1) as f64 / input.num_records as f64) as usize;
             if progress != old_progress {
                 println!("Progress: {}%", progress);
                 old_progress = progress;
@@ -339,6 +338,5 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         );
     }
 
-    
     Ok(())
 }

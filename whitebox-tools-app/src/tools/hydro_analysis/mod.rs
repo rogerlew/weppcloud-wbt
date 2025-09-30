@@ -25,6 +25,7 @@ mod fill_depressions_planchon_and_darboux;
 mod fill_depressions_wang_and_liu;
 mod fill_pits;
 mod find_noflow_cells;
+mod find_outlet;
 mod find_parallel_flow;
 mod flatten_lakes;
 mod flood_order;
@@ -79,6 +80,7 @@ pub use self::fill_depressions_planchon_and_darboux::FillDepressionsPlanchonAndD
 pub use self::fill_depressions_wang_and_liu::FillDepressionsWangAndLiu;
 pub use self::fill_pits::FillSingleCellPits;
 pub use self::find_noflow_cells::FindNoFlowCells;
+pub use self::find_outlet::FindOutlet;
 pub use self::find_parallel_flow::FindParallelFlow;
 pub use self::flatten_lakes::FlattenLakes;
 pub use self::flood_order::FloodOrder;

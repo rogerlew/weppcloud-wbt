@@ -42,13 +42,14 @@ impl ClipRasterToRaster {
         parameters.push(ToolParameter {
             name: "Mask Raster".to_owned(),
             flags: vec!["-m".to_owned(), "--mask".to_owned()],
-            description: "Raster defining the clip area (cells with nodata OR value 0 are excluded)."
-                .to_owned(),
+            description:
+                "Raster defining the clip area (cells with nodata OR value 0 are excluded)."
+                    .to_owned(),
             parameter_type: ParameterType::ExistingFile(ParameterFileType::Raster),
             default_value: None,
             optional: false,
         });
-        
+
         parameters.push(ToolParameter {
             name: "Output Raster".to_owned(),
             flags: vec!["-o".to_owned(), "--output".to_owned()],
@@ -115,7 +116,10 @@ impl WhiteboxTool for ClipRasterToRaster {
         //              Parse arguments
         // --------------------------------------------------
         if args.is_empty() {
-            return Err(Error::new(ErrorKind::InvalidInput, "No parameters supplied."));
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "No parameters supplied.",
+            ));
         }
         let sep: String = path::MAIN_SEPARATOR.to_string();
         let mut input_file = String::new();
@@ -160,7 +164,10 @@ impl WhiteboxTool for ClipRasterToRaster {
         }
 
         if input_file.is_empty() || mask_file.is_empty() || output_file.is_empty() {
-            return Err(Error::new(ErrorKind::InvalidInput, "Missing required arguments."));
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "Missing required arguments.",
+            ));
         }
         if !input_file.contains(&sep) && !input_file.contains('/') {
             input_file = format!("{}{}", working_directory, input_file);
@@ -191,13 +198,13 @@ impl WhiteboxTool for ClipRasterToRaster {
         //--------------------------------------------------
         //              Core clipping loop
         //--------------------------------------------------
-        let rows     = input.configs.rows as isize;
-        let columns  = input.configs.columns as isize;
+        let rows = input.configs.rows as isize;
+        let columns = input.configs.columns as isize;
         let nodata_i = input.configs.nodata;
         let nodata_m = mask.configs.nodata;
 
-        let start     = std::time::Instant::now();
-        let mut output   = Raster::initialize_using_file(&output_file, &input);
+        let start = std::time::Instant::now();
+        let mut output = Raster::initialize_using_file(&output_file, &input);
 
         let mut old_progress = 0usize;
         for row in 0..rows {

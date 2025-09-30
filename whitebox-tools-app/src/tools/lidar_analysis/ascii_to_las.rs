@@ -6,7 +6,6 @@ Last Modified: 18/01/2020
 License: MIT
 */
 
-use whitebox_lidar::*;
 use crate::tools::*;
 use std;
 use std::env;
@@ -15,6 +14,7 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_lidar::*;
 extern crate byteorder;
 use whitebox_common::spatial_ref_system::esri_wkt_from_epsg;
 
@@ -225,11 +225,18 @@ impl WhiteboxTool for AsciiToLas {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -401,28 +408,43 @@ impl WhiteboxTool for AsciiToLas {
                             for a in 0..num_fields {
                                 match pattern_numeric[a] {
                                     0usize => {
-                                        coord_val = line_data[a].trim().parse::<f64>().expect("Error parsing data.");
+                                        coord_val = line_data[a]
+                                            .trim()
+                                            .parse::<f64>()
+                                            .expect("Error parsing data.");
                                         if !read_first_point_x {
                                             output.header.x_offset = coord_val;
                                             read_first_point_x = true;
                                         }
-                                        point_data.x = ((coord_val - output.header.x_offset) / output.header.x_scale_factor) as i32;
+                                        point_data.x = ((coord_val - output.header.x_offset)
+                                            / output.header.x_scale_factor)
+                                            as i32;
                                     }
                                     1usize => {
-                                        coord_val = line_data[a].trim().parse::<f64>().expect("Error parsing data.");
+                                        coord_val = line_data[a]
+                                            .trim()
+                                            .parse::<f64>()
+                                            .expect("Error parsing data.");
                                         if !read_first_point_y {
                                             output.header.y_offset = coord_val;
                                             read_first_point_y = true;
                                         }
-                                        point_data.y = ((coord_val - output.header.y_offset) / output.header.y_scale_factor) as i32;
+                                        point_data.y = ((coord_val - output.header.y_offset)
+                                            / output.header.y_scale_factor)
+                                            as i32;
                                     }
                                     2usize => {
-                                        coord_val = line_data[a].trim().parse::<f64>().expect("Error parsing data.");
+                                        coord_val = line_data[a]
+                                            .trim()
+                                            .parse::<f64>()
+                                            .expect("Error parsing data.");
                                         if !read_first_point_z {
                                             output.header.z_offset = coord_val;
                                             read_first_point_z = true;
                                         }
-                                        point_data.z = ((coord_val - output.header.z_offset) / output.header.z_scale_factor) as i32;
+                                        point_data.z = ((coord_val - output.header.z_offset)
+                                            / output.header.z_scale_factor)
+                                            as i32;
                                     }
                                     3usize => {
                                         point_data.intensity = line_data[a]

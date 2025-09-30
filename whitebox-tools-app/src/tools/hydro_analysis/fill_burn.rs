@@ -6,10 +6,7 @@ Last Modified: 22/10/2019
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::{Array2D, BoundingBox};
 use crate::tools::*;
-use whitebox_vector::{ShapeType, Shapefile};
 use num_cpus;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
@@ -21,6 +18,9 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::structures::{Array2D, BoundingBox};
+use whitebox_raster::*;
+use whitebox_vector::{ShapeType, Shapefile};
 
 /// Burns streams into a digital elevation model (DEM) using the FillBurn (Saunders, 1999) method which produces a hydro-enforced DEM.
 /// This tool uses the algorithm described in:
@@ -32,11 +32,11 @@ use std::thread;
 ///
 /// Saunders, W. 1999. Preparation of DEMs for use in environmental modeling analysis, in: ESRI User
 /// Conference. pp. 24-30.
-/// 
+///
 /// The `TopologicalBreachBurn` tool, contained within the Whitebox Toolset Extension (WTE), should be preferred to
 /// this `FillBurn`, because it accounts for the topological errors that frequently occur when burning vector streams
 /// into a DEM.
-/// 
+///
 /// # See Also
 /// `TopologicalBreachBurn`, `PruneVectorStreams`
 pub struct FillBurn {
@@ -194,11 +194,18 @@ impl WhiteboxTool for FillBurn {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

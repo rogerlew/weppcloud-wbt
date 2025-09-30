@@ -11,15 +11,15 @@ a lake elevation attribute is not specified, the tool would then default to chec
 elevation on each lake's coastline.
 */
 
-use whitebox_common::algorithms;
-use whitebox_raster::*;
-use whitebox_common::structures::{BoundingBox, Point2D};
 use crate::tools::*;
-use whitebox_vector::{ShapeType, Shapefile};
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::algorithms;
+use whitebox_common::structures::{BoundingBox, Point2D};
+use whitebox_raster::*;
+use whitebox_vector::{ShapeType, Shapefile};
 
 /// This tool can be used to set the elevations contained in a set of input vector lake polygons (`--lakes`) to
 /// a consistent value within an input (`--dem`) digital elevation model (DEM). Lake flattening is
@@ -180,11 +180,18 @@ impl WhiteboxTool for FlattenLakes {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

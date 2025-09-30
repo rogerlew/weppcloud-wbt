@@ -7,7 +7,7 @@ License: MIT
 */
 
 use crate::tools::*;
-use whitebox_raster::*;
+use num_cpus;
 use std::collections::HashMap;
 use std::env;
 use std::f64;
@@ -16,12 +16,12 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
-use num_cpus;
+use whitebox_raster::*;
 
-/// This tool can be used to list each of the unique values contained within a categorical raster (`input`). The tool 
+/// This tool can be used to list each of the unique values contained within a categorical raster (`input`). The tool
 /// outputs an HTML formatted report (`--output`)
 /// containing a table of the unique values and their frequency of occurrence within the data. The user must
-/// specify the name of an input raster (`--input`). The specified raster *should not contained categorical data*. 
+/// specify the name of an input raster (`--input`). The specified raster *should not contained categorical data*.
 /// The tool provides tabular output.
 ///
 /// # See Also
@@ -152,11 +152,18 @@ impl WhiteboxTool for ListUniqueValuesRaster {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

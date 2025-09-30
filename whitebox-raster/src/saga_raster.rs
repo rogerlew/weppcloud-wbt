@@ -1,11 +1,11 @@
 use super::*;
-use whitebox_common::utils::ByteOrderReader;
 use std::f64;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{BufReader, BufWriter, Cursor, Error, ErrorKind, SeekFrom};
 use std::mem;
 use std::path::Path;
+use whitebox_common::utils::ByteOrderReader;
 
 pub fn read_saga(
     file_name: &String,
@@ -138,20 +138,20 @@ pub fn read_saga(
         } else if vec[0].to_lowercase().contains("nodata_value") {
             if !vec[1].contains(";") {
                 configs.nodata = vec[1]
-                .replace("=", "")
-                .trim()
-                .to_string()
-                .parse::<f64>()
-                .unwrap();
+                    .replace("=", "")
+                    .trim()
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap();
             } else {
                 let line_split2 = vec[1].split(";");
                 let vec2 = line_split2.collect::<Vec<&str>>();
                 configs.nodata = vec2[0]
-                .replace("=", "")
-                .trim()
-                .to_string()
-                .parse::<f64>()
-                .unwrap();
+                    .replace("=", "")
+                    .trim()
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap();
             }
         } else if vec[0].to_lowercase().contains("toptobottom") {
             top_to_bottom = vec[1].replace("=", "").trim().to_lowercase().contains("t")
@@ -511,9 +511,21 @@ pub fn write_saga<'a>(r: &'a mut Raster) -> Result<(), Error> {
         writer.write_all("BYTEORDER_BIG\t= TRUE\n".as_bytes())?;
     }
 
-    writer.write_all(format!("POSITION_XMIN\t= {}\n", r.configs.west + (0.5 * r.configs.resolution_x)).as_bytes())?;
+    writer.write_all(
+        format!(
+            "POSITION_XMIN\t= {}\n",
+            r.configs.west + (0.5 * r.configs.resolution_x)
+        )
+        .as_bytes(),
+    )?;
 
-    writer.write_all(format!("POSITION_YMIN\t= {}\n", r.configs.south + (0.5 * r.configs.resolution_y)).as_bytes())?;
+    writer.write_all(
+        format!(
+            "POSITION_YMIN\t= {}\n",
+            r.configs.south + (0.5 * r.configs.resolution_y)
+        )
+        .as_bytes(),
+    )?;
 
     writer.write_all(format!("CELLCOUNT_X\t= {}\n", r.configs.columns).as_bytes())?;
 

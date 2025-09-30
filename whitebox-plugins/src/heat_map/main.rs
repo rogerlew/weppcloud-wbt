@@ -1,4 +1,4 @@
-/* 
+/*
 Authors:  Dr. John Lindsay
 Created: 01/06/2022
 Last Modified: 01/06/2022
@@ -7,6 +7,7 @@ License: MIT
 extern crate kd_tree;
 
 use kd_tree::{KdPoint, KdTree};
+use num_cpus;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
@@ -14,47 +15,42 @@ use std::panic;
 use std::path;
 use std::process;
 use std::str;
-use std::time::Instant;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
-use num_cpus;
+use std::time::Instant;
 use whitebox_common::utils::get_formatted_elapsed_time;
 use whitebox_raster::*;
-use whitebox_vector::{
-    FieldData,
-    ShapeType, 
-    Shapefile
-};
+use whitebox_vector::{FieldData, ShapeType, Shapefile};
 
 /// This tool is used to generate a raster heat map, or [kernel density estimation](https://en.wikipedia.org/wiki/Kernel_density_estimation)
 /// surface raster from a set of vector points (`--input`). Heat mapping is a visualization and modelling technique
-/// used to create the continuous density surface associated with the occurrences of a point phenomenon. Heat maps can 
+/// used to create the continuous density surface associated with the occurrences of a point phenomenon. Heat maps can
 /// therefore be used to identify point clusters by mapping the concentration of event occurrence. For example, heat
 /// maps have been used extensively to map the spatial distributions of crime events (i.e. crime mapping) or disease cases.
-/// 
+///
 /// By default, the tool maps the density of raw occurrence events, however, the user may optionally specify an associated
-/// weights field (`--weights`) from the point file's attribute table. When a weights field is specified, these values 
+/// weights field (`--weights`) from the point file's attribute table. When a weights field is specified, these values
 /// are simply multiplied by each of the individual components of the density estimate. Weights must be numeric.
-/// 
-/// The bandwidth parameter (--bandwidth) determines the radius of the [kernel](https://en.wikipedia.org/wiki/Kernel_%28statistics%29) 
-/// used in calculation of the density surface. There are [guidelines](https://en.wikipedia.org/wiki/Kernel_density_estimation#Bandwidth_selection) 
-/// that statisticians use in determining an appropriate bandwidth for a particular population and data set, but often 
-/// this parameter is determined through experimentation. The bandwidth of the kernel is a free parameter which exhibits 
-/// a strong influence on the resulting estimate. 
-/// 
-/// The user must specify the kernel [function type](https://en.wikipedia.org/wiki/Kernel_%28statistics%29#Kernel_functions_in_common_use) 
-/// (`--kernel`). Options include 'uniform', 'triangular', 'epanechnikov', 'quartic', 'triweight', 'tricube', 'gaussian', 'cosine', 
-/// 'logistic', 'sigmoid', and 'silverman'; 'quartic' is the default kernel type. Descriptions of each function can be found at the 
+///
+/// The bandwidth parameter (--bandwidth) determines the radius of the [kernel](https://en.wikipedia.org/wiki/Kernel_%28statistics%29)
+/// used in calculation of the density surface. There are [guidelines](https://en.wikipedia.org/wiki/Kernel_density_estimation#Bandwidth_selection)
+/// that statisticians use in determining an appropriate bandwidth for a particular population and data set, but often
+/// this parameter is determined through experimentation. The bandwidth of the kernel is a free parameter which exhibits
+/// a strong influence on the resulting estimate.
+///
+/// The user must specify the kernel [function type](https://en.wikipedia.org/wiki/Kernel_%28statistics%29#Kernel_functions_in_common_use)
+/// (`--kernel`). Options include 'uniform', 'triangular', 'epanechnikov', 'quartic', 'triweight', 'tricube', 'gaussian', 'cosine',
+/// 'logistic', 'sigmoid', and 'silverman'; 'quartic' is the default kernel type. Descriptions of each function can be found at the
 /// link above.
-/// 
+///
 /// The characteristics of the output raster (resolution and extent) are determined by one of two optional parameters,
-/// `--cell_size` and `--base`. If the user optionally specifies the output grid cell size parameter (`--cell_size`) 
-/// then the coordinates of the output raster extent are determined by the input vector (i.e. the bounding box) and 
-/// the specified cell size determines the number of rows and columns. If the user instead specifies the optional 
-/// base raster file parameter (`--base`), the output raster's coordinates (i.e. north, south, east, west) and row 
+/// `--cell_size` and `--base`. If the user optionally specifies the output grid cell size parameter (`--cell_size`)
+/// then the coordinates of the output raster extent are determined by the input vector (i.e. the bounding box) and
+/// the specified cell size determines the number of rows and columns. If the user instead specifies the optional
+/// base raster file parameter (`--base`), the output raster's coordinates (i.e. north, south, east, west) and row
 /// and column count, and therefore, resolution, will be the same as the base file.
-/// 
+///
 /// # Reference
 /// Geomatics (2017) QGIS Heatmap Using Kernel Density Estimation Explained, online resource: [https://www.geodose.com/2017/11/qgis-heatmap-using-kernel-density.html](https://www.geodose.com/2017/11/qgis-heatmap-using-kernel-density.html)
 /// visited 02/06/2022.
@@ -135,7 +131,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         working_directory += &sep;
     }
     let max_procs = configurations.max_procs;
-
 
     // read the arguments
     let mut input_file = String::new();
@@ -220,11 +215,18 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     }
 
     if configurations.verbose_mode {
-        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+        let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
         // 28 = length of the 'Powered by' by statement.
         println!("{}", "*".repeat(welcome_len));
-        println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-        println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+        println!(
+            "* Welcome to {} {}*",
+            tool_name,
+            " ".repeat(welcome_len - 15 - tool_name.len())
+        );
+        println!(
+            "* Powered by WhiteboxTools {}*",
+            " ".repeat(welcome_len - 28)
+        );
         println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
         println!("{}", "*".repeat(welcome_len));
     }
@@ -272,7 +274,10 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
     // What is the index of the field to be analyzed?
     if field_name.is_some() {
-        let field_index = match vector_points.attributes.get_field_num(&field_name.as_ref().unwrap()) {
+        let field_index = match vector_points
+            .attributes
+            .get_field_num(&field_name.as_ref().unwrap())
+        {
             Some(i) => i,
             None => {
                 return Err(Error::new(
@@ -281,7 +286,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                 ));
             }
         };
-    
+
         // Is the field numeric?
         if !vector_points.attributes.is_field_numeric(field_index) {
             return Err(Error::new(
@@ -299,28 +304,27 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             x = record.points[i].x;
             y = record.points[i].y;
             if field_name.is_some() {
-                weight = match vector_points.attributes.get_value(record_num, &field_name.as_ref().unwrap()) {
-                    FieldData::Int(val) => {
-                        val as f64
-                    }
-                    FieldData::Real(val) => {
-                        val
-                    }
-                    _ => {
-                        1.0
-                    }
+                weight = match vector_points
+                    .attributes
+                    .get_value(record_num, &field_name.as_ref().unwrap())
+                {
+                    FieldData::Int(val) => val as f64,
+                    FieldData::Real(val) => val,
+                    _ => 1.0,
                 };
             } else {
                 weight = 1.0
             }
-            points.push( TreeItem { point: [x, y], weight: weight } );
+            points.push(TreeItem {
+                point: [x, y],
+                weight: weight,
+            });
         }
         if configurations.verbose_mode {
-            progress = (100.0_f64 * (record_num + 1) as f64 / vector_points.num_records as f64) as usize;
+            progress =
+                (100.0_f64 * (record_num + 1) as f64 / vector_points.num_records as f64) as usize;
             if progress != old_progress {
-                println!(
-                    "Progress: {progress}%"
-                );
+                println!("Progress: {progress}%");
                 old_progress = progress;
             }
         }
@@ -334,7 +338,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
 
     // calculate the point features
     let kdtree = Arc::new(kdtree);
-
 
     // Create the output raster. The process of doing this will
     // depend on whether a cell size or a base raster were specified.
@@ -391,8 +394,7 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     let resolution_x = output.configs.resolution_x;
     let resolution_y = output.configs.resolution_y;
 
-
-    // Convert the string kernel_function to the numeric kernel 
+    // Convert the string kernel_function to the numeric kernel
     let kernel = if kernel_function.contains("uniform") || kernel_function.contains("rect") {
         1
     } else if kernel_function.contains("triang") {
@@ -413,7 +415,8 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
         9
     } else if kernel_function.contains("sigmoid") {
         10
-    } else { // if kernel_function.contains("silverman") {
+    } else {
+        // if kernel_function.contains("silverman") {
         11
     };
 
@@ -449,57 +452,61 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
                     let found = kdtree.within_radius(&[x, y], bandwidth);
                     if found.len() > 0 {
                         density_func_value = 0.0;
-                    
+
                         for i in 0..found.len() {
-                            d = ((found[i].point[0] - x).powi(2) + (found[i].point[1] - y).powi(2)).sqrt() / bandwidth;
+                            d = ((found[i].point[0] - x).powi(2) + (found[i].point[1] - y).powi(2))
+                                .sqrt()
+                                / bandwidth;
                             weight = found[i].weight;
                             density_func_value += match kernel {
                                 1 => {
                                     // uniform kernel function
                                     weight * 0.5
-                                },
+                                }
                                 2 => {
                                     // triangular kernel function
                                     weight * (1.0 - d.abs())
-                                },
+                                }
                                 3 => {
                                     // Epanechnikov (parabolic) kernel function
-                                    weight * (0.75 * (1.0 - d*d))
-                                },
+                                    weight * (0.75 * (1.0 - d * d))
+                                }
                                 4 => {
                                     // quartic kernel function
-                                    weight * (0.9375 * (1.0 - d*d).powi(2))
-                                },
+                                    weight * (0.9375 * (1.0 - d * d).powi(2))
+                                }
                                 5 => {
                                     // triweight kernel function
-                                    weight * (1.09375 * (1.0 - d*d).powi(3))
-                                },
+                                    weight * (1.09375 * (1.0 - d * d).powi(3))
+                                }
                                 6 => {
                                     // tricube kernel function
                                     weight * (0.864197531 * (1.0 - d.abs().powi(3)).powi(3))
-                                },
+                                }
                                 7 => {
                                     // Gaussian kernel function
-                                    weight * (0.398942280401433 * (-0.5 * d*d).exp())
-                                },
+                                    weight * (0.398942280401433 * (-0.5 * d * d).exp())
+                                }
                                 8 => {
                                     // cosine kernel function
                                     weight * (0.785398163397448 * (1.570796326794900 * d).cos())
-                                },
+                                }
                                 9 => {
                                     // logistic kernel function
                                     weight * (1.0 / (d.exp() + 2.0 + -d.exp()))
-                                },
+                                }
                                 10 => {
                                     // sigmoidal kernel function
                                     weight * (0.636619772367581 * 1.0 / (d.exp() + (-d).exp()))
-                                },
+                                }
                                 _ => {
                                     // Silverman kernel function
-                                    weight * (0.5 * (-(d.abs() / 1.4142135623731)).exp() * (d.abs() / 1.4142135623731 + 0.785398163397448).sin())
+                                    weight
+                                        * (0.5
+                                            * (-(d.abs() / 1.4142135623731)).exp()
+                                            * (d.abs() / 1.4142135623731 + 0.785398163397448).sin())
                                 }
                             };
-                            
                         }
 
                         data[col as usize] = density_func_value;
@@ -522,7 +529,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
             }
         }
     }
-
 
     if configurations.verbose_mode {
         println!("Saving data...")
@@ -549,7 +555,6 @@ fn run(args: &Vec<String>) -> Result<(), std::io::Error> {
     Ok(())
 }
 
-
 struct TreeItem {
     point: [f64; 2],
     weight: f64,
@@ -558,5 +563,7 @@ struct TreeItem {
 impl KdPoint for TreeItem {
     type Scalar = f64;
     type Dim = typenum::U2; // 2 dimensional tree.
-    fn at(&self, k: usize) -> f64 { self.point[k] }
+    fn at(&self, k: usize) -> f64 {
+        self.point[k]
+    }
 }

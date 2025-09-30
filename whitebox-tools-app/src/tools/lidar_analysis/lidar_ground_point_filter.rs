@@ -6,8 +6,6 @@ Last Modified: 18/10/2019
 License: MIT
 */
 
-use whitebox_lidar::*;
-use whitebox_common::structures::{DistanceMetric, FixedRadiusSearch2D, Point3D};
 use crate::tools::*;
 use num_cpus;
 use std::env;
@@ -17,6 +15,8 @@ use std::path;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::thread;
+use whitebox_common::structures::{DistanceMetric, FixedRadiusSearch2D, Point3D};
+use whitebox_lidar::*;
 
 /// This tool can be used to perform a slope-based classification, or filtering (i.e. removal), of
 /// non-ground points within a LiDAR point-cloud. The user must specify the name of the input and output
@@ -319,11 +319,18 @@ impl WhiteboxTool for LidarGroundPointFilter {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -552,7 +559,6 @@ impl WhiteboxTool for LidarGroundPointFilter {
                 }
             }
         }
-        
 
         /////////////////////
         // Output the data //
@@ -624,7 +630,9 @@ impl WhiteboxTool for LidarGroundPointFilter {
                     let pr2: LidarPointRecord;
                     match pr {
                         LidarPointRecord::PointRecord0 { mut point_data } => {
-                            point_data.z = ((height - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                            point_data.z = ((height - input.header.z_offset)
+                                / input.header.z_scale_factor)
+                                as i32;
                             point_data.set_classification(class_val);
                             pr2 = LidarPointRecord::PointRecord0 {
                                 point_data: point_data,
@@ -634,7 +642,9 @@ impl WhiteboxTool for LidarGroundPointFilter {
                             mut point_data,
                             gps_data,
                         } => {
-                            point_data.z = ((height - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                            point_data.z = ((height - input.header.z_offset)
+                                / input.header.z_scale_factor)
+                                as i32;
                             point_data.set_classification(class_val);
                             pr2 = LidarPointRecord::PointRecord1 {
                                 point_data: point_data,
@@ -645,7 +655,9 @@ impl WhiteboxTool for LidarGroundPointFilter {
                             mut point_data,
                             colour_data,
                         } => {
-                            point_data.z = ((height - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                            point_data.z = ((height - input.header.z_offset)
+                                / input.header.z_scale_factor)
+                                as i32;
                             point_data.set_classification(class_val);
                             pr2 = LidarPointRecord::PointRecord2 {
                                 point_data: point_data,
@@ -657,7 +669,9 @@ impl WhiteboxTool for LidarGroundPointFilter {
                             gps_data,
                             colour_data,
                         } => {
-                            point_data.z = ((height - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                            point_data.z = ((height - input.header.z_offset)
+                                / input.header.z_scale_factor)
+                                as i32;
                             point_data.set_classification(class_val);
                             pr2 = LidarPointRecord::PointRecord3 {
                                 point_data: point_data,
@@ -670,7 +684,9 @@ impl WhiteboxTool for LidarGroundPointFilter {
                             gps_data,
                             wave_packet,
                         } => {
-                            point_data.z = ((height - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                            point_data.z = ((height - input.header.z_offset)
+                                / input.header.z_scale_factor)
+                                as i32;
                             point_data.set_classification(class_val);
                             pr2 = LidarPointRecord::PointRecord4 {
                                 point_data: point_data,
@@ -684,7 +700,9 @@ impl WhiteboxTool for LidarGroundPointFilter {
                             colour_data,
                             wave_packet,
                         } => {
-                            point_data.z = ((height - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                            point_data.z = ((height - input.header.z_offset)
+                                / input.header.z_scale_factor)
+                                as i32;
                             point_data.set_classification(class_val);
                             pr2 = LidarPointRecord::PointRecord5 {
                                 point_data: point_data,
@@ -697,7 +715,9 @@ impl WhiteboxTool for LidarGroundPointFilter {
                             mut point_data,
                             gps_data,
                         } => {
-                            point_data.z = ((height - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                            point_data.z = ((height - input.header.z_offset)
+                                / input.header.z_scale_factor)
+                                as i32;
                             point_data.set_classification(class_val);
                             pr2 = LidarPointRecord::PointRecord6 {
                                 point_data: point_data,
@@ -709,7 +729,9 @@ impl WhiteboxTool for LidarGroundPointFilter {
                             gps_data,
                             colour_data,
                         } => {
-                            point_data.z = ((height - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                            point_data.z = ((height - input.header.z_offset)
+                                / input.header.z_scale_factor)
+                                as i32;
                             point_data.set_classification(class_val);
                             pr2 = LidarPointRecord::PointRecord7 {
                                 point_data: point_data,
@@ -722,7 +744,9 @@ impl WhiteboxTool for LidarGroundPointFilter {
                             gps_data,
                             colour_data,
                         } => {
-                            point_data.z = ((height - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                            point_data.z = ((height - input.header.z_offset)
+                                / input.header.z_scale_factor)
+                                as i32;
                             point_data.set_classification(class_val);
                             pr2 = LidarPointRecord::PointRecord8 {
                                 point_data: point_data,
@@ -735,7 +759,9 @@ impl WhiteboxTool for LidarGroundPointFilter {
                             gps_data,
                             wave_packet,
                         } => {
-                            point_data.z = ((height - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                            point_data.z = ((height - input.header.z_offset)
+                                / input.header.z_scale_factor)
+                                as i32;
                             point_data.set_classification(class_val);
                             pr2 = LidarPointRecord::PointRecord9 {
                                 point_data: point_data,
@@ -749,7 +775,9 @@ impl WhiteboxTool for LidarGroundPointFilter {
                             colour_data,
                             wave_packet,
                         } => {
-                            point_data.z = ((height - input.header.z_offset) / input.header.z_scale_factor) as i32;
+                            point_data.z = ((height - input.header.z_offset)
+                                / input.header.z_scale_factor)
+                                as i32;
                             point_data.set_classification(class_val);
                             pr2 = LidarPointRecord::PointRecord10 {
                                 point_data: point_data,

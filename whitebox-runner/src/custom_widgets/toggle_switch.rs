@@ -1,4 +1,3 @@
-
 // The following code is largely taken from the egui demo with some modification:
 // https://github.com/emilk/egui/blob/master/crates/egui_demo_lib/src/demo/toggle_switch.rs
 

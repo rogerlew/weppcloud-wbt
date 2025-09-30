@@ -6,15 +6,15 @@ Last Modified: 16/06/2020
 License: MIT
 */
 
-use whitebox_common::algorithms::{is_clockwise_order, triangulate};
-use whitebox_common::structures::{BoundingBox, Point2D};
 use crate::tools::*;
-use whitebox_vector::*;
 use std::collections::HashMap;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::algorithms::{is_clockwise_order, triangulate};
+use whitebox_common::structures::{BoundingBox, Point2D};
+use whitebox_vector::*;
 
 /// This tool creates a vector Voronoi diagram for a set of vector points. The
 /// Voronoi diagram is the dual graph of the Delaunay triangulation. The tool
@@ -191,11 +191,18 @@ impl WhiteboxTool for VoronoiDiagram {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

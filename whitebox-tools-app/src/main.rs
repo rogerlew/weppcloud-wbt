@@ -44,10 +44,10 @@ pub mod tools;
 use crate::tools::ToolManager;
 use nalgebra as na;
 // use rstar;
+use std;
 use std::env;
 use std::io::Error;
 use std::path;
-use std;
 
 #[macro_use]
 extern crate serde_derive;
@@ -68,7 +68,7 @@ extern crate serde_derive;
 /// ```
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    run()?;      // propogate error to provide ability to backtrace
+    run()?; // propogate error to provide ability to backtrace
     Ok(())
 }
 
@@ -142,7 +142,10 @@ fn run() -> Result<(), Error> {
         if flag_val == "-h" || flag_val == "-help" {
             help();
             return Ok(());
-        } else if flag_val.starts_with("-cd") || flag_val.starts_with("-wd") || flag_val.starts_with("-working_directory") {
+        } else if flag_val.starts_with("-cd")
+            || flag_val.starts_with("-wd")
+            || flag_val.starts_with("-working_directory")
+        {
             let mut v = arg
                 .replace("--cd", "")
                 .replace("--wd", "")
@@ -168,7 +171,8 @@ fn run() -> Result<(), Error> {
                 working_dir.push_str(&(sep.to_string()));
                 configs.working_directory = working_dir.clone();
             }
-            if configs.working_directory != working_dir { // update the value
+            if configs.working_directory != working_dir {
+                // update the value
                 configs.working_directory = working_dir.clone();
                 configs_modified = true;
             }
@@ -269,12 +273,14 @@ fn run() -> Result<(), Error> {
                 v = v[1..v.len()].to_string();
             }
             if v.to_lowercase().contains("t") || v.is_empty() {
-                if !configs.compress_rasters { // update value
+                if !configs.compress_rasters {
+                    // update value
                     configs.compress_rasters = true;
                     configs_modified = true;
                 }
             } else {
-                if configs.compress_rasters { // update value
+                if configs.compress_rasters {
+                    // update value
                     configs.compress_rasters = false;
                     configs_modified = true;
                 }

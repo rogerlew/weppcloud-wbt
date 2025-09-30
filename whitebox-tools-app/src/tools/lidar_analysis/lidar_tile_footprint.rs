@@ -6,12 +6,7 @@ Last Modified: 19/05/2020
 License: MIT
 */
 
-use whitebox_common::algorithms::convex_hull;
-use whitebox_lidar::*;
-use whitebox_common::structures::Point2D;
 use crate::tools::*;
-use whitebox_vector::ShapefileGeometry;
-use whitebox_vector::*;
 use num_cpus;
 use std::env;
 use std::fs;
@@ -20,6 +15,11 @@ use std::path;
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use whitebox_common::algorithms::convex_hull;
+use whitebox_common::structures::Point2D;
+use whitebox_lidar::*;
+use whitebox_vector::ShapefileGeometry;
+use whitebox_vector::*;
 
 /// This tool can be used to create a vector polygon of the bounding box or convex hull of a LiDAR point cloud (i.e. LAS file).
 /// If the user specified an input file (`--input`) and output file (`--output`), the tool will calculate the footprint,
@@ -232,8 +232,10 @@ impl WhiteboxTool for LidarTileFootprint {
                         .to_str()
                         .expect("Error reading path string")
                         .to_string();
-                    if s.to_lowercase().ends_with(".las") || s.to_lowercase().ends_with(".zlidar") ||
-                    s.to_lowercase().ends_with(".laz") {
+                    if s.to_lowercase().ends_with(".las")
+                        || s.to_lowercase().ends_with(".zlidar")
+                        || s.to_lowercase().ends_with(".laz")
+                    {
                         inputs.push(s);
                     }
                 }
@@ -252,11 +254,18 @@ impl WhiteboxTool for LidarTileFootprint {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }

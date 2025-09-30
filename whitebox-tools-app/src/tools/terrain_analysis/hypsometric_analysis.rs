@@ -6,9 +6,6 @@ Last Modified: 12/10/2018
 License: MIT
 */
 
-use whitebox_raster::Raster;
-use whitebox_common::rendering::html::*;
-use whitebox_common::rendering::LineGraph;
 use crate::tools::*;
 use std::env;
 use std::f64;
@@ -18,6 +15,9 @@ use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::process::Command;
+use whitebox_common::rendering::html::*;
+use whitebox_common::rendering::LineGraph;
+use whitebox_raster::Raster;
 
 /// This tool can be used to derive the hypsometric curve, or area-altitude curve, of one or more
 /// input digital elevation models (DEMs) (`--inputs`). A hypsometric curve is a histogram or cumulative
@@ -182,11 +182,18 @@ impl WhiteboxTool for HypsometricAnalysis {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -249,7 +256,6 @@ impl WhiteboxTool for HypsometricAnalysis {
                 }
                 let input = Raster::new(&input_file, "r")?;
 
-                
                 let rows = input.configs.rows as isize;
                 let columns = input.configs.columns as isize;
                 let nodata = input.configs.nodata;
@@ -258,10 +264,10 @@ impl WhiteboxTool for HypsometricAnalysis {
                 let max = input.configs.maximum;
                 let range = max - min; // + 0.00001f64;
                 let num_bins = 101; // (max - min) as usize / 5;
-                // if num_bins < ((rows * columns) as f64).log2().ceil() as usize + 1 {
-                //     num_bins = ((rows * columns) as f64).log2().ceil() as usize + 1;
-                // }
-                // let bin_width = range / num_bins as f64;
+                                    // if num_bins < ((rows * columns) as f64).log2().ceil() as usize + 1 {
+                                    //     num_bins = ((rows * columns) as f64).log2().ceil() as usize + 1;
+                                    // }
+                                    // let bin_width = range / num_bins as f64;
                 let mut freq_data = vec![0f64; num_bins];
                 let mut bin_elevations = vec![0f64; num_bins];
                 let mut val: f64;
@@ -295,7 +301,7 @@ impl WhiteboxTool for HypsometricAnalysis {
                 for i in 1..num_bins {
                     freq_data[i] += freq_data[i - 1];
                     // bin_elevations[i] =  min + i as f64 * bin_width;
-                    bin_elevations[i] =  i as f64 / num_bins as f64;
+                    bin_elevations[i] = i as f64 / num_bins as f64;
                 }
 
                 for i in 0..num_bins {
@@ -319,8 +325,14 @@ impl WhiteboxTool for HypsometricAnalysis {
                         .as_bytes(),
                     )?;
                 } else {
-                // if num_files > 1 {
-                    writer.write_all(&format!("{}, Hypsometric Integral: {:.3}<br>", shortnames[i], hi_data[i]).as_bytes())?;
+                    // if num_files > 1 {
+                    writer.write_all(
+                        &format!(
+                            "{}, Hypsometric Integral: {:.3}<br>",
+                            shortnames[i], hi_data[i]
+                        )
+                        .as_bytes(),
+                    )?;
                 }
             }
         } else {

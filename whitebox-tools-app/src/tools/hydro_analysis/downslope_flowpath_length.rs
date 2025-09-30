@@ -6,13 +6,13 @@ Last Modified: 18/10/2019
 License: MIT
 */
 
-use whitebox_raster::*;
-use whitebox_common::structures::Array2D;
 use crate::tools::*;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::structures::Array2D;
+use whitebox_raster::*;
 
 /// This tool can be used to calculate the downslope flowpath length from each grid cell in a raster to
 /// an outlet cell either at the edge of the grid or at the outlet point of a watershed. The user must
@@ -214,11 +214,18 @@ impl WhiteboxTool for DownslopeFlowpathLength {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -351,7 +358,10 @@ impl WhiteboxTool for DownslopeFlowpathLength {
         for row in 0..rows {
             for col in 0..columns {
                 current_id = watersheds.get_value(row, col) as f64;
-                if pntr.get_value(row, col) >= 0.0 && pntr.get_value(row, col) != nodata && current_id > 0f64 {
+                if pntr.get_value(row, col) >= 0.0
+                    && pntr.get_value(row, col) != nodata
+                    && current_id > 0f64
+                {
                     dist = 0f64;
                     flag = false;
                     x = col;

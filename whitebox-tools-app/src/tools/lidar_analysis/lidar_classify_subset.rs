@@ -8,7 +8,6 @@ License: MIT
 
 extern crate kdtree;
 
-use whitebox_lidar::*;
 use crate::tools::*;
 use kdtree::distance::squared_euclidean;
 use kdtree::KdTree;
@@ -16,6 +15,7 @@ use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_lidar::*;
 
 /// This tool classifies points within a user-specified LiDAR point cloud (`--base`) that correspond
 /// with points in a subset cloud (`--subset`). The subset point cloud may have been derived by filtering
@@ -239,11 +239,18 @@ impl WhiteboxTool for LidarClassifySubset {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
@@ -314,7 +321,7 @@ impl WhiteboxTool for LidarClassifySubset {
             let p = base_lidar.get_transformed_coords(i);
             // let pr = base_lidar.get_transformed_coords(i);
             let pr = base_lidar.get_record(i);
-            
+
             let pr2: LidarPointRecord;
 
             let ret = kdtree

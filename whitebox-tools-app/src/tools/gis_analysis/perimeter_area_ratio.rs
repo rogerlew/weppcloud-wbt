@@ -6,13 +6,13 @@ Last Modified: 03/03/2020
 License: MIT
 */
 
-use whitebox_common::algorithms::{polygon_area, polygon_perimeter};
 use crate::tools::*;
-use whitebox_vector::*;
 use std::env;
 use std::f64;
 use std::io::{Error, ErrorKind};
 use std::path;
+use whitebox_common::algorithms::{polygon_area, polygon_perimeter};
+use whitebox_vector::*;
 
 /// The perimeter-area ratio is an indicator of polygon shape complexity. Unlike some
 /// other shape parameters (e.g. shape complexity index), perimeter-area ratio does not
@@ -153,11 +153,18 @@ impl WhiteboxTool for PerimeterAreaRatio {
 
         if verbose {
             let tool_name = self.get_tool_name();
-            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28); 
+            let welcome_len = format!("* Welcome to {} *", tool_name).len().max(28);
             // 28 = length of the 'Powered by' by statement.
             println!("{}", "*".repeat(welcome_len));
-            println!("* Welcome to {} {}*", tool_name, " ".repeat(welcome_len - 15 - tool_name.len()));
-            println!("* Powered by WhiteboxTools {}*", " ".repeat(welcome_len - 28));
+            println!(
+                "* Welcome to {} {}*",
+                tool_name,
+                " ".repeat(welcome_len - 15 - tool_name.len())
+            );
+            println!(
+                "* Powered by WhiteboxTools {}*",
+                " ".repeat(welcome_len - 28)
+            );
             println!("* www.whiteboxgeo.com {}*", " ".repeat(welcome_len - 23));
             println!("{}", "*".repeat(welcome_len));
         }
