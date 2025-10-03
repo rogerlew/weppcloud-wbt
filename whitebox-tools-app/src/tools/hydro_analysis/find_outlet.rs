@@ -279,6 +279,10 @@ impl WhiteboxTool for FindOutlet {
 
         let dx = [1, 1, 1, 0, -1, -1, -1, 0];
         let dy = [-1, 0, 1, 1, 1, 0, -1, -1];
+        let mut inflowing_vals = [16f64, 32f64, 64f64, 128f64, 1f64, 2f64, 4f64, 8f64];
+        if esri_style {
+            inflowing_vals = [8f64, 16f64, 32f64, 64f64, 128f64, 1f64, 2f64, 4f64];
+        }
         let mut pntr_matches: [i8; 129] = [0i8; 129];
         if !esri_style {
             pntr_matches[1] = 0i8;
@@ -300,13 +304,50 @@ impl WhiteboxTool for FindOutlet {
             pntr_matches[128] = 0i8;
         }
 
+        if verbose {
+            println!("Computing stream junction counts...");
+        }
+        let mut junction_counts: Array2D<i16> = Array2D::new(rows, columns, -1i16, -1i16)?;
+        let mut progress: usize;
+        let mut old_progress: usize = 1;
+        for row in 0..rows {
+            for col in 0..columns {
+                let stream_val = streams[(row, col)];
+                if stream_val != streams_nodata && stream_val > 0f64 {
+                    let mut cnt = 0i16;
+                    for n in 0..8 {
+                        let nr = row + dy[n];
+                        let nc = col + dx[n];
+                        if nr >= 0 && nr < rows && nc >= 0 && nc < columns {
+                            let neighbour_stream = streams[(nr, nc)];
+                            if neighbour_stream != streams_nodata && neighbour_stream > 0f64 {
+                                let neighbour_pointer = pntr[(nr, nc)];
+                                if neighbour_pointer != pntr_nodata
+                                    && neighbour_pointer == inflowing_vals[n]
+                                {
+                                    cnt += 1;
+                                }
+                            }
+                        }
+                    }
+                    junction_counts.set_value(row, col, cnt);
+                }
+            }
+            if verbose && rows > 1 {
+                progress = (100.0_f64 * row as f64 / (rows - 1) as f64) as usize;
+                if progress != old_progress {
+                    println!("Junction scan: {}%", progress);
+                    old_progress = progress;
+                }
+            }
+        }
+
         let mut mask: Array2D<u8> = Array2D::new(rows, columns, 0u8, 0u8)?;
         let mut total_cells: usize = 0;
         let mut sum_row = 0f64;
         let mut sum_col = 0f64;
 
-        let mut progress: usize;
-        let mut old_progress: usize = 1;
+        old_progress = 1;
 
         for row in 0..rows {
             for col in 0..columns {
@@ -429,7 +470,7 @@ impl WhiteboxTool for FindOutlet {
 
         let max_candidates = candidates.len().min(512);
         let mut attempt_summaries: Vec<String> = Vec::new();
-        let mut outlet_cell: Option<(isize, isize, usize, i32, usize)> = None;
+        let mut outlet_cell: Option<(isize, isize, usize, i32, usize, bool, usize, i16)> = None;
 
         for (idx, candidate) in candidates.iter().take(max_candidates).enumerate() {
             let (distance_to_boundary, mut row, mut col) = *candidate;
@@ -437,6 +478,9 @@ impl WhiteboxTool for FindOutlet {
             let mut steps: usize = 0;
             let max_steps = (rows * columns * 4).max(1) as usize;
             let mut failure_reason = String::new();
+            let mut has_left_mask = false;
+            let mut steps_beyond_mask: usize = 0;
+            let mut last_junction_mismatch: Option<(isize, isize, i16)> = None;
             loop {
                 if !visited.insert((row, col)) {
                     failure_reason = format!(
@@ -447,26 +491,47 @@ impl WhiteboxTool for FindOutlet {
                 }
                 let pointer = pntr[(row, col)];
                 if pointer == pntr_nodata || pointer <= 0f64 {
-                    failure_reason = format!(
-                        "Candidate {}: encountered invalid D8 pointer ({}) at row {}, col {}.",
-                        idx, pointer, row, col
-                    );
+                    failure_reason = if has_left_mask {
+                        format!(
+                            "Candidate {}: downstream pointer becomes invalid ({}) near row {}, col {}.",
+                            idx, pointer, row, col
+                        )
+                    } else {
+                        format!(
+                            "Candidate {}: encountered invalid D8 pointer ({}) at row {}, col {}.",
+                            idx, pointer, row, col
+                        )
+                    };
                     break;
                 }
                 let pointer_index = pointer.round() as usize;
                 if pointer_index >= pntr_matches.len() {
-                    failure_reason = format!(
-                        "Candidate {}: pointer value {} out of range at row {}, col {}.",
-                        idx, pointer, row, col
-                    );
+                    failure_reason = if has_left_mask {
+                        format!(
+                            "Candidate {}: downstream pointer value {} out of range near row {}, col {}.",
+                            idx, pointer, row, col
+                        )
+                    } else {
+                        format!(
+                            "Candidate {}: pointer value {} out of range at row {}, col {}.",
+                            idx, pointer, row, col
+                        )
+                    };
                     break;
                 }
                 let dir = pntr_matches[pointer_index];
                 if dir < 0 {
-                    failure_reason = format!(
-                        "Candidate {}: unsupported pointer value {} at row {}, col {}.",
-                        idx, pointer, row, col
-                    );
+                    failure_reason = if has_left_mask {
+                        format!(
+                            "Candidate {}: downstream pointer value {} unsupported near row {}, col {}.",
+                            idx, pointer, row, col
+                        )
+                    } else {
+                        format!(
+                            "Candidate {}: unsupported pointer value {} at row {}, col {}.",
+                            idx, pointer, row, col
+                        )
+                    };
                     break;
                 }
                 let nr = row + dy[dir as usize];
@@ -475,7 +540,24 @@ impl WhiteboxTool for FindOutlet {
                 if nr < 0 || nr >= rows || nc < 0 || nc >= columns {
                     let stream_val = streams[(row, col)];
                     if stream_val != streams_nodata && stream_val > 0f64 {
-                        outlet_cell = Some((row, col, steps, distance_to_boundary, idx));
+                        let junction = junction_counts.get_value(row, col);
+                        if junction == 1 {
+                            outlet_cell = Some((
+                                row,
+                                col,
+                                steps,
+                                distance_to_boundary,
+                                idx,
+                                has_left_mask,
+                                steps_beyond_mask,
+                                junction,
+                            ));
+                        } else {
+                            failure_reason = format!(
+                                "Candidate {}: reached raster edge at row {}, col {} with junction count {} (expected 1).",
+                                idx, row, col, junction
+                            );
+                        }
                     } else {
                         failure_reason = format!(
                             "Candidate {}: exited raster at row {}, col {} without hitting a stream (value {}).",
@@ -484,53 +566,109 @@ impl WhiteboxTool for FindOutlet {
                     }
                     break;
                 }
-                if mask.get_value(nr, nc) == 0u8 {
+                let next_in_mask = mask.get_value(nr, nc) == 1u8;
+                if !next_in_mask {
                     let stream_val = streams[(row, col)];
                     if stream_val != streams_nodata && stream_val > 0f64 {
-                        outlet_cell = Some((row, col, steps, distance_to_boundary, idx));
-                    } else {
-                        failure_reason = format!(
-                            "Candidate {}: boundary cell row {}, col {} is not flagged as stream (value {}).",
-                            idx, row, col, stream_val
-                        );
+                        let junction = junction_counts.get_value(row, col);
+                        if junction == 1 {
+                            outlet_cell = Some((
+                                row,
+                                col,
+                                steps,
+                                distance_to_boundary,
+                                idx,
+                                false,
+                                steps_beyond_mask,
+                                junction,
+                            ));
+                            break;
+                        } else {
+                            last_junction_mismatch = Some((row, col, junction));
+                        }
                     }
-                    break;
+                    has_left_mask = true;
                 }
                 row = nr;
                 col = nc;
+                if has_left_mask && mask.get_value(row, col) == 0u8 {
+                    steps_beyond_mask += 1;
+                }
+                if has_left_mask {
+                    let stream_val = streams[(row, col)];
+                    if stream_val != streams_nodata && stream_val > 0f64 {
+                        let junction = junction_counts.get_value(row, col);
+                        if junction == 1 {
+                            outlet_cell = Some((
+                                row,
+                                col,
+                                steps,
+                                distance_to_boundary,
+                                idx,
+                                true,
+                                steps_beyond_mask,
+                                junction,
+                            ));
+                            break;
+                        } else {
+                            last_junction_mismatch = Some((row, col, junction));
+                        }
+                    }
+                }
                 if steps >= max_steps {
-                    failure_reason = format!(
-                        "Candidate {}: exceeded maximum step count ({}) before exiting watershed.",
-                        idx, max_steps
-                    );
+                    failure_reason = if has_left_mask {
+                        format!(
+                            "Candidate {}: exceeded maximum step count ({}) while searching downstream of the watershed.",
+                            idx, max_steps
+                        )
+                    } else {
+                        format!(
+                            "Candidate {}: exceeded maximum step count ({}) before exiting watershed.",
+                            idx, max_steps
+                        )
+                    };
                     break;
                 }
             }
-            if let Some((_, _, _, _, candidate_idx)) = outlet_cell {
+            if let Some((_, _, _, _, candidate_idx, _, _, _)) = outlet_cell {
                 if candidate_idx == idx {
                     break;
                 }
             } else if !failure_reason.is_empty() {
+                if let Some((jr, jc, jcnt)) = last_junction_mismatch {
+                    failure_reason.push_str(&format!(
+                        " Latest stream encountered at row {}, col {} had junction count {}.",
+                        jr, jc, jcnt
+                    ));
+                }
                 if attempt_summaries.len() < 5 {
                     attempt_summaries.push(failure_reason);
                 }
             }
         }
 
-        let (outlet_row, outlet_col, steps_taken, distance_to_boundary, candidate_rank) =
-            match outlet_cell {
-                Some(val) => val,
-                None => {
-                    let mut message = String::from(
-                        "Failed to identify an outlet stream cell for the provided watershed mask.",
-                    );
-                    if !attempt_summaries.is_empty() {
-                        message.push_str(" Reasons considered: ");
-                        message.push_str(&attempt_summaries.join(" | "));
-                    }
-                    return Err(Error::new(ErrorKind::InvalidInput, message));
+        let (
+            outlet_row,
+            outlet_col,
+            steps_taken,
+            distance_to_boundary,
+            candidate_rank,
+            outlet_downstream,
+            steps_beyond_mask,
+            outlet_junction_count,
+        ) = match outlet_cell {
+            Some(val) => val,
+            None => {
+                let mut message = String::from(
+                    "Failed to identify an outlet stream cell for the provided watershed mask.",
+                );
+                if !attempt_summaries.is_empty() {
+                    message.push_str(" Reasons considered: ");
+                    message.push_str(&attempt_summaries.join(" | "));
                 }
-            };
+                return Err(Error::new(ErrorKind::InvalidInput, message));
+            }
+        };
 
         let easting = pntr.get_x_from_column(outlet_col);
         let northing = pntr.get_y_from_row(outlet_row);
@@ -550,9 +688,17 @@ impl WhiteboxTool for FindOutlet {
             json!(distance_to_boundary),
         );
         properties.insert("steps_from_center".to_string(), json!(steps_taken));
+        properties.insert("steps_beyond_mask".to_string(), json!(steps_beyond_mask));
         properties.insert("candidate_rank".to_string(), json!(candidate_rank));
         properties.insert("candidates_considered".to_string(), json!(max_candidates));
         properties.insert("watershed_cell_count".to_string(), json!(total_cells));
+        let outlet_mask_value = mask.get_value(outlet_row, outlet_col);
+        properties.insert("outlet_mask_value".to_string(), json!(outlet_mask_value));
+        properties.insert("outlet_in_mask".to_string(), json!(!outlet_downstream));
+        properties.insert(
+            "outlet_junction_count".to_string(),
+            json!(outlet_junction_count),
+        );
         properties.insert(
             "perimeter_stream_count".to_string(),
             json!(perimeter_stream_cells.len()),

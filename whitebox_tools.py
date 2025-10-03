@@ -666,7 +666,7 @@ class WhiteboxTools(object):
                 new_path = entry.path.replace(f'{unzipped_dir_name}', 'plugins')
                 os.replace(entry.path, new_path)
                 if ".json" not in new_path and platform.system() != "Windows":
-                    os.system("chmod 755 " + new_path) # grant executable permission
+                    os.system("chmod 755 " + new_path)  # grant executable permission
 
             # Remove the unzipped directory, which isn't needed anymore.
             if os.path.exists(f'./{unzipped_dir_name}'):
@@ -797,7 +797,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('add_point_coordinates_to_table', args, callback) # returns 1 if error
+        return self.run_tool('add_point_coordinates_to_table', args, callback)  # returns 1 if error
 
     def clean_vector(self, i, output, callback=None):
         """Removes null features and lines/polygons with fewer than the required number of vertices.
@@ -811,7 +811,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('clean_vector', args, callback) # returns 1 if error
+        return self.run_tool('clean_vector', args, callback)  # returns 1 if error
 
     def convert_nodata_to_zero(self, i, output, callback=None):
         """Converts nodata values in a raster to zero.
@@ -825,7 +825,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('convert_nodata_to_zero', args, callback) # returns 1 if error
+        return self.run_tool('convert_nodata_to_zero', args, callback)  # returns 1 if error
 
     def convert_raster_format(self, i, output, callback=None):
         """Converts raster data from one format to another.
@@ -839,7 +839,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('convert_raster_format', args, callback) # returns 1 if error
+        return self.run_tool('convert_raster_format', args, callback)  # returns 1 if error
 
     def csv_points_to_vector(self, i, output, xfield=0, yfield=1, epsg=None, callback=None):
         """Converts a CSV text file to vector points.
@@ -859,7 +859,7 @@ Okay, that's it for now.
         args.append("--xfield={}".format(xfield))
         args.append("--yfield={}".format(yfield))
         if epsg is not None: args.append("--epsg='{}'".format(epsg))
-        return self.run_tool('csv_points_to_vector', args, callback) # returns 1 if error
+        return self.run_tool('csv_points_to_vector', args, callback)  # returns 1 if error
 
     def export_table_to_csv(self, i, output, headers=True, callback=None):
         """Exports an attribute table to a CSV text file.
@@ -875,7 +875,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if headers: args.append("--headers")
-        return self.run_tool('export_table_to_csv', args, callback) # returns 1 if error
+        return self.run_tool('export_table_to_csv', args, callback)  # returns 1 if error
 
     def fix_dangling_arcs(self, i, output, dist="", callback=None):
         """This tool fixes undershot and overshot arcs, two common topological errors, in an input vector lines file.
@@ -891,7 +891,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--dist={}".format(dist))
-        return self.run_tool('fix_dangling_arcs', args, callback) # returns 1 if error
+        return self.run_tool('fix_dangling_arcs', args, callback)  # returns 1 if error
 
     def join_tables(self, input1, pkey, input2, fkey, import_field=None, callback=None):
         """Merge a vector's attribute table with another table based on a common field.
@@ -911,7 +911,7 @@ Okay, that's it for now.
         args.append("--input2='{}'".format(input2))
         args.append("--fkey='{}'".format(fkey))
         if import_field is not None: args.append("--import_field='{}'".format(import_field))
-        return self.run_tool('join_tables', args, callback) # returns 1 if error
+        return self.run_tool('join_tables', args, callback)  # returns 1 if error
 
     def lines_to_polygons(self, i, output, callback=None):
         """Converts vector polylines to polygons.
@@ -925,7 +925,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('lines_to_polygons', args, callback) # returns 1 if error
+        return self.run_tool('lines_to_polygons', args, callback)  # returns 1 if error
 
     def merge_table_with_csv(self, i, pkey, csv, fkey, import_field=None, callback=None):
         """Merge a vector's attribute table with a table contained within a CSV text file.
@@ -945,7 +945,7 @@ Okay, that's it for now.
         args.append("--csv='{}'".format(csv))
         args.append("--fkey='{}'".format(fkey))
         if import_field is not None: args.append("--import_field='{}'".format(import_field))
-        return self.run_tool('merge_table_with_csv', args, callback) # returns 1 if error
+        return self.run_tool('merge_table_with_csv', args, callback)  # returns 1 if error
 
     def merge_vectors(self, inputs, output, callback=None):
         """Combines two or more input vectors of the same ShapeType creating a single, new output vector.
@@ -959,7 +959,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
-        return self.run_tool('merge_vectors', args, callback) # returns 1 if error
+        return self.run_tool('merge_vectors', args, callback)  # returns 1 if error
 
     def modify_no_data_value(self, i, new_value="-32768.0", callback=None):
         """Modifies nodata values in a raster.
@@ -973,7 +973,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--new_value={}".format(new_value))
-        return self.run_tool('modify_no_data_value', args, callback) # returns 1 if error
+        return self.run_tool('modify_no_data_value', args, callback)  # returns 1 if error
 
     def multi_part_to_single_part(self, i, output, exclude_holes=True, callback=None):
         """Converts a vector file containing multi-part features into a vector containing only single-part features.
@@ -989,7 +989,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if exclude_holes: args.append("--exclude_holes")
-        return self.run_tool('multi_part_to_single_part', args, callback) # returns 1 if error
+        return self.run_tool('multi_part_to_single_part', args, callback)  # returns 1 if error
 
     def new_raster_from_base(self, base, output, value="nodata", data_type="float", cell_size=None, callback=None):
         """Creates a new raster using a base image.
@@ -1009,7 +1009,7 @@ Okay, that's it for now.
         args.append("--value={}".format(value))
         args.append("--data_type={}".format(data_type))
         if cell_size is not None: args.append("--cell_size='{}'".format(cell_size))
-        return self.run_tool('new_raster_from_base', args, callback) # returns 1 if error
+        return self.run_tool('new_raster_from_base', args, callback)  # returns 1 if error
 
     def polygons_to_lines(self, i, output, callback=None):
         """Converts vector polygons to polylines.
@@ -1023,7 +1023,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('polygons_to_lines', args, callback) # returns 1 if error
+        return self.run_tool('polygons_to_lines', args, callback)  # returns 1 if error
 
     def print_geo_tiff_tags(self, i, callback=None):
         """Prints the tags within a GeoTIFF.
@@ -1035,7 +1035,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('print_geo_tiff_tags', args, callback) # returns 1 if error
+        return self.run_tool('print_geo_tiff_tags', args, callback)  # returns 1 if error
 
     def raster_to_vector_lines(self, i, output, callback=None):
         """Converts a raster lines features into a vector of the POLYLINE shapetype.
@@ -1049,7 +1049,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('raster_to_vector_lines', args, callback) # returns 1 if error
+        return self.run_tool('raster_to_vector_lines', args, callback)  # returns 1 if error
 
     def raster_to_vector_points(self, i, output, callback=None):
         """Converts a raster dataset to a vector of the POINT shapetype.
@@ -1063,7 +1063,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('raster_to_vector_points', args, callback) # returns 1 if error
+        return self.run_tool('raster_to_vector_points', args, callback)  # returns 1 if error
 
     def raster_to_vector_polygons(self, i, output, callback=None):
         """Converts a raster dataset to a vector of the POLYGON shapetype.
@@ -1077,7 +1077,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('raster_to_vector_polygons', args, callback) # returns 1 if error
+        return self.run_tool('raster_to_vector_polygons', args, callback)  # returns 1 if error
 
     def reinitialize_attribute_table(self, i, callback=None):
         """Reinitializes a vector's attribute table deleting all fields but the feature ID (FID).
@@ -1089,7 +1089,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('reinitialize_attribute_table', args, callback) # returns 1 if error
+        return self.run_tool('reinitialize_attribute_table', args, callback)  # returns 1 if error
 
     def remove_polygon_holes(self, i, output, callback=None):
         """Removes holes within the features of a vector polygon file.
@@ -1103,7 +1103,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('remove_polygon_holes', args, callback) # returns 1 if error
+        return self.run_tool('remove_polygon_holes', args, callback)  # returns 1 if error
 
     def remove_raster_polygon_holes(self, i, output, threshold=3, use_diagonals=True, callback=None):
         """Removes polygon holes, or 'donut-holes', from raster polygons.
@@ -1121,7 +1121,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--threshold={}".format(threshold))
         if use_diagonals: args.append("--use_diagonals")
-        return self.run_tool('remove_raster_polygon_holes', args, callback) # returns 1 if error
+        return self.run_tool('remove_raster_polygon_holes', args, callback)  # returns 1 if error
 
     def set_nodata_value(self, i, output, back_value=0.0, callback=None):
         """Assign the NoData value for an input image.
@@ -1137,7 +1137,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--back_value={}".format(back_value))
-        return self.run_tool('set_nodata_value', args, callback) # returns 1 if error
+        return self.run_tool('set_nodata_value', args, callback)  # returns 1 if error
 
     def single_part_to_multi_part(self, i, output, field=None, callback=None):
         """Converts a vector file containing multi-part features into a vector containing only single-part features.
@@ -1153,7 +1153,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         if field is not None: args.append("--field='{}'".format(field))
         args.append("--output='{}'".format(output))
-        return self.run_tool('single_part_to_multi_part', args, callback) # returns 1 if error
+        return self.run_tool('single_part_to_multi_part', args, callback)  # returns 1 if error
 
     def vector_lines_to_raster(self, i, output, field="FID", nodata=True, cell_size=None, base=None, callback=None):
         """Converts a vector containing polylines into a raster.
@@ -1175,7 +1175,7 @@ Okay, that's it for now.
         if nodata: args.append("--nodata")
         if cell_size is not None: args.append("--cell_size='{}'".format(cell_size))
         if base is not None: args.append("--base='{}'".format(base))
-        return self.run_tool('vector_lines_to_raster', args, callback) # returns 1 if error
+        return self.run_tool('vector_lines_to_raster', args, callback)  # returns 1 if error
 
     def vector_points_to_raster(self, i, output, field="FID", assign="last", nodata=True, cell_size=None, base=None, callback=None):
         """Converts a vector containing points into a raster.
@@ -1199,7 +1199,7 @@ Okay, that's it for now.
         if nodata: args.append("--nodata")
         if cell_size is not None: args.append("--cell_size='{}'".format(cell_size))
         if base is not None: args.append("--base='{}'".format(base))
-        return self.run_tool('vector_points_to_raster', args, callback) # returns 1 if error
+        return self.run_tool('vector_points_to_raster', args, callback)  # returns 1 if error
 
     def vector_polygons_to_raster(self, i, output, field="FID", nodata=True, cell_size=None, base=None, callback=None):
         """Converts a vector containing polygons into a raster.
@@ -1221,7 +1221,7 @@ Okay, that's it for now.
         if nodata: args.append("--nodata")
         if cell_size is not None: args.append("--cell_size='{}'".format(cell_size))
         if base is not None: args.append("--base='{}'".format(base))
-        return self.run_tool('vector_polygons_to_raster', args, callback) # returns 1 if error
+        return self.run_tool('vector_polygons_to_raster', args, callback)  # returns 1 if error
 
     ################
     # GIS Analysis #
@@ -1243,7 +1243,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--agg_factor={}".format(agg_factor))
         args.append("--type={}".format(type))
-        return self.run_tool('aggregate_raster', args, callback) # returns 1 if error
+        return self.run_tool('aggregate_raster', args, callback)  # returns 1 if error
 
     def block_maximum_gridding(self, i, field, output, use_z=False, cell_size=None, base=None, callback=None):
         """Creates a raster grid based on a set of vector points and assigns grid values using a block maximum scheme.
@@ -1265,7 +1265,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if cell_size is not None: args.append("--cell_size='{}'".format(cell_size))
         if base is not None: args.append("--base='{}'".format(base))
-        return self.run_tool('block_maximum_gridding', args, callback) # returns 1 if error
+        return self.run_tool('block_maximum_gridding', args, callback)  # returns 1 if error
 
     def block_minimum_gridding(self, i, field, output, use_z=False, cell_size=None, base=None, callback=None):
         """Creates a raster grid based on a set of vector points and assigns grid values using a block minimum scheme.
@@ -1287,7 +1287,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if cell_size is not None: args.append("--cell_size='{}'".format(cell_size))
         if base is not None: args.append("--base='{}'".format(base))
-        return self.run_tool('block_minimum_gridding', args, callback) # returns 1 if error
+        return self.run_tool('block_minimum_gridding', args, callback)  # returns 1 if error
 
     def centroid(self, i, output, text_output=False, callback=None):
         """Calculates the centroid, or average location, of raster polygon objects.
@@ -1303,7 +1303,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if text_output: args.append("--text_output")
-        return self.run_tool('centroid', args, callback) # returns 1 if error
+        return self.run_tool('centroid', args, callback)  # returns 1 if error
 
     def centroid_vector(self, i, output, callback=None):
         """Identifies the centroid point of a vector polyline or polygon feature or a group of vector points.
@@ -1317,7 +1317,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('centroid_vector', args, callback) # returns 1 if error
+        return self.run_tool('centroid_vector', args, callback)  # returns 1 if error
 
     def clump(self, i, output, diag=True, zero_back=False, callback=None):
         """Groups cells that form discrete areas, assigning them unique identifiers.
@@ -1335,7 +1335,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if diag: args.append("--diag")
         if zero_back: args.append("--zero_back")
-        return self.run_tool('clump', args, callback) # returns 1 if error
+        return self.run_tool('clump', args, callback)  # returns 1 if error
 
     def construct_vector_tin(self, i, output, field=None, use_z=False, max_triangle_edge_length=None, callback=None):
         """Creates a vector triangular irregular network (TIN) for a set of vector points.
@@ -1355,7 +1355,7 @@ Okay, that's it for now.
         if use_z: args.append("--use_z")
         args.append("--output='{}'".format(output))
         if max_triangle_edge_length is not None: args.append("--max_triangle_edge_length='{}'".format(max_triangle_edge_length))
-        return self.run_tool('construct_vector_tin', args, callback) # returns 1 if error
+        return self.run_tool('construct_vector_tin', args, callback)  # returns 1 if error
 
     def create_hexagonal_vector_grid(self, i, output, width, orientation="horizontal", callback=None):
         """Creates a hexagonal vector grid.
@@ -1373,7 +1373,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--width='{}'".format(width))
         args.append("--orientation={}".format(orientation))
-        return self.run_tool('create_hexagonal_vector_grid', args, callback) # returns 1 if error
+        return self.run_tool('create_hexagonal_vector_grid', args, callback)  # returns 1 if error
 
     def create_plane(self, base, output, gradient=15.0, aspect=90.0, constant=0.0, callback=None):
         """Creates a raster image based on the equation for a simple plane.
@@ -1393,7 +1393,7 @@ Okay, that's it for now.
         args.append("--gradient={}".format(gradient))
         args.append("--aspect={}".format(aspect))
         args.append("--constant={}".format(constant))
-        return self.run_tool('create_plane', args, callback) # returns 1 if error
+        return self.run_tool('create_plane', args, callback)  # returns 1 if error
 
     def create_rectangular_vector_grid(self, i, output, width, height, xorig=0, yorig=0, callback=None):
         """Creates a rectangular vector grid.
@@ -1415,7 +1415,7 @@ Okay, that's it for now.
         args.append("--height='{}'".format(height))
         args.append("--xorig={}".format(xorig))
         args.append("--yorig={}".format(yorig))
-        return self.run_tool('create_rectangular_vector_grid', args, callback) # returns 1 if error
+        return self.run_tool('create_rectangular_vector_grid', args, callback)  # returns 1 if error
 
     def dissolve(self, i, output, field=None, snap=0.0, callback=None):
         """Removes the interior, or shared, boundaries within a vector polygon coverage.
@@ -1433,7 +1433,7 @@ Okay, that's it for now.
         if field is not None: args.append("--field='{}'".format(field))
         args.append("--output='{}'".format(output))
         args.append("--snap={}".format(snap))
-        return self.run_tool('dissolve', args, callback) # returns 1 if error
+        return self.run_tool('dissolve', args, callback)  # returns 1 if error
 
     def eliminate_coincident_points(self, i, output, tolerance, callback=None):
         """Removes any coincident, or nearly coincident, points from a vector points file.
@@ -1449,7 +1449,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--tolerance='{}'".format(tolerance))
-        return self.run_tool('eliminate_coincident_points', args, callback) # returns 1 if error
+        return self.run_tool('eliminate_coincident_points', args, callback)  # returns 1 if error
 
     def extend_vector_lines(self, i, output, dist, extend="both ends", callback=None):
         """Extends vector lines by a specified distance.
@@ -1467,7 +1467,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--dist='{}'".format(dist))
         args.append("--extend={}".format(extend))
-        return self.run_tool('extend_vector_lines', args, callback) # returns 1 if error
+        return self.run_tool('extend_vector_lines', args, callback)  # returns 1 if error
 
     def extract_nodes(self, i, output, callback=None):
         """Converts vector lines or polygons into vertex points.
@@ -1481,7 +1481,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('extract_nodes', args, callback) # returns 1 if error
+        return self.run_tool('extract_nodes', args, callback)  # returns 1 if error
 
     def extract_raster_values_at_points(self, inputs, points, out_text=False, callback=None):
         """Extracts the values of raster(s) at vector point locations.
@@ -1497,7 +1497,7 @@ Okay, that's it for now.
         args.append("--inputs='{}'".format(inputs))
         args.append("--points='{}'".format(points))
         if out_text: args.append("--out_text")
-        return self.run_tool('extract_raster_values_at_points', args, callback) # returns 1 if error
+        return self.run_tool('extract_raster_values_at_points', args, callback)  # returns 1 if error
 
     def filter_raster_features_by_area(self, i, output, threshold, background="zero", callback=None):
         """Removes small-area features from a raster.
@@ -1515,7 +1515,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--threshold='{}'".format(threshold))
         args.append("--background={}".format(background))
-        return self.run_tool('filter_raster_features_by_area', args, callback) # returns 1 if error
+        return self.run_tool('filter_raster_features_by_area', args, callback)  # returns 1 if error
 
     def find_lowest_or_highest_points(self, i, output, out_type="lowest", callback=None):
         """Locates the lowest and/or highest valued cells in a raster.
@@ -1531,7 +1531,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--out_type={}".format(out_type))
-        return self.run_tool('find_lowest_or_highest_points', args, callback) # returns 1 if error
+        return self.run_tool('find_lowest_or_highest_points', args, callback)  # returns 1 if error
 
     def heat_map(self, i, output, weight_field=None, bandwidth="", kernel="quartic", cell_size="", base=None, callback=None):
         """Calculates a heat map, or kernel density estimation (KDE), for an input point set.
@@ -1555,7 +1555,7 @@ Okay, that's it for now.
         args.append("--kernel={}".format(kernel))
         args.append("--cell_size={}".format(cell_size))
         if base is not None: args.append("--base='{}'".format(base))
-        return self.run_tool('heat_map', args, callback) # returns 1 if error
+        return self.run_tool('heat_map', args, callback)  # returns 1 if error
 
     def idw_interpolation(self, i, field, output, use_z=False, weight=2.0, radius=None, min_points=None, cell_size=None, base=None, callback=None):
         """Interpolates vector points into a raster surface using an inverse-distance weighted scheme.
@@ -1583,7 +1583,7 @@ Okay, that's it for now.
         if min_points is not None: args.append("--min_points='{}'".format(min_points))
         if cell_size is not None: args.append("--cell_size='{}'".format(cell_size))
         if base is not None: args.append("--base='{}'".format(base))
-        return self.run_tool('idw_interpolation', args, callback) # returns 1 if error
+        return self.run_tool('idw_interpolation', args, callback)  # returns 1 if error
 
     def layer_footprint(self, i, output, callback=None):
         """Creates a vector polygon footprint of the area covered by a raster grid or vector layer.
@@ -1597,7 +1597,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('layer_footprint', args, callback) # returns 1 if error
+        return self.run_tool('layer_footprint', args, callback)  # returns 1 if error
 
     def medoid(self, i, output, callback=None):
         """Calculates the medoid for a series of vector features contained in a shapefile.
@@ -1611,7 +1611,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('medoid', args, callback) # returns 1 if error
+        return self.run_tool('medoid', args, callback)  # returns 1 if error
 
     def minimum_bounding_box(self, i, output, criterion="area", features=True, callback=None):
         """Creates a vector minimum bounding rectangle around vector features.
@@ -1629,7 +1629,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--criterion={}".format(criterion))
         if features: args.append("--features")
-        return self.run_tool('minimum_bounding_box', args, callback) # returns 1 if error
+        return self.run_tool('minimum_bounding_box', args, callback)  # returns 1 if error
 
     def minimum_bounding_circle(self, i, output, features=True, callback=None):
         """Delineates the minimum bounding circle (i.e. smallest enclosing circle) for a group of vectors.
@@ -1645,7 +1645,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if features: args.append("--features")
-        return self.run_tool('minimum_bounding_circle', args, callback) # returns 1 if error
+        return self.run_tool('minimum_bounding_circle', args, callback)  # returns 1 if error
 
     def minimum_bounding_envelope(self, i, output, features=True, callback=None):
         """Creates a vector axis-aligned minimum bounding rectangle (envelope) around vector features.
@@ -1661,7 +1661,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if features: args.append("--features")
-        return self.run_tool('minimum_bounding_envelope', args, callback) # returns 1 if error
+        return self.run_tool('minimum_bounding_envelope', args, callback)  # returns 1 if error
 
     def minimum_convex_hull(self, i, output, features=True, callback=None):
         """Creates a vector convex polygon around vector features.
@@ -1677,7 +1677,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if features: args.append("--features")
-        return self.run_tool('minimum_convex_hull', args, callback) # returns 1 if error
+        return self.run_tool('minimum_convex_hull', args, callback)  # returns 1 if error
 
     def natural_neighbour_interpolation(self, i, output, field=None, use_z=False, cell_size=None, base=None, clip=True, callback=None):
         """Creates a raster grid based on Sibson's natural neighbour method.
@@ -1701,7 +1701,7 @@ Okay, that's it for now.
         if cell_size is not None: args.append("--cell_size='{}'".format(cell_size))
         if base is not None: args.append("--base='{}'".format(base))
         if clip: args.append("--clip")
-        return self.run_tool('natural_neighbour_interpolation', args, callback) # returns 1 if error
+        return self.run_tool('natural_neighbour_interpolation', args, callback)  # returns 1 if error
 
     def nearest_neighbour_gridding(self, i, field, output, use_z=False, cell_size=None, base=None, max_dist=None, callback=None):
         """Creates a raster grid based on a set of vector points and assigns grid values using the nearest neighbour.
@@ -1725,7 +1725,7 @@ Okay, that's it for now.
         if cell_size is not None: args.append("--cell_size='{}'".format(cell_size))
         if base is not None: args.append("--base='{}'".format(base))
         if max_dist is not None: args.append("--max_dist='{}'".format(max_dist))
-        return self.run_tool('nearest_neighbour_gridding', args, callback) # returns 1 if error
+        return self.run_tool('nearest_neighbour_gridding', args, callback)  # returns 1 if error
 
     def polygon_area(self, i, callback=None):
         """Calculates the area of vector polygons.
@@ -1737,7 +1737,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('polygon_area', args, callback) # returns 1 if error
+        return self.run_tool('polygon_area', args, callback)  # returns 1 if error
 
     def polygon_long_axis(self, i, output, callback=None):
         """Used to map the long axis of polygon features.
@@ -1751,7 +1751,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('polygon_long_axis', args, callback) # returns 1 if error
+        return self.run_tool('polygon_long_axis', args, callback)  # returns 1 if error
 
     def polygon_perimeter(self, i, callback=None):
         """Calculates the perimeter of vector polygons.
@@ -1763,7 +1763,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('polygon_perimeter', args, callback) # returns 1 if error
+        return self.run_tool('polygon_perimeter', args, callback)  # returns 1 if error
 
     def polygon_short_axis(self, i, output, callback=None):
         """Used to map the short axis of polygon features.
@@ -1777,7 +1777,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('polygon_short_axis', args, callback) # returns 1 if error
+        return self.run_tool('polygon_short_axis', args, callback)  # returns 1 if error
 
     def radial_basis_function_interpolation(self, i, field, output, use_z=False, radius=None, min_points=None, func_type="ThinPlateSpline", poly_order="none", weight=0.1, cell_size=None, base=None, callback=None):
         """Interpolates vector points into a raster surface using a radial basis function scheme.
@@ -1809,7 +1809,7 @@ Okay, that's it for now.
         args.append("--weight={}".format(weight))
         if cell_size is not None: args.append("--cell_size='{}'".format(cell_size))
         if base is not None: args.append("--base='{}'".format(base))
-        return self.run_tool('radial_basis_function_interpolation', args, callback) # returns 1 if error
+        return self.run_tool('radial_basis_function_interpolation', args, callback)  # returns 1 if error
 
     def raster_area(self, i, output=None, out_text=False, units="grid cells", zero_back=False, callback=None):
         """Calculates the area of polygons or classes within a raster image.
@@ -1829,7 +1829,7 @@ Okay, that's it for now.
         if out_text: args.append("--out_text")
         args.append("--units={}".format(units))
         if zero_back: args.append("--zero_back")
-        return self.run_tool('raster_area', args, callback) # returns 1 if error
+        return self.run_tool('raster_area', args, callback)  # returns 1 if error
 
     def raster_cell_assignment(self, i, output, assign="column", callback=None):
         """Assign row or column number to cells.
@@ -1845,7 +1845,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--assign={}".format(assign))
-        return self.run_tool('raster_cell_assignment', args, callback) # returns 1 if error
+        return self.run_tool('raster_cell_assignment', args, callback)  # returns 1 if error
 
     def raster_perimeter(self, i, output=None, out_text=False, units="grid cells", zero_back=False, callback=None):
         """Calculates the perimeters of polygons or classes within a raster image.
@@ -1865,7 +1865,7 @@ Okay, that's it for now.
         if out_text: args.append("--out_text")
         args.append("--units={}".format(units))
         if zero_back: args.append("--zero_back")
-        return self.run_tool('raster_perimeter', args, callback) # returns 1 if error
+        return self.run_tool('raster_perimeter', args, callback)  # returns 1 if error
 
     def reclass(self, i, output, reclass_vals, assign_mode=False, callback=None):
         """Reclassifies the values in a raster image.
@@ -1883,7 +1883,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--reclass_vals='{}'".format(reclass_vals))
         if assign_mode: args.append("--assign_mode")
-        return self.run_tool('reclass', args, callback) # returns 1 if error
+        return self.run_tool('reclass', args, callback)  # returns 1 if error
 
     def reclass_equal_interval(self, i, output, interval=10.0, start_val=None, end_val=None, callback=None):
         """Reclassifies the values in a raster image based on equal-ranges.
@@ -1903,7 +1903,7 @@ Okay, that's it for now.
         args.append("--interval={}".format(interval))
         if start_val is not None: args.append("--start_val='{}'".format(start_val))
         if end_val is not None: args.append("--end_val='{}'".format(end_val))
-        return self.run_tool('reclass_equal_interval', args, callback) # returns 1 if error
+        return self.run_tool('reclass_equal_interval', args, callback)  # returns 1 if error
 
     def reclass_from_file(self, i, reclass_file, output, callback=None):
         """Reclassifies the values in a raster image using reclass ranges in a text file.
@@ -1919,7 +1919,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--reclass_file='{}'".format(reclass_file))
         args.append("--output='{}'".format(output))
-        return self.run_tool('reclass_from_file', args, callback) # returns 1 if error
+        return self.run_tool('reclass_from_file', args, callback)  # returns 1 if error
 
     def smooth_vectors(self, i, output, filter=3, callback=None):
         """Smooths a vector coverage of either a POLYLINE or POLYGON base ShapeType.
@@ -1935,7 +1935,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--filter={}".format(filter))
-        return self.run_tool('smooth_vectors', args, callback) # returns 1 if error
+        return self.run_tool('smooth_vectors', args, callback)  # returns 1 if error
 
     def split_vector_lines(self, i, output, length=None, callback=None):
         """Used to split a vector line coverage into even-lengthed segments.
@@ -1951,7 +1951,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if length is not None: args.append("--length='{}'".format(length))
-        return self.run_tool('split_vector_lines', args, callback) # returns 1 if error
+        return self.run_tool('split_vector_lines', args, callback)  # returns 1 if error
 
     def tin_gridding(self, i, output, field=None, use_z=False, resolution=None, base=None, max_triangle_edge_length=None, callback=None):
         """Creates a raster grid based on a triangular irregular network (TIN) fitted to vector points.
@@ -1975,7 +1975,7 @@ Okay, that's it for now.
         if resolution is not None: args.append("--resolution='{}'".format(resolution))
         if base is not None: args.append("--base='{}'".format(base))
         if max_triangle_edge_length is not None: args.append("--max_triangle_edge_length='{}'".format(max_triangle_edge_length))
-        return self.run_tool('tin_gridding', args, callback) # returns 1 if error
+        return self.run_tool('tin_gridding', args, callback)  # returns 1 if error
 
     def travelling_salesman_problem(self, i, output, duration=60, callback=None):
         """Finds approximate solutions to travelling salesman problems, the goal of which is to identify the shortest route connecting a set of locations.
@@ -1991,7 +1991,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--duration={}".format(duration))
-        return self.run_tool('travelling_salesman_problem', args, callback) # returns 1 if error
+        return self.run_tool('travelling_salesman_problem', args, callback)  # returns 1 if error
 
     def vector_hex_binning(self, i, output, width, orientation="horizontal", callback=None):
         """Hex-bins a set of vector points.
@@ -2009,7 +2009,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--width='{}'".format(width))
         args.append("--orientation={}".format(orientation))
-        return self.run_tool('vector_hex_binning', args, callback) # returns 1 if error
+        return self.run_tool('vector_hex_binning', args, callback)  # returns 1 if error
 
     def voronoi_diagram(self, i, output, callback=None):
         """Creates a vector Voronoi diagram for a set of vector points.
@@ -2023,7 +2023,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('voronoi_diagram', args, callback) # returns 1 if error
+        return self.run_tool('voronoi_diagram', args, callback)  # returns 1 if error
 
     ###############################
     # GIS Analysis/Distance Tools #
@@ -2045,7 +2045,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--size='{}'".format(size))
         if gridcells: args.append("--gridcells")
-        return self.run_tool('buffer_raster', args, callback) # returns 1 if error
+        return self.run_tool('buffer_raster', args, callback)  # returns 1 if error
 
     def cost_allocation(self, source, backlink, output, callback=None):
         """Identifies the source cell to which each grid cell is connected by a least-cost pathway in a cost-distance analysis.
@@ -2061,7 +2061,7 @@ Okay, that's it for now.
         args.append("--source='{}'".format(source))
         args.append("--backlink='{}'".format(backlink))
         args.append("--output='{}'".format(output))
-        return self.run_tool('cost_allocation', args, callback) # returns 1 if error
+        return self.run_tool('cost_allocation', args, callback)  # returns 1 if error
 
     def cost_distance(self, source, cost, out_accum, out_backlink, callback=None):
         """Performs cost-distance accumulation on a cost surface and a group of source cells.
@@ -2079,7 +2079,7 @@ Okay, that's it for now.
         args.append("--cost='{}'".format(cost))
         args.append("--out_accum='{}'".format(out_accum))
         args.append("--out_backlink='{}'".format(out_backlink))
-        return self.run_tool('cost_distance', args, callback) # returns 1 if error
+        return self.run_tool('cost_distance', args, callback)  # returns 1 if error
 
     def cost_pathway(self, destination, backlink, output, zero_background=False, callback=None):
         """Performs cost-distance pathway analysis using a series of destination grid cells.
@@ -2097,7 +2097,7 @@ Okay, that's it for now.
         args.append("--backlink='{}'".format(backlink))
         args.append("--output='{}'".format(output))
         if zero_background: args.append("--zero_background")
-        return self.run_tool('cost_pathway', args, callback) # returns 1 if error
+        return self.run_tool('cost_pathway', args, callback)  # returns 1 if error
 
     def euclidean_allocation(self, i, output, callback=None):
         """Assigns grid cells in the output raster the value of the nearest target cell in the input image, measured by the Shih and Wu (2004) Euclidean distance transform.
@@ -2111,7 +2111,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('euclidean_allocation', args, callback) # returns 1 if error
+        return self.run_tool('euclidean_allocation', args, callback)  # returns 1 if error
 
     def euclidean_distance(self, i, output, callback=None):
         """Calculates the Shih and Wu (2004) Euclidean distance transform.
@@ -2125,7 +2125,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('euclidean_distance', args, callback) # returns 1 if error
+        return self.run_tool('euclidean_distance', args, callback)  # returns 1 if error
 
     ##############################
     # GIS Analysis/Overlay Tools #
@@ -2143,7 +2143,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
-        return self.run_tool('average_overlay', args, callback) # returns 1 if error
+        return self.run_tool('average_overlay', args, callback)  # returns 1 if error
 
     def clip(self, i, clip, output, callback=None):
         """Extract all the features, or parts of features, that overlap with the features of the clip vector.
@@ -2159,7 +2159,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--clip='{}'".format(clip))
         args.append("--output='{}'".format(output))
-        return self.run_tool('clip', args, callback) # returns 1 if error
+        return self.run_tool('clip', args, callback)  # returns 1 if error
 
     def clip_raster_to_polygon(self, i, polygons, output, maintain_dimensions=False, callback=None):
         """Clips a raster to a vector polygon.
@@ -2177,7 +2177,7 @@ Okay, that's it for now.
         args.append("--polygons='{}'".format(polygons))
         args.append("--output='{}'".format(output))
         if maintain_dimensions: args.append("--maintain_dimensions")
-        return self.run_tool('clip_raster_to_polygon', args, callback) # returns 1 if error
+        return self.run_tool('clip_raster_to_polygon', args, callback)  # returns 1 if error
 
     def clip_raster_to_raster(self, i, mask, output, callback=None):
         """
@@ -2210,7 +2210,7 @@ Okay, that's it for now.
         args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
         args.append("--value='{}'".format(value))
-        return self.run_tool('count_if', args, callback) # returns 1 if error
+        return self.run_tool('count_if', args, callback)  # returns 1 if error
 
     def difference(self, i, overlay, output, callback=None):
         """Outputs the features that occur in one of the two vector inputs but not both, i.e. no overlapping features.
@@ -2226,7 +2226,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--overlay='{}'".format(overlay))
         args.append("--output='{}'".format(output))
-        return self.run_tool('difference', args, callback) # returns 1 if error
+        return self.run_tool('difference', args, callback)  # returns 1 if error
 
     def erase(self, i, erase, output, callback=None):
         """Removes all the features, or parts of features, that overlap with the features of the erase vector polygon.
@@ -2242,7 +2242,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--erase='{}'".format(erase))
         args.append("--output='{}'".format(output))
-        return self.run_tool('erase', args, callback) # returns 1 if error
+        return self.run_tool('erase', args, callback)  # returns 1 if error
 
     def erase_polygon_from_raster(self, i, polygons, output, callback=None):
         """Erases (cuts out) a vector polygon from a raster.
@@ -2258,7 +2258,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--polygons='{}'".format(polygons))
         args.append("--output='{}'".format(output))
-        return self.run_tool('erase_polygon_from_raster', args, callback) # returns 1 if error
+        return self.run_tool('erase_polygon_from_raster', args, callback)  # returns 1 if error
 
     def highest_position(self, inputs, output, callback=None):
         """Identifies the stack position of the maximum value within a raster stack on a cell-by-cell basis.
@@ -2272,7 +2272,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
-        return self.run_tool('highest_position', args, callback) # returns 1 if error
+        return self.run_tool('highest_position', args, callback)  # returns 1 if error
 
     def intersect(self, i, overlay, output, snap=0.0, callback=None):
         """Identifies the parts of features in common between two input vector layers.
@@ -2290,7 +2290,7 @@ Okay, that's it for now.
         args.append("--overlay='{}'".format(overlay))
         args.append("--output='{}'".format(output))
         args.append("--snap={}".format(snap))
-        return self.run_tool('intersect', args, callback) # returns 1 if error
+        return self.run_tool('intersect', args, callback)  # returns 1 if error
 
     def line_intersections(self, input1, input2, output, callback=None):
         """Identifies points where the features of two vector line layers intersect.
@@ -2306,7 +2306,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('line_intersections', args, callback) # returns 1 if error
+        return self.run_tool('line_intersections', args, callback)  # returns 1 if error
 
     def lowest_position(self, inputs, output, callback=None):
         """Identifies the stack position of the minimum value within a raster stack on a cell-by-cell basis.
@@ -2320,7 +2320,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
-        return self.run_tool('lowest_position', args, callback) # returns 1 if error
+        return self.run_tool('lowest_position', args, callback)  # returns 1 if error
 
     def max_absolute_overlay(self, inputs, output, callback=None):
         """Evaluates the maximum absolute value for each grid cell from a stack of input rasters.
@@ -2334,7 +2334,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
-        return self.run_tool('max_absolute_overlay', args, callback) # returns 1 if error
+        return self.run_tool('max_absolute_overlay', args, callback)  # returns 1 if error
 
     def max_overlay(self, inputs, output, callback=None):
         """Evaluates the maximum value for each grid cell from a stack of input rasters.
@@ -2348,7 +2348,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
-        return self.run_tool('max_overlay', args, callback) # returns 1 if error
+        return self.run_tool('max_overlay', args, callback)  # returns 1 if error
 
     def merge_line_segments(self, i, output, snap=0.0, callback=None):
         """Merges vector line segments into larger features.
@@ -2364,7 +2364,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--snap={}".format(snap))
-        return self.run_tool('merge_line_segments', args, callback) # returns 1 if error
+        return self.run_tool('merge_line_segments', args, callback)  # returns 1 if error
 
     def min_absolute_overlay(self, inputs, output, callback=None):
         """Evaluates the minimum absolute value for each grid cell from a stack of input rasters.
@@ -2378,7 +2378,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
-        return self.run_tool('min_absolute_overlay', args, callback) # returns 1 if error
+        return self.run_tool('min_absolute_overlay', args, callback)  # returns 1 if error
 
     def min_overlay(self, inputs, output, callback=None):
         """Evaluates the minimum value for each grid cell from a stack of input rasters.
@@ -2392,7 +2392,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
-        return self.run_tool('min_overlay', args, callback) # returns 1 if error
+        return self.run_tool('min_overlay', args, callback)  # returns 1 if error
 
     def multiply_overlay(self, inputs, output, callback=None):
         """Calculates the sum for each grid cell from a group of raster images.
@@ -2406,7 +2406,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
-        return self.run_tool('multiply_overlay', args, callback) # returns 1 if error
+        return self.run_tool('multiply_overlay', args, callback)  # returns 1 if error
 
     def percent_equal_to(self, inputs, comparison, output, callback=None):
         """Calculates the percentage of a raster stack that have cell values equal to an input on a cell-by-cell basis.
@@ -2422,7 +2422,7 @@ Okay, that's it for now.
         args.append("--inputs='{}'".format(inputs))
         args.append("--comparison='{}'".format(comparison))
         args.append("--output='{}'".format(output))
-        return self.run_tool('percent_equal_to', args, callback) # returns 1 if error
+        return self.run_tool('percent_equal_to', args, callback)  # returns 1 if error
 
     def percent_greater_than(self, inputs, comparison, output, callback=None):
         """Calculates the percentage of a raster stack that have cell values greater than an input on a cell-by-cell basis.
@@ -2438,7 +2438,7 @@ Okay, that's it for now.
         args.append("--inputs='{}'".format(inputs))
         args.append("--comparison='{}'".format(comparison))
         args.append("--output='{}'".format(output))
-        return self.run_tool('percent_greater_than', args, callback) # returns 1 if error
+        return self.run_tool('percent_greater_than', args, callback)  # returns 1 if error
 
     def percent_less_than(self, inputs, comparison, output, callback=None):
         """Calculates the percentage of a raster stack that have cell values less than an input on a cell-by-cell basis.
@@ -2454,7 +2454,7 @@ Okay, that's it for now.
         args.append("--inputs='{}'".format(inputs))
         args.append("--comparison='{}'".format(comparison))
         args.append("--output='{}'".format(output))
-        return self.run_tool('percent_less_than', args, callback) # returns 1 if error
+        return self.run_tool('percent_less_than', args, callback)  # returns 1 if error
 
     def pick_from_list(self, inputs, pos_input, output, callback=None):
         """Outputs the value from a raster stack specified by a position raster.
@@ -2470,7 +2470,7 @@ Okay, that's it for now.
         args.append("--inputs='{}'".format(inputs))
         args.append("--pos_input='{}'".format(pos_input))
         args.append("--output='{}'".format(output))
-        return self.run_tool('pick_from_list', args, callback) # returns 1 if error
+        return self.run_tool('pick_from_list', args, callback)  # returns 1 if error
 
     def polygonize(self, inputs, output, callback=None):
         """Creates a polygon layer from two or more intersecting line features contained in one or more input vector line files.
@@ -2484,7 +2484,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
-        return self.run_tool('polygonize', args, callback) # returns 1 if error
+        return self.run_tool('polygonize', args, callback)  # returns 1 if error
 
     def split_with_lines(self, i, split, output, callback=None):
         """Splits the lines or polygons in one layer using the lines in another layer.
@@ -2500,7 +2500,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--split='{}'".format(split))
         args.append("--output='{}'".format(output))
-        return self.run_tool('split_with_lines', args, callback) # returns 1 if error
+        return self.run_tool('split_with_lines', args, callback)  # returns 1 if error
 
     def sum_overlay(self, inputs, output, callback=None):
         """Calculates the sum for each grid cell from a group of raster images.
@@ -2514,7 +2514,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
-        return self.run_tool('sum_overlay', args, callback) # returns 1 if error
+        return self.run_tool('sum_overlay', args, callback)  # returns 1 if error
 
     def symmetrical_difference(self, i, overlay, output, snap=0.0, callback=None):
         """Outputs the features that occur in one of the two vector inputs but not both, i.e. no overlapping features.
@@ -2532,7 +2532,7 @@ Okay, that's it for now.
         args.append("--overlay='{}'".format(overlay))
         args.append("--output='{}'".format(output))
         args.append("--snap={}".format(snap))
-        return self.run_tool('symmetrical_difference', args, callback) # returns 1 if error
+        return self.run_tool('symmetrical_difference', args, callback)  # returns 1 if error
 
     def union(self, i, overlay, output, snap=0.0, callback=None):
         """Splits vector layers at their overlaps, creating a layer containing all the portions from both input and overlay layers.
@@ -2550,7 +2550,7 @@ Okay, that's it for now.
         args.append("--overlay='{}'".format(overlay))
         args.append("--output='{}'".format(output))
         args.append("--snap={}".format(snap))
-        return self.run_tool('union', args, callback) # returns 1 if error
+        return self.run_tool('union', args, callback)  # returns 1 if error
 
     def update_nodata_cells(self, input1, input2, output, callback=None):
         """Replaces the NoData values in an input raster with the corresponding values contained in a second update layer.
@@ -2566,7 +2566,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('update_nodata_cells', args, callback) # returns 1 if error
+        return self.run_tool('update_nodata_cells', args, callback)  # returns 1 if error
 
     def weighted_overlay(self, factors, weights, output, cost=None, constraints=None, scale_max=1.0, callback=None):
         """Performs a weighted sum on multiple input rasters after converting each image to a common scale. The tool performs a multi-criteria evaluation (MCE).
@@ -2588,7 +2588,7 @@ Okay, that's it for now.
         if constraints is not None: args.append("--constraints='{}'".format(constraints))
         args.append("--output='{}'".format(output))
         args.append("--scale_max={}".format(scale_max))
-        return self.run_tool('weighted_overlay', args, callback) # returns 1 if error
+        return self.run_tool('weighted_overlay', args, callback)  # returns 1 if error
 
     def weighted_sum(self, inputs, weights, output, callback=None):
         """Performs a weighted-sum overlay on multiple input raster images.
@@ -2604,7 +2604,7 @@ Okay, that's it for now.
         args.append("--inputs='{}'".format(inputs))
         args.append("--weights='{}'".format(weights))
         args.append("--output='{}'".format(output))
-        return self.run_tool('weighted_sum', args, callback) # returns 1 if error
+        return self.run_tool('weighted_sum', args, callback)  # returns 1 if error
 
     ##################################
     # GIS Analysis/Patch Shape Tools #
@@ -2622,7 +2622,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('boundary_shape_complexity', args, callback) # returns 1 if error
+        return self.run_tool('boundary_shape_complexity', args, callback)  # returns 1 if error
 
     def compactness_ratio(self, i, callback=None):
         """Calculates the compactness ratio (A/P), a measure of shape complexity, for vector polygons.
@@ -2634,7 +2634,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('compactness_ratio', args, callback) # returns 1 if error
+        return self.run_tool('compactness_ratio', args, callback)  # returns 1 if error
 
     def edge_proportion(self, i, output, output_text=False, callback=None):
         """Calculate the proportion of cells in a raster polygon that are edge cells.
@@ -2650,7 +2650,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if output_text: args.append("--output_text")
-        return self.run_tool('edge_proportion', args, callback) # returns 1 if error
+        return self.run_tool('edge_proportion', args, callback)  # returns 1 if error
 
     def elongation_ratio(self, i, callback=None):
         """Calculates the elongation ratio for vector polygons.
@@ -2662,7 +2662,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('elongation_ratio', args, callback) # returns 1 if error
+        return self.run_tool('elongation_ratio', args, callback)  # returns 1 if error
 
     def find_patch_or_class_edge_cells(self, i, output, callback=None):
         """Finds all cells located on the edge of patch or class features.
@@ -2676,7 +2676,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('find_patch_or_class_edge_cells', args, callback) # returns 1 if error
+        return self.run_tool('find_patch_or_class_edge_cells', args, callback)  # returns 1 if error
 
     def hole_proportion(self, i, callback=None):
         """Calculates the proportion of the total area of a polygon's holes relative to the area of the polygon's hull.
@@ -2688,7 +2688,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('hole_proportion', args, callback) # returns 1 if error
+        return self.run_tool('hole_proportion', args, callback)  # returns 1 if error
 
     def linearity_index(self, i, callback=None):
         """Calculates the linearity index for vector polygons.
@@ -2700,7 +2700,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('linearity_index', args, callback) # returns 1 if error
+        return self.run_tool('linearity_index', args, callback)  # returns 1 if error
 
     def narrowness_index(self, i, output, callback=None):
         """Calculates the narrowness of raster polygons.
@@ -2714,7 +2714,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('narrowness_index', args, callback) # returns 1 if error
+        return self.run_tool('narrowness_index', args, callback)  # returns 1 if error
 
     def patch_orientation(self, i, callback=None):
         """Calculates the orientation of vector polygons.
@@ -2726,7 +2726,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('patch_orientation', args, callback) # returns 1 if error
+        return self.run_tool('patch_orientation', args, callback)  # returns 1 if error
 
     def perimeter_area_ratio(self, i, callback=None):
         """Calculates the perimeter-area ratio of vector polygons.
@@ -2738,7 +2738,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('perimeter_area_ratio', args, callback) # returns 1 if error
+        return self.run_tool('perimeter_area_ratio', args, callback)  # returns 1 if error
 
     def radius_of_gyration(self, i, output, text_output=False, callback=None):
         """Calculates the distance of cells from their polygon's centroid.
@@ -2754,7 +2754,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if text_output: args.append("--text_output")
-        return self.run_tool('radius_of_gyration', args, callback) # returns 1 if error
+        return self.run_tool('radius_of_gyration', args, callback)  # returns 1 if error
 
     def related_circumscribing_circle(self, i, callback=None):
         """Calculates the related circumscribing circle of vector polygons.
@@ -2766,7 +2766,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('related_circumscribing_circle', args, callback) # returns 1 if error
+        return self.run_tool('related_circumscribing_circle', args, callback)  # returns 1 if error
 
     def shape_complexity_index(self, i, callback=None):
         """Calculates overall polygon shape complexity or irregularity.
@@ -2778,7 +2778,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('shape_complexity_index', args, callback) # returns 1 if error
+        return self.run_tool('shape_complexity_index', args, callback)  # returns 1 if error
 
     def shape_complexity_index_raster(self, i, output, callback=None):
         """Calculates the complexity of raster polygons or classes.
@@ -2792,7 +2792,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('shape_complexity_index_raster', args, callback) # returns 1 if error
+        return self.run_tool('shape_complexity_index_raster', args, callback)  # returns 1 if error
 
     ############################
     # Geomorphometric Analysis #
@@ -2814,7 +2814,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         args.append("--zfactor={}".format(zfactor))
-        return self.run_tool('accumulation_curvature', args, callback) # returns 1 if error
+        return self.run_tool('accumulation_curvature', args, callback)  # returns 1 if error
 
     def aspect(self, dem, output, zfactor=None, callback=None):
         """Calculates an aspect raster from an input DEM.
@@ -2830,7 +2830,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('aspect', args, callback) # returns 1 if error
+        return self.run_tool('aspect', args, callback)  # returns 1 if error
 
     def assess_route(self, routes, dem, output, length="", dist=20, callback=None):
         """This tool assesses a route for slope, elevation, and visibility variation.
@@ -2850,7 +2850,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--length={}".format(length))
         args.append("--dist={}".format(dist))
-        return self.run_tool('assess_route', args, callback) # returns 1 if error
+        return self.run_tool('assess_route', args, callback)  # returns 1 if error
 
     def average_normal_vector_angular_deviation(self, dem, output, filter=11, callback=None):
         """Calculates the circular variance of aspect at a scale for a DEM.
@@ -2866,7 +2866,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         args.append("--filter={}".format(filter))
-        return self.run_tool('average_normal_vector_angular_deviation', args, callback) # returns 1 if error
+        return self.run_tool('average_normal_vector_angular_deviation', args, callback)  # returns 1 if error
 
     def breakline_mapping(self, dem, output, threshold=2.0, min_length=3, callback=None):
         """This tool maps breaklines from an input DEM.
@@ -2884,7 +2884,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--threshold={}".format(threshold))
         args.append("--min_length={}".format(min_length))
-        return self.run_tool('breakline_mapping', args, callback) # returns 1 if error
+        return self.run_tool('breakline_mapping', args, callback)  # returns 1 if error
 
     def circular_variance_of_aspect(self, dem, output, filter=11, callback=None):
         """Calculates the circular variance of aspect at a scale for a DEM.
@@ -2900,7 +2900,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         args.append("--filter={}".format(filter))
-        return self.run_tool('circular_variance_of_aspect', args, callback) # returns 1 if error
+        return self.run_tool('circular_variance_of_aspect', args, callback)  # returns 1 if error
 
     def contours_from_points(self, i, output, field=None, use_z=False, max_triangle_edge_length=None, interval=10.0, base=0.0, smooth=5, callback=None):
         """Creates a contour coverage from a set of input points.
@@ -2926,7 +2926,7 @@ Okay, that's it for now.
         args.append("--interval={}".format(interval))
         args.append("--base={}".format(base))
         args.append("--smooth={}".format(smooth))
-        return self.run_tool('contours_from_points', args, callback) # returns 1 if error
+        return self.run_tool('contours_from_points', args, callback)  # returns 1 if error
 
     def contours_from_raster(self, i, output, interval=10.0, base=0.0, smooth=9, tolerance=10.0, callback=None):
         """Derives a vector contour coverage from a raster surface.
@@ -2948,7 +2948,7 @@ Okay, that's it for now.
         args.append("--base={}".format(base))
         args.append("--smooth={}".format(smooth))
         args.append("--tolerance={}".format(tolerance))
-        return self.run_tool('contours_from_raster', args, callback) # returns 1 if error
+        return self.run_tool('contours_from_raster', args, callback)  # returns 1 if error
 
     def curvedness(self, dem, output, log=False, zfactor=1.0, callback=None):
         """This tool calculates curvedness from an input DEM.
@@ -2966,7 +2966,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         args.append("--zfactor={}".format(zfactor))
-        return self.run_tool('curvedness', args, callback) # returns 1 if error
+        return self.run_tool('curvedness', args, callback)  # returns 1 if error
 
     def dem_void_filling(self, dem, fill, output, mean_plane_dist=20, edge_treatment="use DEM", weight_value=2.0, callback=None):
         """This tool can be used to fill the void areas of a DEM using another fill DEM data set.
@@ -2988,7 +2988,7 @@ Okay, that's it for now.
         args.append("--mean_plane_dist={}".format(mean_plane_dist))
         args.append("--edge_treatment={}".format(edge_treatment))
         args.append("--weight_value={}".format(weight_value))
-        return self.run_tool('dem_void_filling', args, callback) # returns 1 if error
+        return self.run_tool('dem_void_filling', args, callback)  # returns 1 if error
 
     def dev_from_mean_elev(self, dem, output, filterx=11, filtery=11, callback=None):
         """Calculates deviation from mean elevation.
@@ -3006,7 +3006,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('dev_from_mean_elev', args, callback) # returns 1 if error
+        return self.run_tool('dev_from_mean_elev', args, callback)  # returns 1 if error
 
     def diff_from_mean_elev(self, dem, output, filterx=11, filtery=11, callback=None):
         """Calculates difference from mean elevation (equivalent to a high-pass filter).
@@ -3024,7 +3024,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('diff_from_mean_elev', args, callback) # returns 1 if error
+        return self.run_tool('diff_from_mean_elev', args, callback)  # returns 1 if error
 
     def difference_curvature(self, dem, output, log=False, zfactor=1.0, callback=None):
         """This tool calculates difference curvature from an input DEM.
@@ -3042,7 +3042,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         args.append("--zfactor={}".format(zfactor))
-        return self.run_tool('difference_curvature', args, callback) # returns 1 if error
+        return self.run_tool('difference_curvature', args, callback)  # returns 1 if error
 
     def directional_relief(self, dem, output, azimuth=0.0, max_dist=None, callback=None):
         """Calculates relief for cells in an input DEM for a specified direction.
@@ -3060,7 +3060,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--azimuth={}".format(azimuth))
         if max_dist is not None: args.append("--max_dist='{}'".format(max_dist))
-        return self.run_tool('directional_relief', args, callback) # returns 1 if error
+        return self.run_tool('directional_relief', args, callback)  # returns 1 if error
 
     def downslope_index(self, dem, output, drop=2.0, out_type="tangent", callback=None):
         """Calculates the Hjerdt et al. (2004) downslope index.
@@ -3078,7 +3078,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--drop={}".format(drop))
         args.append("--out_type={}".format(out_type))
-        return self.run_tool('downslope_index', args, callback) # returns 1 if error
+        return self.run_tool('downslope_index', args, callback)  # returns 1 if error
 
     def edge_density(self, dem, output, filter=11, norm_diff=5.0, zfactor=None, callback=None):
         """Calculates the density of edges, or breaks-in-slope within DEMs.
@@ -3098,7 +3098,7 @@ Okay, that's it for now.
         args.append("--filter={}".format(filter))
         args.append("--norm_diff={}".format(norm_diff))
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('edge_density', args, callback) # returns 1 if error
+        return self.run_tool('edge_density', args, callback)  # returns 1 if error
 
     def elev_above_pit(self, dem, output, callback=None):
         """Calculate the elevation of each grid cell above the nearest downstream pit cell or grid edge cell.
@@ -3112,7 +3112,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('elev_above_pit', args, callback) # returns 1 if error
+        return self.run_tool('elev_above_pit', args, callback)  # returns 1 if error
 
     def elev_percentile(self, dem, output, filterx=11, filtery=11, sig_digits=2, callback=None):
         """Calculates the elevation percentile raster from a DEM.
@@ -3132,7 +3132,7 @@ Okay, that's it for now.
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
         args.append("--sig_digits={}".format(sig_digits))
-        return self.run_tool('elev_percentile', args, callback) # returns 1 if error
+        return self.run_tool('elev_percentile', args, callback)  # returns 1 if error
 
     def elev_relative_to_min_max(self, dem, output, callback=None):
         """Calculates the elevation of a location relative to the minimum and maximum elevations in a DEM.
@@ -3146,7 +3146,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('elev_relative_to_min_max', args, callback) # returns 1 if error
+        return self.run_tool('elev_relative_to_min_max', args, callback)  # returns 1 if error
 
     def elev_relative_to_watershed_min_max(self, dem, watersheds, output, callback=None):
         """Calculates the elevation of a location relative to the minimum and maximum elevations in a watershed.
@@ -3162,7 +3162,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--watersheds='{}'".format(watersheds))
         args.append("--output='{}'".format(output))
-        return self.run_tool('elev_relative_to_watershed_min_max', args, callback) # returns 1 if error
+        return self.run_tool('elev_relative_to_watershed_min_max', args, callback)  # returns 1 if error
 
     def embankment_mapping(self, dem, road_vec, output, search_dist=2.5, min_road_width=6.0, typical_width=30.0, max_height=2.0, max_width=60.0, max_increment=0.05, spillout_slope=4.0, remove_embankments=False, callback=None):
         """Maps and/or removes road embankments from an input fine-resolution DEM.
@@ -3194,7 +3194,7 @@ Okay, that's it for now.
         args.append("--max_increment={}".format(max_increment))
         args.append("--spillout_slope={}".format(spillout_slope))
         if remove_embankments: args.append("--remove_embankments")
-        return self.run_tool('embankment_mapping', args, callback) # returns 1 if error
+        return self.run_tool('embankment_mapping', args, callback)  # returns 1 if error
 
     def exposure_towards_wind_flux(self, dem, output, azimuth="", max_dist="", zfactor="", callback=None):
         """Evaluates hydrologic connectivity within a DEM.
@@ -3214,7 +3214,7 @@ Okay, that's it for now.
         args.append("--azimuth={}".format(azimuth))
         args.append("--max_dist={}".format(max_dist))
         args.append("--zfactor={}".format(zfactor))
-        return self.run_tool('exposure_towards_wind_flux', args, callback) # returns 1 if error
+        return self.run_tool('exposure_towards_wind_flux', args, callback)  # returns 1 if error
 
     def feature_preserving_smoothing(self, dem, output, filter=11, norm_diff=15.0, num_iter=3, max_diff=0.5, zfactor=None, callback=None):
         """Reduces short-scale variation in an input DEM using a modified Sun et al. (2007) algorithm.
@@ -3238,7 +3238,7 @@ Okay, that's it for now.
         args.append("--num_iter={}".format(num_iter))
         args.append("--max_diff={}".format(max_diff))
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('feature_preserving_smoothing', args, callback) # returns 1 if error
+        return self.run_tool('feature_preserving_smoothing', args, callback)  # returns 1 if error
 
     def fetch_analysis(self, dem, output, azimuth=0.0, hgt_inc=0.05, callback=None):
         """Performs an analysis of fetch or upwind distance to an obstacle.
@@ -3256,7 +3256,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--azimuth={}".format(azimuth))
         args.append("--hgt_inc={}".format(hgt_inc))
-        return self.run_tool('fetch_analysis', args, callback) # returns 1 if error
+        return self.run_tool('fetch_analysis', args, callback)  # returns 1 if error
 
     def fill_missing_data(self, i, output, filter=11, weight=2.0, no_edges=True, callback=None):
         """Fills NoData holes in a DEM.
@@ -3276,7 +3276,7 @@ Okay, that's it for now.
         args.append("--filter={}".format(filter))
         args.append("--weight={}".format(weight))
         if no_edges: args.append("--no_edges")
-        return self.run_tool('fill_missing_data', args, callback) # returns 1 if error
+        return self.run_tool('fill_missing_data', args, callback)  # returns 1 if error
 
     def find_ridges(self, dem, output, line_thin=True, callback=None):
         """Identifies potential ridge and peak grid cells.
@@ -3292,7 +3292,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         if line_thin: args.append("--line_thin")
-        return self.run_tool('find_ridges', args, callback) # returns 1 if error
+        return self.run_tool('find_ridges', args, callback)  # returns 1 if error
 
     def gaussian_curvature(self, dem, output, log=False, zfactor=None, callback=None):
         """Calculates a mean curvature raster from an input DEM.
@@ -3310,7 +3310,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('gaussian_curvature', args, callback) # returns 1 if error
+        return self.run_tool('gaussian_curvature', args, callback)  # returns 1 if error
 
     def gaussian_scale_space(self, dem, output, output_zscore, output_scale, points=None, sigma=0.5, step=0.5, num_steps=10, lsp="Slope", z_factor=None, callback=None):
         """Uses the fast Gaussian approximation algorithm to produce scaled land-surface parameter measurements from an input DEM.
@@ -3340,7 +3340,7 @@ Okay, that's it for now.
         args.append("--num_steps={}".format(num_steps))
         args.append("--lsp={}".format(lsp))
         if z_factor is not None: args.append("--z_factor='{}'".format(z_factor))
-        return self.run_tool('gaussian_scale_space', args, callback) # returns 1 if error
+        return self.run_tool('gaussian_scale_space', args, callback)  # returns 1 if error
 
     def generating_function(self, dem, output, log=False, zfactor=1.0, callback=None):
         """This tool calculates generating function from an input DEM.
@@ -3358,7 +3358,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         args.append("--zfactor={}".format(zfactor))
-        return self.run_tool('generating_function', args, callback) # returns 1 if error
+        return self.run_tool('generating_function', args, callback)  # returns 1 if error
 
     def geomorphons(self, dem, output, search=50, threshold=0.0, fdist=0, skip=0, forms=True, residuals=False, callback=None):
         """Computes geomorphon patterns.
@@ -3384,7 +3384,7 @@ Okay, that's it for now.
         args.append("--skip={}".format(skip))
         if forms: args.append("--forms")
         if residuals: args.append("--residuals")
-        return self.run_tool('geomorphons', args, callback) # returns 1 if error
+        return self.run_tool('geomorphons', args, callback)  # returns 1 if error
 
     def hillshade(self, dem, output, azimuth=315.0, altitude=30.0, zfactor=None, callback=None):
         """Calculates a hillshade raster from an input DEM.
@@ -3404,7 +3404,7 @@ Okay, that's it for now.
         args.append("--azimuth={}".format(azimuth))
         args.append("--altitude={}".format(altitude))
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('hillshade', args, callback) # returns 1 if error
+        return self.run_tool('hillshade', args, callback)  # returns 1 if error
 
     def horizon_angle(self, dem, output, azimuth=0.0, max_dist=100.0, callback=None):
         """Calculates horizon angle (maximum upwind slope) for each grid cell in an input DEM.
@@ -3422,7 +3422,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--azimuth={}".format(azimuth))
         args.append("--max_dist={}".format(max_dist))
-        return self.run_tool('horizon_angle', args, callback) # returns 1 if error
+        return self.run_tool('horizon_angle', args, callback)  # returns 1 if error
 
     def horizontal_excess_curvature(self, dem, output, log=False, zfactor=1.0, callback=None):
         """This tool calculates horizontal excess curvature from an input DEM.
@@ -3440,7 +3440,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         args.append("--zfactor={}".format(zfactor))
-        return self.run_tool('horizontal_excess_curvature', args, callback) # returns 1 if error
+        return self.run_tool('horizontal_excess_curvature', args, callback)  # returns 1 if error
 
     def hypsometric_analysis(self, inputs, output, watershed=None, callback=None):
         """Calculates a hypsometric curve for one or more DEMs.
@@ -3456,7 +3456,7 @@ Okay, that's it for now.
         args.append("--inputs='{}'".format(inputs))
         if watershed is not None: args.append("--watershed='{}'".format(watershed))
         args.append("--output='{}'".format(output))
-        return self.run_tool('hypsometric_analysis', args, callback) # returns 1 if error
+        return self.run_tool('hypsometric_analysis', args, callback)  # returns 1 if error
 
     def hypsometrically_tinted_hillshade(self, dem, output, altitude=45.0, hs_weight=0.5, brightness=0.5, atmospheric=0.0, palette="atlas", reverse=False, zfactor=None, full_mode=False, callback=None):
         """Creates an colour shaded relief image from an input DEM.
@@ -3486,7 +3486,7 @@ Okay, that's it for now.
         if reverse: args.append("--reverse")
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
         if full_mode: args.append("--full_mode")
-        return self.run_tool('hypsometrically_tinted_hillshade', args, callback) # returns 1 if error
+        return self.run_tool('hypsometrically_tinted_hillshade', args, callback)  # returns 1 if error
 
     def local_hypsometric_analysis(self, i, out_mag, out_scale, min_scale=4, step=1, num_steps=10, step_nonlinearity=1.0, callback=None):
         """This tool calculates a local, neighbourhood-based hypsometric integral raster.
@@ -3510,7 +3510,7 @@ Okay, that's it for now.
         args.append("--step={}".format(step))
         args.append("--num_steps={}".format(num_steps))
         args.append("--step_nonlinearity={}".format(step_nonlinearity))
-        return self.run_tool('local_hypsometric_analysis', args, callback) # returns 1 if error
+        return self.run_tool('local_hypsometric_analysis', args, callback)  # returns 1 if error
 
     def local_quadratic_regression(self, dem, output, filter=3, callback=None):
         """An implementation of the constrained quadratic regression algorithm using a flexible window size described in Wood (1996).
@@ -3526,7 +3526,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         args.append("--filter={}".format(filter))
-        return self.run_tool('local_quadratic_regression', args, callback) # returns 1 if error
+        return self.run_tool('local_quadratic_regression', args, callback)  # returns 1 if error
 
     def map_off_terrain_objects(self, dem, output, max_slope=40.0, min_size=1, callback=None):
         """Maps off-terrain objects in a digital elevation model (DEM).
@@ -3544,7 +3544,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--max_slope={}".format(max_slope))
         args.append("--min_size={}".format(min_size))
-        return self.run_tool('map_off_terrain_objects', args, callback) # returns 1 if error
+        return self.run_tool('map_off_terrain_objects', args, callback)  # returns 1 if error
 
     def max_anisotropy_dev(self, dem, out_mag, out_scale, max_scale, min_scale=3, step=2, callback=None):
         """Calculates the maximum anisotropy (directionality) in elevation deviation over a range of spatial scales.
@@ -3566,7 +3566,7 @@ Okay, that's it for now.
         args.append("--min_scale={}".format(min_scale))
         args.append("--max_scale='{}'".format(max_scale))
         args.append("--step={}".format(step))
-        return self.run_tool('max_anisotropy_dev', args, callback) # returns 1 if error
+        return self.run_tool('max_anisotropy_dev', args, callback)  # returns 1 if error
 
     def max_anisotropy_dev_signature(self, dem, points, output, max_scale, min_scale=1, step=1, callback=None):
         """Calculates the anisotropy in deviation from mean for points over a range of spatial scales.
@@ -3588,7 +3588,7 @@ Okay, that's it for now.
         args.append("--min_scale={}".format(min_scale))
         args.append("--max_scale='{}'".format(max_scale))
         args.append("--step={}".format(step))
-        return self.run_tool('max_anisotropy_dev_signature', args, callback) # returns 1 if error
+        return self.run_tool('max_anisotropy_dev_signature', args, callback)  # returns 1 if error
 
     def max_branch_length(self, dem, output, log=False, callback=None):
         """Lindsay and Seibert's (2013) branch length index is used to map drainage divides or ridge lines.
@@ -3604,7 +3604,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
-        return self.run_tool('max_branch_length', args, callback) # returns 1 if error
+        return self.run_tool('max_branch_length', args, callback)  # returns 1 if error
 
     def max_difference_from_mean(self, dem, out_mag, out_scale, min_scale, max_scale, step=1, callback=None):
         """Calculates the maximum difference from mean elevation over a range of spatial scales.
@@ -3626,7 +3626,7 @@ Okay, that's it for now.
         args.append("--min_scale='{}'".format(min_scale))
         args.append("--max_scale='{}'".format(max_scale))
         args.append("--step={}".format(step))
-        return self.run_tool('max_difference_from_mean', args, callback) # returns 1 if error
+        return self.run_tool('max_difference_from_mean', args, callback)  # returns 1 if error
 
     def max_downslope_elev_change(self, dem, output, callback=None):
         """Calculates the maximum downslope change in elevation between a grid cell and its eight downslope neighbors.
@@ -3640,7 +3640,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('max_downslope_elev_change', args, callback) # returns 1 if error
+        return self.run_tool('max_downslope_elev_change', args, callback)  # returns 1 if error
 
     def max_elev_dev_signature(self, dem, points, output, min_scale, max_scale, step=10, callback=None):
         """Calculates the maximum elevation deviation over a range of spatial scales and for a set of points.
@@ -3662,7 +3662,7 @@ Okay, that's it for now.
         args.append("--min_scale='{}'".format(min_scale))
         args.append("--max_scale='{}'".format(max_scale))
         args.append("--step={}".format(step))
-        return self.run_tool('max_elev_dev_signature', args, callback) # returns 1 if error
+        return self.run_tool('max_elev_dev_signature', args, callback)  # returns 1 if error
 
     def max_elevation_deviation(self, dem, out_mag, out_scale, min_scale, max_scale, step=1, callback=None):
         """Calculates the maximum elevation deviation over a range of spatial scales.
@@ -3684,7 +3684,7 @@ Okay, that's it for now.
         args.append("--min_scale='{}'".format(min_scale))
         args.append("--max_scale='{}'".format(max_scale))
         args.append("--step={}".format(step))
-        return self.run_tool('max_elevation_deviation', args, callback) # returns 1 if error
+        return self.run_tool('max_elevation_deviation', args, callback)  # returns 1 if error
 
     def max_upslope_elev_change(self, dem, output, callback=None):
         """Calculates the maximum upslope change in elevation between a grid cell and its eight downslope neighbors.
@@ -3698,7 +3698,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('max_upslope_elev_change', args, callback) # returns 1 if error
+        return self.run_tool('max_upslope_elev_change', args, callback)  # returns 1 if error
 
     def maximal_curvature(self, dem, output, log=False, zfactor=None, callback=None):
         """Calculates a mean curvature raster from an input DEM.
@@ -3716,7 +3716,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('maximal_curvature', args, callback) # returns 1 if error
+        return self.run_tool('maximal_curvature', args, callback)  # returns 1 if error
 
     def mean_curvature(self, dem, output, log=False, zfactor=None, callback=None):
         """Calculates a mean curvature raster from an input DEM.
@@ -3734,7 +3734,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('mean_curvature', args, callback) # returns 1 if error
+        return self.run_tool('mean_curvature', args, callback)  # returns 1 if error
 
     def min_downslope_elev_change(self, dem, output, callback=None):
         """Calculates the minimum downslope change in elevation between a grid cell and its eight downslope neighbors.
@@ -3748,7 +3748,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('min_downslope_elev_change', args, callback) # returns 1 if error
+        return self.run_tool('min_downslope_elev_change', args, callback)  # returns 1 if error
 
     def minimal_curvature(self, dem, output, log=False, zfactor=None, callback=None):
         """Calculates a mean curvature raster from an input DEM.
@@ -3766,7 +3766,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('minimal_curvature', args, callback) # returns 1 if error
+        return self.run_tool('minimal_curvature', args, callback)  # returns 1 if error
 
     def multidirectional_hillshade(self, dem, output, altitude=45.0, zfactor=None, full_mode=False, callback=None):
         """Calculates a multi-direction hillshade raster from an input DEM.
@@ -3786,7 +3786,7 @@ Okay, that's it for now.
         args.append("--altitude={}".format(altitude))
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
         if full_mode: args.append("--full_mode")
-        return self.run_tool('multidirectional_hillshade', args, callback) # returns 1 if error
+        return self.run_tool('multidirectional_hillshade', args, callback)  # returns 1 if error
 
     def multiscale_curvatures(self, dem, out_mag, curv_type="ProfileCurv", out_scale=None, min_scale=0, step=1, num_steps=1, step_nonlinearity=1.0, log=True, standardize=False, callback=None):
         """This tool calculates several multiscale curvatures and curvature-based indices from an input DEM.
@@ -3816,7 +3816,7 @@ Okay, that's it for now.
         args.append("--step_nonlinearity={}".format(step_nonlinearity))
         if log: args.append("--log")
         if standardize: args.append("--standardize")
-        return self.run_tool('multiscale_curvatures', args, callback) # returns 1 if error
+        return self.run_tool('multiscale_curvatures', args, callback)  # returns 1 if error
 
     def multiscale_elevation_percentile(self, dem, out_mag, out_scale, sig_digits=3, min_scale=4, step=1, num_steps=10, step_nonlinearity=1.0, callback=None):
         """Calculates surface roughness over a range of spatial scales.
@@ -3842,7 +3842,7 @@ Okay, that's it for now.
         args.append("--step={}".format(step))
         args.append("--num_steps={}".format(num_steps))
         args.append("--step_nonlinearity={}".format(step_nonlinearity))
-        return self.run_tool('multiscale_elevation_percentile', args, callback) # returns 1 if error
+        return self.run_tool('multiscale_elevation_percentile', args, callback)  # returns 1 if error
 
     def multiscale_roughness(self, dem, out_mag, out_scale, max_scale, min_scale=1, step=1, callback=None):
         """Calculates surface roughness over a range of spatial scales.
@@ -3864,7 +3864,7 @@ Okay, that's it for now.
         args.append("--min_scale={}".format(min_scale))
         args.append("--max_scale='{}'".format(max_scale))
         args.append("--step={}".format(step))
-        return self.run_tool('multiscale_roughness', args, callback) # returns 1 if error
+        return self.run_tool('multiscale_roughness', args, callback)  # returns 1 if error
 
     def multiscale_roughness_signature(self, dem, points, output, max_scale, min_scale=1, step=1, callback=None):
         """Calculates the surface roughness for points over a range of spatial scales.
@@ -3886,7 +3886,7 @@ Okay, that's it for now.
         args.append("--min_scale={}".format(min_scale))
         args.append("--max_scale='{}'".format(max_scale))
         args.append("--step={}".format(step))
-        return self.run_tool('multiscale_roughness_signature', args, callback) # returns 1 if error
+        return self.run_tool('multiscale_roughness_signature', args, callback)  # returns 1 if error
 
     def multiscale_std_dev_normals(self, dem, out_mag, out_scale, min_scale=1, step=1, num_steps=10, step_nonlinearity=1.0, callback=None):
         """Calculates surface roughness over a range of spatial scales.
@@ -3910,7 +3910,7 @@ Okay, that's it for now.
         args.append("--step={}".format(step))
         args.append("--num_steps={}".format(num_steps))
         args.append("--step_nonlinearity={}".format(step_nonlinearity))
-        return self.run_tool('multiscale_std_dev_normals', args, callback) # returns 1 if error
+        return self.run_tool('multiscale_std_dev_normals', args, callback)  # returns 1 if error
 
     def multiscale_std_dev_normals_signature(self, dem, points, output, min_scale=1, step=1, num_steps=10, step_nonlinearity=1.0, callback=None):
         """Calculates the surface roughness for points over a range of spatial scales.
@@ -3934,7 +3934,7 @@ Okay, that's it for now.
         args.append("--step={}".format(step))
         args.append("--num_steps={}".format(num_steps))
         args.append("--step_nonlinearity={}".format(step_nonlinearity))
-        return self.run_tool('multiscale_std_dev_normals_signature', args, callback) # returns 1 if error
+        return self.run_tool('multiscale_std_dev_normals_signature', args, callback)  # returns 1 if error
 
     def multiscale_topographic_position_image(self, local, meso, broad, output, hillshade=None, lightness=1.2, callback=None):
         """Creates a multiscale topographic position image from three DEVmax rasters of differing spatial scale ranges.
@@ -3956,7 +3956,7 @@ Okay, that's it for now.
         if hillshade is not None: args.append("--hillshade='{}'".format(hillshade))
         args.append("--output='{}'".format(output))
         args.append("--lightness={}".format(lightness))
-        return self.run_tool('multiscale_topographic_position_image', args, callback) # returns 1 if error
+        return self.run_tool('multiscale_topographic_position_image', args, callback)  # returns 1 if error
 
     def num_downslope_neighbours(self, dem, output, callback=None):
         """Calculates the number of downslope neighbours to each grid cell in a DEM.
@@ -3970,7 +3970,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('num_downslope_neighbours', args, callback) # returns 1 if error
+        return self.run_tool('num_downslope_neighbours', args, callback)  # returns 1 if error
 
     def num_upslope_neighbours(self, dem, output, callback=None):
         """Calculates the number of upslope neighbours to each grid cell in a DEM.
@@ -3984,7 +3984,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('num_upslope_neighbours', args, callback) # returns 1 if error
+        return self.run_tool('num_upslope_neighbours', args, callback)  # returns 1 if error
 
     def openness(self, i, pos_output, neg_output, dist=20, callback=None):
         """This tool calculates the topographic openness index from an input DEM.
@@ -4002,7 +4002,7 @@ Okay, that's it for now.
         args.append("--pos_output='{}'".format(pos_output))
         args.append("--neg_output='{}'".format(neg_output))
         args.append("--dist={}".format(dist))
-        return self.run_tool('openness', args, callback) # returns 1 if error
+        return self.run_tool('openness', args, callback)  # returns 1 if error
 
     def pennock_landform_class(self, dem, output, slope=3.0, prof=0.1, plan=0.0, zfactor=None, callback=None):
         """Classifies hillslope zones based on slope, profile curvature, and plan curvature.
@@ -4024,7 +4024,7 @@ Okay, that's it for now.
         args.append("--prof={}".format(prof))
         args.append("--plan={}".format(plan))
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('pennock_landform_class', args, callback) # returns 1 if error
+        return self.run_tool('pennock_landform_class', args, callback)  # returns 1 if error
 
     def percent_elev_range(self, dem, output, filterx=3, filtery=3, callback=None):
         """Calculates percent of elevation range from a DEM.
@@ -4042,7 +4042,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('percent_elev_range', args, callback) # returns 1 if error
+        return self.run_tool('percent_elev_range', args, callback)  # returns 1 if error
 
     def plan_curvature(self, dem, output, log=False, zfactor=None, callback=None):
         """Calculates a plan (contour) curvature raster from an input DEM.
@@ -4060,7 +4060,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('plan_curvature', args, callback) # returns 1 if error
+        return self.run_tool('plan_curvature', args, callback)  # returns 1 if error
 
     def profile(self, lines, surface, output, callback=None):
         """Plots profiles from digital surface models.
@@ -4076,7 +4076,7 @@ Okay, that's it for now.
         args.append("--lines='{}'".format(lines))
         args.append("--surface='{}'".format(surface))
         args.append("--output='{}'".format(output))
-        return self.run_tool('profile', args, callback) # returns 1 if error
+        return self.run_tool('profile', args, callback)  # returns 1 if error
 
     def profile_curvature(self, dem, output, log=False, zfactor=None, callback=None):
         """Calculates a profile curvature raster from an input DEM.
@@ -4094,7 +4094,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('profile_curvature', args, callback) # returns 1 if error
+        return self.run_tool('profile_curvature', args, callback)  # returns 1 if error
 
     def relative_aspect(self, dem, output, azimuth=0.0, zfactor=None, callback=None):
         """Calculates relative aspect (relative to a user-specified direction) from an input DEM.
@@ -4112,7 +4112,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--azimuth={}".format(azimuth))
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('relative_aspect', args, callback) # returns 1 if error
+        return self.run_tool('relative_aspect', args, callback)  # returns 1 if error
 
     def relative_topographic_position(self, dem, output, filterx=11, filtery=11, callback=None):
         """Calculates the relative topographic position index from a DEM.
@@ -4130,7 +4130,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('relative_topographic_position', args, callback) # returns 1 if error
+        return self.run_tool('relative_topographic_position', args, callback)  # returns 1 if error
 
     def remove_off_terrain_objects(self, dem, output, filter=11, slope=15.0, callback=None):
         """Removes off-terrain objects from a raster digital elevation model (DEM).
@@ -4148,7 +4148,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filter={}".format(filter))
         args.append("--slope={}".format(slope))
-        return self.run_tool('remove_off_terrain_objects', args, callback) # returns 1 if error
+        return self.run_tool('remove_off_terrain_objects', args, callback)  # returns 1 if error
 
     def ring_curvature(self, dem, output, log=False, zfactor=1.0, callback=None):
         """This tool calculates ring curvature from an input DEM.
@@ -4166,7 +4166,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         args.append("--zfactor={}".format(zfactor))
-        return self.run_tool('ring_curvature', args, callback) # returns 1 if error
+        return self.run_tool('ring_curvature', args, callback)  # returns 1 if error
 
     def rotor(self, dem, output, log=False, zfactor=1.0, callback=None):
         """This tool calculates rotor from an input DEM.
@@ -4184,7 +4184,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         args.append("--zfactor={}".format(zfactor))
-        return self.run_tool('rotor', args, callback) # returns 1 if error
+        return self.run_tool('rotor', args, callback)  # returns 1 if error
 
     def ruggedness_index(self, dem, output, callback=None):
         """Calculates the Riley et al.'s (1999) terrain ruggedness index from an input DEM.
@@ -4198,7 +4198,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('ruggedness_index', args, callback) # returns 1 if error
+        return self.run_tool('ruggedness_index', args, callback)  # returns 1 if error
 
     def sediment_transport_index(self, sca, slope, output, sca_exponent=0.4, slope_exponent=1.3, callback=None):
         """Calculates the sediment transport index.
@@ -4218,7 +4218,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--sca_exponent={}".format(sca_exponent))
         args.append("--slope_exponent={}".format(slope_exponent))
-        return self.run_tool('sediment_transport_index', args, callback) # returns 1 if error
+        return self.run_tool('sediment_transport_index', args, callback)  # returns 1 if error
 
     def shadow_animation(self, i, output, palette="atlas", max_dist="", date="21/06/2021", interval=15, location="43.5448/-80.2482/-4", height=600, delay=250, label="", callback=None):
         """This tool creates an animated GIF of shadows based on an input DEM.
@@ -4248,7 +4248,7 @@ Okay, that's it for now.
         args.append("--height={}".format(height))
         args.append("--delay={}".format(delay))
         args.append("--label={}".format(label))
-        return self.run_tool('shadow_animation', args, callback) # returns 1 if error
+        return self.run_tool('shadow_animation', args, callback)  # returns 1 if error
 
     def shadow_image(self, i, output, palette="soft", max_dist="", date="21/06/2021", time="13:00", location="43.5448/-80.2482/-4", callback=None):
         """This tool creates a raster of shadow areas based on an input DEM.
@@ -4272,7 +4272,7 @@ Okay, that's it for now.
         args.append("--date={}".format(date))
         args.append("--time={}".format(time))
         args.append("--location={}".format(location))
-        return self.run_tool('shadow_image', args, callback) # returns 1 if error
+        return self.run_tool('shadow_image', args, callback)  # returns 1 if error
 
     def shape_index(self, dem, output, zfactor=1.0, callback=None):
         """This tool calculates the shape index from an input DEM.
@@ -4288,7 +4288,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         args.append("--zfactor={}".format(zfactor))
-        return self.run_tool('shape_index', args, callback) # returns 1 if error
+        return self.run_tool('shape_index', args, callback)  # returns 1 if error
 
     def slope(self, dem, output, zfactor=None, units="degrees", callback=None):
         """Calculates a slope raster from an input DEM.
@@ -4306,7 +4306,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
         args.append("--units={}".format(units))
-        return self.run_tool('slope', args, callback) # returns 1 if error
+        return self.run_tool('slope', args, callback)  # returns 1 if error
 
     def slope_vs_aspect_plot(self, i, output, bin_size=2.0, min_slope=0.1, zfactor=1.0, callback=None):
         """This tool creates a slope-aspect relation plot from an input DEM.
@@ -4326,7 +4326,7 @@ Okay, that's it for now.
         args.append("--bin_size={}".format(bin_size))
         args.append("--min_slope={}".format(min_slope))
         args.append("--zfactor={}".format(zfactor))
-        return self.run_tool('slope_vs_aspect_plot', args, callback) # returns 1 if error
+        return self.run_tool('slope_vs_aspect_plot', args, callback)  # returns 1 if error
 
     def slope_vs_elevation_plot(self, inputs, output, watershed=None, callback=None):
         """Creates a slope vs. elevation plot for one or more DEMs.
@@ -4342,7 +4342,7 @@ Okay, that's it for now.
         args.append("--inputs='{}'".format(inputs))
         if watershed is not None: args.append("--watershed='{}'".format(watershed))
         args.append("--output='{}'".format(output))
-        return self.run_tool('slope_vs_elevation_plot', args, callback) # returns 1 if error
+        return self.run_tool('slope_vs_elevation_plot', args, callback)  # returns 1 if error
 
     def smooth_vegetation_residual(self, i, output, max_scale=30, dev_threshold=1.0, scale_threshold=5, callback=None):
         """This tool can smooth the residual roughness due to vegetation cover in LiDAR DEMs.
@@ -4362,7 +4362,7 @@ Okay, that's it for now.
         args.append("--max_scale={}".format(max_scale))
         args.append("--dev_threshold={}".format(dev_threshold))
         args.append("--scale_threshold={}".format(scale_threshold))
-        return self.run_tool('smooth_vegetation_residual', args, callback) # returns 1 if error
+        return self.run_tool('smooth_vegetation_residual', args, callback)  # returns 1 if error
 
     def spherical_std_dev_of_normals(self, dem, output, filter=11, callback=None):
         """Calculates the spherical standard deviation of surface normals for a DEM.
@@ -4378,7 +4378,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         args.append("--filter={}".format(filter))
-        return self.run_tool('spherical_std_dev_of_normals', args, callback) # returns 1 if error
+        return self.run_tool('spherical_std_dev_of_normals', args, callback)  # returns 1 if error
 
     def standard_deviation_of_slope(self, i, output, zfactor=None, filterx=11, filtery=11, callback=None):
         """Calculates the standard deviation of slope from an input DEM.
@@ -4398,7 +4398,7 @@ Okay, that's it for now.
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('standard_deviation_of_slope', args, callback) # returns 1 if error
+        return self.run_tool('standard_deviation_of_slope', args, callback)  # returns 1 if error
 
     def stream_power_index(self, sca, slope, output, exponent=1.0, callback=None):
         """Calculates the relative stream power index.
@@ -4416,7 +4416,7 @@ Okay, that's it for now.
         args.append("--slope='{}'".format(slope))
         args.append("--output='{}'".format(output))
         args.append("--exponent={}".format(exponent))
-        return self.run_tool('stream_power_index', args, callback) # returns 1 if error
+        return self.run_tool('stream_power_index', args, callback)  # returns 1 if error
 
     def surface_area_ratio(self, dem, output, callback=None):
         """Calculates a the surface area ratio of each grid cell in an input DEM.
@@ -4430,7 +4430,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('surface_area_ratio', args, callback) # returns 1 if error
+        return self.run_tool('surface_area_ratio', args, callback)  # returns 1 if error
 
     def tangential_curvature(self, dem, output, log=False, zfactor=None, callback=None):
         """Calculates a tangential curvature raster from an input DEM.
@@ -4448,7 +4448,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('tangential_curvature', args, callback) # returns 1 if error
+        return self.run_tool('tangential_curvature', args, callback)  # returns 1 if error
 
     def time_in_daylight(self, dem, output, lat, long, az_fraction=10.0, max_dist=100.0, utc_offset="00:00", start_day=1, end_day=365, start_time="00:00:00", end_time="23:59:59", callback=None):
         """Calculates the proportion of time a location is not within an area of shadow.
@@ -4480,7 +4480,7 @@ Okay, that's it for now.
         args.append("--end_day={}".format(end_day))
         args.append("--start_time={}".format(start_time))
         args.append("--end_time={}".format(end_time))
-        return self.run_tool('time_in_daylight', args, callback) # returns 1 if error
+        return self.run_tool('time_in_daylight', args, callback)  # returns 1 if error
 
     def topo_render(self, dem, output, palette="soft", rev_palette=False, az=315.0, alt=30.0, background_hgt_offset=10.0, polygon=None, background_clr="[255, 255, 255]", attenuation=0.6, ambient_light=0.2, z_factor=1.0, callback=None):
         """This tool creates a pseudo-3D rendering from an input DEM, for the purpose of effective topographic visualization.
@@ -4514,7 +4514,7 @@ Okay, that's it for now.
         args.append("--attenuation={}".format(attenuation))
         args.append("--ambient_light={}".format(ambient_light))
         args.append("--z_factor={}".format(z_factor))
-        return self.run_tool('topo_render', args, callback) # returns 1 if error
+        return self.run_tool('topo_render', args, callback)  # returns 1 if error
 
     def topographic_position_animation(self, i, output, palette="bl_yl_rd", min_scale=1, num_steps=100, step_nonlinearity=1.5, height=600, delay=250, label="", dev_max=False, callback=None):
         """This tool creates an animated GIF of multi-scale local topographic position (elevation deviation).
@@ -4544,7 +4544,7 @@ Okay, that's it for now.
         args.append("--delay={}".format(delay))
         args.append("--label={}".format(label))
         if dev_max: args.append("--dev_max")
-        return self.run_tool('topographic_position_animation', args, callback) # returns 1 if error
+        return self.run_tool('topographic_position_animation', args, callback)  # returns 1 if error
 
     def total_curvature(self, dem, output, log=False, zfactor=None, callback=None):
         """Calculates a total curvature raster from an input DEM.
@@ -4562,7 +4562,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         if zfactor is not None: args.append("--zfactor='{}'".format(zfactor))
-        return self.run_tool('total_curvature', args, callback) # returns 1 if error
+        return self.run_tool('total_curvature', args, callback)  # returns 1 if error
 
     def unsphericity(self, dem, output, log=False, zfactor=1.0, callback=None):
         """This tool calculates the unsphericity curvature from an input DEM.
@@ -4580,7 +4580,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         args.append("--zfactor={}".format(zfactor))
-        return self.run_tool('unsphericity', args, callback) # returns 1 if error
+        return self.run_tool('unsphericity', args, callback)  # returns 1 if error
 
     def vertical_excess_curvature(self, dem, output, log=False, zfactor=1.0, callback=None):
         """This tool calculates vertical excess curvature from an input DEM.
@@ -4598,7 +4598,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if log: args.append("--log")
         args.append("--zfactor={}".format(zfactor))
-        return self.run_tool('vertical_excess_curvature', args, callback) # returns 1 if error
+        return self.run_tool('vertical_excess_curvature', args, callback)  # returns 1 if error
 
     def viewshed(self, dem, stations, output, height=2.0, callback=None):
         """Identifies the viewshed for a point or set of points.
@@ -4616,7 +4616,7 @@ Okay, that's it for now.
         args.append("--stations='{}'".format(stations))
         args.append("--output='{}'".format(output))
         args.append("--height={}".format(height))
-        return self.run_tool('viewshed', args, callback) # returns 1 if error
+        return self.run_tool('viewshed', args, callback)  # returns 1 if error
 
     def visibility_index(self, dem, output, height=2.0, res_factor=2, callback=None):
         """Estimates the relative visibility of sites in a DEM.
@@ -4634,7 +4634,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--height={}".format(height))
         args.append("--res_factor={}".format(res_factor))
-        return self.run_tool('visibility_index', args, callback) # returns 1 if error
+        return self.run_tool('visibility_index', args, callback)  # returns 1 if error
 
     def wetness_index(self, sca, slope, output, callback=None):
         """Calculates the topographic wetness index, Ln(A / tan(slope)).
@@ -4650,7 +4650,7 @@ Okay, that's it for now.
         args.append("--sca='{}'".format(sca))
         args.append("--slope='{}'".format(slope))
         args.append("--output='{}'".format(output))
-        return self.run_tool('wetness_index', args, callback) # returns 1 if error
+        return self.run_tool('wetness_index', args, callback)  # returns 1 if error
 
     #########################
     # Hydrological Analysis #
@@ -4668,7 +4668,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('average_flowpath_slope', args, callback) # returns 1 if error
+        return self.run_tool('average_flowpath_slope', args, callback)  # returns 1 if error
 
     def average_upslope_flowpath_length(self, dem, output, callback=None):
         """Measures the average length of all upslope flowpaths draining each grid cell.
@@ -4682,7 +4682,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('average_upslope_flowpath_length', args, callback) # returns 1 if error
+        return self.run_tool('average_upslope_flowpath_length', args, callback)  # returns 1 if error
 
     def basins(self, d8_pntr, output, esri_pntr=False, callback=None):
         """Identifies drainage basins that drain to the DEM edge.
@@ -4698,7 +4698,7 @@ Okay, that's it for now.
         args.append("--d8_pntr='{}'".format(d8_pntr))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('basins', args, callback) # returns 1 if error
+        return self.run_tool('basins', args, callback)  # returns 1 if error
 
     def breach_depressions(self, dem, output, max_depth=None, max_length=None, flat_increment=None, fill_pits=False, callback=None):
         """Breaches all of the depressions in a DEM using Lindsay's (2016) algorithm. This should be preferred over depression filling in most cases.
@@ -4720,7 +4720,7 @@ Okay, that's it for now.
         if max_length is not None: args.append("--max_length='{}'".format(max_length))
         if flat_increment is not None: args.append("--flat_increment='{}'".format(flat_increment))
         if fill_pits: args.append("--fill_pits")
-        return self.run_tool('breach_depressions', args, callback) # returns 1 if error
+        return self.run_tool('breach_depressions', args, callback)  # returns 1 if error
 
     def breach_depressions_least_cost(self, dem, output, dist, max_cost=None, min_dist=True, flat_increment=None, fill=True, callback=None):
         """Breaches the depressions in a DEM using a least-cost pathway method.
@@ -4744,7 +4744,7 @@ Okay, that's it for now.
         if min_dist: args.append("--min_dist")
         if flat_increment is not None: args.append("--flat_increment='{}'".format(flat_increment))
         if fill: args.append("--fill")
-        return self.run_tool('breach_depressions_least_cost', args, callback) # returns 1 if error
+        return self.run_tool('breach_depressions_least_cost', args, callback)  # returns 1 if error
 
     def breach_single_cell_pits(self, dem, output, callback=None):
         """Removes single-cell pits from an input DEM by breaching.
@@ -4758,7 +4758,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('breach_single_cell_pits', args, callback) # returns 1 if error
+        return self.run_tool('breach_single_cell_pits', args, callback)  # returns 1 if error
 
     def burn_streams_at_roads(self, dem, streams, roads, output, width=None, callback=None):
         """Burns-in streams at the sites of road embankments.
@@ -4778,7 +4778,7 @@ Okay, that's it for now.
         args.append("--roads='{}'".format(roads))
         args.append("--output='{}'".format(output))
         if width is not None: args.append("--width='{}'".format(width))
-        return self.run_tool('burn_streams_at_roads', args, callback) # returns 1 if error
+        return self.run_tool('burn_streams_at_roads', args, callback)  # returns 1 if error
 
     def d8_flow_accumulation(self, i, output, out_type="cells", log=False, clip=False, pntr=False, esri_pntr=False, callback=None):
         """Calculates a D8 flow accumulation raster from an input DEM or flow pointer.
@@ -4802,7 +4802,7 @@ Okay, that's it for now.
         if clip: args.append("--clip")
         if pntr: args.append("--pntr")
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('d8_flow_accumulation', args, callback) # returns 1 if error
+        return self.run_tool('d8_flow_accumulation', args, callback)  # returns 1 if error
 
     def d8_mass_flux(self, dem, loading, efficiency, absorption, output, callback=None):
         """Performs a D8 mass flux calculation.
@@ -4822,7 +4822,7 @@ Okay, that's it for now.
         args.append("--efficiency='{}'".format(efficiency))
         args.append("--absorption='{}'".format(absorption))
         args.append("--output='{}'".format(output))
-        return self.run_tool('d8_mass_flux', args, callback) # returns 1 if error
+        return self.run_tool('d8_mass_flux', args, callback)  # returns 1 if error
 
     def d8_pointer(self, dem, output, esri_pntr=False, callback=None):
         """Calculates a D8 flow pointer raster from an input DEM.
@@ -4838,7 +4838,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('d8_pointer', args, callback) # returns 1 if error
+        return self.run_tool('d8_pointer', args, callback)  # returns 1 if error
 
     def d_inf_flow_accumulation(self, i, output, out_type="Specific Contributing Area", threshold=None, log=False, clip=False, pntr=False, callback=None):
         """Calculates a D-infinity flow accumulation raster from an input DEM.
@@ -4862,7 +4862,7 @@ Okay, that's it for now.
         if log: args.append("--log")
         if clip: args.append("--clip")
         if pntr: args.append("--pntr")
-        return self.run_tool('d_inf_flow_accumulation', args, callback) # returns 1 if error
+        return self.run_tool('d_inf_flow_accumulation', args, callback)  # returns 1 if error
 
     def d_inf_mass_flux(self, dem, loading, efficiency, absorption, output, callback=None):
         """Performs a D-infinity mass flux calculation.
@@ -4882,7 +4882,7 @@ Okay, that's it for now.
         args.append("--efficiency='{}'".format(efficiency))
         args.append("--absorption='{}'".format(absorption))
         args.append("--output='{}'".format(output))
-        return self.run_tool('d_inf_mass_flux', args, callback) # returns 1 if error
+        return self.run_tool('d_inf_mass_flux', args, callback)  # returns 1 if error
 
     def d_inf_pointer(self, dem, output, callback=None):
         """Calculates a D-infinity flow pointer (flow direction) raster from an input DEM.
@@ -4896,7 +4896,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('d_inf_pointer', args, callback) # returns 1 if error
+        return self.run_tool('d_inf_pointer', args, callback)  # returns 1 if error
 
     def depth_in_sink(self, dem, output, zero_background=False, callback=None):
         """Measures the depth of sinks (depressions) in a DEM.
@@ -4912,7 +4912,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         if zero_background: args.append("--zero_background")
-        return self.run_tool('depth_in_sink', args, callback) # returns 1 if error
+        return self.run_tool('depth_in_sink', args, callback)  # returns 1 if error
 
     def depth_to_water(self, dem, output, streams=None, lakes=None, callback=None):
         """This tool calculates cartographic depth-to-water (DTW) index.
@@ -4930,7 +4930,7 @@ Okay, that's it for now.
         if streams is not None: args.append("--streams='{}'".format(streams))
         if lakes is not None: args.append("--lakes='{}'".format(lakes))
         args.append("--output='{}'".format(output))
-        return self.run_tool('depth_to_water', args, callback) # returns 1 if error
+        return self.run_tool('depth_to_water', args, callback)  # returns 1 if error
 
     def downslope_distance_to_stream(self, dem, streams, output, dinf=False, callback=None):
         """Measures distance to the nearest downslope stream cell.
@@ -4948,7 +4948,7 @@ Okay, that's it for now.
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
         if dinf: args.append("--dinf")
-        return self.run_tool('downslope_distance_to_stream', args, callback) # returns 1 if error
+        return self.run_tool('downslope_distance_to_stream', args, callback)  # returns 1 if error
 
     def downslope_flowpath_length(self, d8_pntr, output, watersheds=None, weights=None, esri_pntr=False, callback=None):
         """Calculates the downslope flowpath length from each cell to basin outlet.
@@ -4968,7 +4968,7 @@ Okay, that's it for now.
         if weights is not None: args.append("--weights='{}'".format(weights))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('downslope_flowpath_length', args, callback) # returns 1 if error
+        return self.run_tool('downslope_flowpath_length', args, callback)  # returns 1 if error
 
     def edge_contamination(self, dem, output, flow_type="mfd", zfactor="", callback=None):
         """Identifies grid cells within an input DEM that may be impacted by edge contamination for hydrological applications.
@@ -4986,7 +4986,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--flow_type={}".format(flow_type))
         args.append("--zfactor={}".format(zfactor))
-        return self.run_tool('edge_contamination', args, callback) # returns 1 if error
+        return self.run_tool('edge_contamination', args, callback)  # returns 1 if error
 
     def elevation_above_stream(self, dem, streams, output, callback=None):
         """Calculates the elevation of cells above the nearest downslope stream cell.
@@ -5002,7 +5002,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
-        return self.run_tool('elevation_above_stream', args, callback) # returns 1 if error
+        return self.run_tool('elevation_above_stream', args, callback)  # returns 1 if error
 
     def elevation_above_stream_euclidean(self, dem, streams, output, callback=None):
         """Calculates the elevation of cells above the nearest (Euclidean distance) stream cell.
@@ -5018,7 +5018,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
-        return self.run_tool('elevation_above_stream_euclidean', args, callback) # returns 1 if error
+        return self.run_tool('elevation_above_stream_euclidean', args, callback)  # returns 1 if error
 
     def fd8_flow_accumulation(self, dem, output, out_type="specific contributing area", exponent=1.1, threshold=None, log=False, clip=False, callback=None):
         """Calculates an FD8 flow accumulation raster from an input DEM.
@@ -5042,7 +5042,7 @@ Okay, that's it for now.
         if threshold is not None: args.append("--threshold='{}'".format(threshold))
         if log: args.append("--log")
         if clip: args.append("--clip")
-        return self.run_tool('fd8_flow_accumulation', args, callback) # returns 1 if error
+        return self.run_tool('fd8_flow_accumulation', args, callback)  # returns 1 if error
 
     def fd8_pointer(self, dem, output, callback=None):
         """Calculates an FD8 flow pointer raster from an input DEM.
@@ -5056,7 +5056,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('fd8_pointer', args, callback) # returns 1 if error
+        return self.run_tool('fd8_pointer', args, callback)  # returns 1 if error
 
     def fill_burn(self, dem, streams, output, callback=None):
         """Burns streams into a DEM using the FillBurn (Saunders, 1999) method.
@@ -5072,7 +5072,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
-        return self.run_tool('fill_burn', args, callback) # returns 1 if error
+        return self.run_tool('fill_burn', args, callback)  # returns 1 if error
 
     def fill_depressions(self, dem, output, fix_flats=True, flat_increment=None, max_depth=None, callback=None):
         """Fills all of the depressions in a DEM. Depression breaching should be preferred in most cases.
@@ -5092,7 +5092,7 @@ Okay, that's it for now.
         if fix_flats: args.append("--fix_flats")
         if flat_increment is not None: args.append("--flat_increment='{}'".format(flat_increment))
         if max_depth is not None: args.append("--max_depth='{}'".format(max_depth))
-        return self.run_tool('fill_depressions', args, callback) # returns 1 if error
+        return self.run_tool('fill_depressions', args, callback)  # returns 1 if error
 
     def fill_depressions_planchon_and_darboux(self, dem, output, fix_flats=True, flat_increment=None, callback=None):
         """Fills all of the depressions in a DEM using the Planchon and Darboux (2002) method.
@@ -5110,7 +5110,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if fix_flats: args.append("--fix_flats")
         if flat_increment is not None: args.append("--flat_increment='{}'".format(flat_increment))
-        return self.run_tool('fill_depressions_planchon_and_darboux', args, callback) # returns 1 if error
+        return self.run_tool('fill_depressions_planchon_and_darboux', args, callback)  # returns 1 if error
 
     def fill_depressions_wang_and_liu(self, dem, output, fix_flats=True, flat_increment=None, callback=None):
         """Fills all of the depressions in a DEM using the Wang and Liu (2006) method. Depression breaching should be preferred in most cases.
@@ -5128,7 +5128,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if fix_flats: args.append("--fix_flats")
         if flat_increment is not None: args.append("--flat_increment='{}'".format(flat_increment))
-        return self.run_tool('fill_depressions_wang_and_liu', args, callback) # returns 1 if error
+        return self.run_tool('fill_depressions_wang_and_liu', args, callback)  # returns 1 if error
 
     def fill_single_cell_pits(self, dem, output, callback=None):
         """Raises pit cells to the elevation of their lowest neighbour.
@@ -5142,7 +5142,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('fill_single_cell_pits', args, callback) # returns 1 if error
+        return self.run_tool('fill_single_cell_pits', args, callback)  # returns 1 if error
 
     def find_no_flow_cells(self, dem, output, callback=None):
         """Finds grid cells with no downslope neighbours.
@@ -5156,7 +5156,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('find_no_flow_cells', args, callback) # returns 1 if error
+        return self.run_tool('find_no_flow_cells', args, callback)  # returns 1 if error
 
     def find_parallel_flow(self, d8_pntr, streams, output, callback=None):
         """Finds areas of parallel flow in D8 flow direction rasters.
@@ -5172,7 +5172,7 @@ Okay, that's it for now.
         args.append("--d8_pntr='{}'".format(d8_pntr))
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
-        return self.run_tool('find_parallel_flow', args, callback) # returns 1 if error
+        return self.run_tool('find_parallel_flow', args, callback)  # returns 1 if error
 
     def find_outlet(self, d8_pntr, streams, watershed, output, esri_pntr=False, callback=None):
         """Identifies an outlet stream cell for a watershed mask and writes a pour point GeoJSON.
@@ -5192,7 +5192,7 @@ Okay, that's it for now.
         args.append("--watershed='{}'".format(watershed))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('find_outlet', args, callback) # returns 1 if error
+        return self.run_tool('find_outlet', args, callback)  # returns 1 if error
 
     def flatten_lakes(self, dem, lakes, output, callback=None):
         """Flattens lake polygons in a raster DEM.
@@ -5208,7 +5208,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--lakes='{}'".format(lakes))
         args.append("--output='{}'".format(output))
-        return self.run_tool('flatten_lakes', args, callback) # returns 1 if error
+        return self.run_tool('flatten_lakes', args, callback)  # returns 1 if error
 
     def flood_order(self, dem, output, callback=None):
         """Assigns each DEM grid cell its order in the sequence of inundations that are encountered during a search starting from the edges, moving inward at increasing elevations.
@@ -5222,7 +5222,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('flood_order', args, callback) # returns 1 if error
+        return self.run_tool('flood_order', args, callback)  # returns 1 if error
 
     def flow_accumulation_full_workflow(self, dem, out_dem, out_pntr, out_accum, out_type="Specific Contributing Area", log=False, clip=False, esri_pntr=False, callback=None):
         """Resolves all of the depressions in a DEM, outputting a breached DEM, an aspect-aligned non-divergent flow pointer, and a flow accumulation raster.
@@ -5248,7 +5248,7 @@ Okay, that's it for now.
         if log: args.append("--log")
         if clip: args.append("--clip")
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('flow_accumulation_full_workflow', args, callback) # returns 1 if error
+        return self.run_tool('flow_accumulation_full_workflow', args, callback)  # returns 1 if error
 
     def flow_length_diff(self, d8_pntr, output, esri_pntr=False, callback=None):
         """Calculates the local maximum absolute difference in downslope flowpath length, useful in mapping drainage divides and ridges.
@@ -5264,7 +5264,7 @@ Okay, that's it for now.
         args.append("--d8_pntr='{}'".format(d8_pntr))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('flow_length_diff', args, callback) # returns 1 if error
+        return self.run_tool('flow_length_diff', args, callback)  # returns 1 if error
 
     def hillslopes(self, d8_pntr, streams, output, esri_pntr=False, callback=None):
         """Identifies the individual hillslopes draining to each link in a stream network.
@@ -5282,7 +5282,7 @@ Okay, that's it for now.
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('hillslopes', args, callback) # returns 1 if error
+        return self.run_tool('hillslopes', args, callback)  # returns 1 if error
     
     def hillslopes_topaz(
         self, 
@@ -5346,7 +5346,7 @@ Okay, that's it for now.
         args.append("--output2='{}'".format(output2))
         args.append("--exponent={}".format(exponent))
         if threshold is not None: args.append("--threshold='{}'".format(threshold))
-        return self.run_tool('hydrologic_connectivity', args, callback) # returns 1 if error
+        return self.run_tool('hydrologic_connectivity', args, callback)  # returns 1 if error
 
     def impoundment_size_index(self, dem, damlength, out_mean=None, out_max=None, out_volume=None, out_area=None, out_dam_height=None, callback=None):
         """Calculates the impoundment size resulting from damming a DEM.
@@ -5370,7 +5370,7 @@ Okay, that's it for now.
         if out_area is not None: args.append("--out_area='{}'".format(out_area))
         if out_dam_height is not None: args.append("--out_dam_height='{}'".format(out_dam_height))
         args.append("--damlength='{}'".format(damlength))
-        return self.run_tool('impoundment_size_index', args, callback) # returns 1 if error
+        return self.run_tool('impoundment_size_index', args, callback)  # returns 1 if error
 
     def insert_dams(self, dem, dam_pts, output, damlength, callback=None):
         """Calculates the impoundment size resulting from damming a DEM.
@@ -5388,7 +5388,7 @@ Okay, that's it for now.
         args.append("--dam_pts='{}'".format(dam_pts))
         args.append("--output='{}'".format(output))
         args.append("--damlength='{}'".format(damlength))
-        return self.run_tool('insert_dams', args, callback) # returns 1 if error
+        return self.run_tool('insert_dams', args, callback)  # returns 1 if error
 
     def isobasins(self, dem, output, size, connections=False, callback=None):
         """Divides a landscape into nearly equal sized drainage basins (i.e. watersheds).
@@ -5406,7 +5406,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--size='{}'".format(size))
         if connections: args.append("--connections")
-        return self.run_tool('isobasins', args, callback) # returns 1 if error
+        return self.run_tool('isobasins', args, callback)  # returns 1 if error
 
     def jenson_snap_pour_points(self, pour_pts, streams, output, snap_dist, callback=None):
         """Moves outlet points used to specify points of interest in a watershedding operation to the nearest stream cell.
@@ -5424,7 +5424,7 @@ Okay, that's it for now.
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
         args.append("--snap_dist='{}'".format(snap_dist))
-        return self.run_tool('jenson_snap_pour_points', args, callback) # returns 1 if error
+        return self.run_tool('jenson_snap_pour_points', args, callback)  # returns 1 if error
 
     def longest_flowpath(self, dem, basins, output, callback=None):
         """Delineates the longest flowpaths for a group of subbasins or watersheds.
@@ -5440,7 +5440,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--basins='{}'".format(basins))
         args.append("--output='{}'".format(output))
-        return self.run_tool('longest_flowpath', args, callback) # returns 1 if error
+        return self.run_tool('longest_flowpath', args, callback)  # returns 1 if error
 
     def low_points_on_headwater_divides(self, dem, streams, output, callback=None):
         """This tool locates saddle points along ridges within a digital elevation model (DEM).
@@ -5456,7 +5456,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
-        return self.run_tool('low_points_on_headwater_divides', args, callback) # returns 1 if error
+        return self.run_tool('low_points_on_headwater_divides', args, callback)  # returns 1 if error
 
     def max_upslope_flowpath_length(self, dem, output, callback=None):
         """Measures the maximum length of all upslope flowpaths draining each grid cell.
@@ -5470,7 +5470,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('max_upslope_flowpath_length', args, callback) # returns 1 if error
+        return self.run_tool('max_upslope_flowpath_length', args, callback)  # returns 1 if error
 
     def max_upslope_value(self, dem, values, output, callback=None):
         """Calculates the maximum upslope value from an input values raster along flowpaths.
@@ -5486,7 +5486,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--values='{}'".format(values))
         args.append("--output='{}'".format(output))
-        return self.run_tool('max_upslope_value', args, callback) # returns 1 if error
+        return self.run_tool('max_upslope_value', args, callback)  # returns 1 if error
 
     def md_inf_flow_accumulation(self, dem, output, out_type="specific contributing area", exponent=1.1, threshold=None, log=False, clip=False, callback=None):
         """Calculates an FD8 flow accumulation raster from an input DEM.
@@ -5510,7 +5510,7 @@ Okay, that's it for now.
         if threshold is not None: args.append("--threshold='{}'".format(threshold))
         if log: args.append("--log")
         if clip: args.append("--clip")
-        return self.run_tool('md_inf_flow_accumulation', args, callback) # returns 1 if error
+        return self.run_tool('md_inf_flow_accumulation', args, callback)  # returns 1 if error
 
     def num_inflowing_neighbours(self, dem, output, callback=None):
         """Computes the number of inflowing neighbours to each cell in an input DEM based on the D8 algorithm.
@@ -5524,7 +5524,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('num_inflowing_neighbours', args, callback) # returns 1 if error
+        return self.run_tool('num_inflowing_neighbours', args, callback)  # returns 1 if error
 
     def qin_flow_accumulation(self, dem, output, out_type="specific contributing area", exponent=10.0, max_slope=45.0, threshold=None, log=False, clip=False, callback=None):
         """Calculates Qin et al. (2007) flow accumulation.
@@ -5550,7 +5550,7 @@ Okay, that's it for now.
         if threshold is not None: args.append("--threshold='{}'".format(threshold))
         if log: args.append("--log")
         if clip: args.append("--clip")
-        return self.run_tool('qin_flow_accumulation', args, callback) # returns 1 if error
+        return self.run_tool('qin_flow_accumulation', args, callback)  # returns 1 if error
 
     def quinn_flow_accumulation(self, dem, output, out_type="specific contributing area", exponent=1.0, threshold=None, log=False, clip=False, callback=None):
         """Calculates Quinn et al. (1995) flow accumulation.
@@ -5574,7 +5574,7 @@ Okay, that's it for now.
         if threshold is not None: args.append("--threshold='{}'".format(threshold))
         if log: args.append("--log")
         if clip: args.append("--clip")
-        return self.run_tool('quinn_flow_accumulation', args, callback) # returns 1 if error
+        return self.run_tool('quinn_flow_accumulation', args, callback)  # returns 1 if error
 
     def raise_walls(self, i, dem, output, breach=None, height=100.0, callback=None):
         """Raises walls in a DEM along a line or around a polygon, e.g. a watershed.
@@ -5594,7 +5594,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         args.append("--height={}".format(height))
-        return self.run_tool('raise_walls', args, callback) # returns 1 if error
+        return self.run_tool('raise_walls', args, callback)  # returns 1 if error
 
     def rho8_flow_accumulation(self, i, output, out_type="specific contributing area", log=False, clip=False, pntr=False, esri_pntr=False, callback=None):
         """Calculates Fairfield and Leymarie (1991) flow accumulation.
@@ -5618,7 +5618,7 @@ Okay, that's it for now.
         if clip: args.append("--clip")
         if pntr: args.append("--pntr")
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('rho8_flow_accumulation', args, callback) # returns 1 if error
+        return self.run_tool('rho8_flow_accumulation', args, callback)  # returns 1 if error
 
     def rho8_pointer(self, dem, output, esri_pntr=False, callback=None):
         """Calculates a stochastic Rho8 flow pointer raster from an input DEM.
@@ -5634,7 +5634,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('rho8_pointer', args, callback) # returns 1 if error
+        return self.run_tool('rho8_pointer', args, callback)  # returns 1 if error
 
     def river_centerlines(self, i, output, min_length=3, radius=4, callback=None):
         """Maps river centerlines from an input water raster.
@@ -5652,7 +5652,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--min_length={}".format(min_length))
         args.append("--radius={}".format(radius))
-        return self.run_tool('river_centerlines', args, callback) # returns 1 if error
+        return self.run_tool('river_centerlines', args, callback)  # returns 1 if error
 
     def sink(self, i, output, zero_background=False, callback=None):
         """Identifies the depressions in a DEM, giving each feature a unique identifier.
@@ -5668,7 +5668,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if zero_background: args.append("--zero_background")
-        return self.run_tool('sink', args, callback) # returns 1 if error
+        return self.run_tool('sink', args, callback)  # returns 1 if error
 
     def snap_pour_points(self, pour_pts, flow_accum, output, snap_dist, callback=None):
         """Moves outlet points used to specify points of interest in a watershedding operation to the cell with the highest flow accumulation in its neighbourhood.
@@ -5686,7 +5686,7 @@ Okay, that's it for now.
         args.append("--flow_accum='{}'".format(flow_accum))
         args.append("--output='{}'".format(output))
         args.append("--snap_dist='{}'".format(snap_dist))
-        return self.run_tool('snap_pour_points', args, callback) # returns 1 if error
+        return self.run_tool('snap_pour_points', args, callback)  # returns 1 if error
 
     def stochastic_depression_analysis(self, dem, output, rmse, range, iterations=100, callback=None):
         """Performs a stochastic analysis of depressions within a DEM.
@@ -5706,7 +5706,7 @@ Okay, that's it for now.
         args.append("--rmse='{}'".format(rmse))
         args.append("--range='{}'".format(range))
         args.append("--iterations={}".format(iterations))
-        return self.run_tool('stochastic_depression_analysis', args, callback) # returns 1 if error
+        return self.run_tool('stochastic_depression_analysis', args, callback)  # returns 1 if error
 
     def strahler_order_basins(self, d8_pntr, streams, output, esri_pntr=False, callback=None):
         """Identifies Strahler-order basins from an input stream network.
@@ -5724,7 +5724,7 @@ Okay, that's it for now.
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('strahler_order_basins', args, callback) # returns 1 if error
+        return self.run_tool('strahler_order_basins', args, callback)  # returns 1 if error
 
     def subbasins(self, d8_pntr, streams, output, esri_pntr=False, callback=None):
         """Identifies the catchments, or sub-basin, draining to each link in a stream network.
@@ -5742,7 +5742,7 @@ Okay, that's it for now.
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('subbasins', args, callback) # returns 1 if error
+        return self.run_tool('subbasins', args, callback)  # returns 1 if error
 
     def trace_downslope_flowpaths(self, seed_pts, d8_pntr, output, esri_pntr=False, zero_background=False, callback=None):
         """Traces downslope flowpaths from one or more target sites (i.e. seed points).
@@ -5762,7 +5762,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('trace_downslope_flowpaths', args, callback) # returns 1 if error
+        return self.run_tool('trace_downslope_flowpaths', args, callback)  # returns 1 if error
 
     def unnest_basins(self, d8_pntr, pour_pts, output, esri_pntr=False, callback=None):
         """Extract whole watersheds for a set of outlet points.
@@ -5780,7 +5780,7 @@ Okay, that's it for now.
         args.append("--pour_pts='{}'".format(pour_pts))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('unnest_basins', args, callback) # returns 1 if error
+        return self.run_tool('unnest_basins', args, callback)  # returns 1 if error
 
     def upslope_depression_storage(self, dem, output, callback=None):
         """Estimates the average upslope depression storage depth.
@@ -5794,7 +5794,7 @@ Okay, that's it for now.
         args = []
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
-        return self.run_tool('upslope_depression_storage', args, callback) # returns 1 if error
+        return self.run_tool('upslope_depression_storage', args, callback)  # returns 1 if error
 
     def watershed(self, d8_pntr, pour_pts, output, esri_pntr=False, callback=None):
         """Identifies the watershed, or drainage basin, draining to a set of target cells.
@@ -5812,7 +5812,7 @@ Okay, that's it for now.
         args.append("--pour_pts='{}'".format(pour_pts))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('watershed', args, callback) # returns 1 if error
+        return self.run_tool('watershed', args, callback)  # returns 1 if error
 
     ##########################
     # Image Processing Tools #
@@ -5834,7 +5834,7 @@ Okay, that's it for now.
         args.append("--date2='{}'".format(date2))
         args.append("--magnitude='{}'".format(magnitude))
         args.append("--direction='{}'".format(direction))
-        return self.run_tool('change_vector_analysis', args, callback) # returns 1 if error
+        return self.run_tool('change_vector_analysis', args, callback)  # returns 1 if error
 
     def closing(self, i, output, filterx=11, filtery=11, callback=None):
         """A closing is a mathematical morphology operation involving an erosion (min filter) of a dilation (max filter) set.
@@ -5852,7 +5852,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('closing', args, callback) # returns 1 if error
+        return self.run_tool('closing', args, callback)  # returns 1 if error
 
     def create_colour_composite(self, red, green, blue, output, opacity=None, enhance=True, zeros=False, callback=None):
         """Creates a colour-composite image from three bands of multispectral imagery.
@@ -5876,7 +5876,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if enhance: args.append("--enhance")
         if zeros: args.append("--zeros")
-        return self.run_tool('create_colour_composite', args, callback) # returns 1 if error
+        return self.run_tool('create_colour_composite', args, callback)  # returns 1 if error
 
     def flip_image(self, i, output, direction="vertical", callback=None):
         """Reflects an image in the vertical or horizontal axis.
@@ -5892,7 +5892,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--direction={}".format(direction))
-        return self.run_tool('flip_image', args, callback) # returns 1 if error
+        return self.run_tool('flip_image', args, callback)  # returns 1 if error
 
     def ihs_to_rgb(self, intensity, hue, saturation, red=None, green=None, blue=None, output=None, callback=None):
         """Converts intensity, hue, and saturation (IHS) images into red, green, and blue (RGB) images.
@@ -5916,7 +5916,7 @@ Okay, that's it for now.
         if green is not None: args.append("--green='{}'".format(green))
         if blue is not None: args.append("--blue='{}'".format(blue))
         if output is not None: args.append("--output='{}'".format(output))
-        return self.run_tool('ihs_to_rgb', args, callback) # returns 1 if error
+        return self.run_tool('ihs_to_rgb', args, callback)  # returns 1 if error
 
     def image_slider(self, input1, input2, output, palette1="grey", reverse1=False, label1="", palette2="grey", reverse2=False, label2="", height=600, callback=None):
         """This tool creates an image slider from two input images.
@@ -5946,7 +5946,7 @@ Okay, that's it for now.
         args.append("--label2={}".format(label2))
         args.append("--output='{}'".format(output))
         args.append("--height={}".format(height))
-        return self.run_tool('image_slider', args, callback) # returns 1 if error
+        return self.run_tool('image_slider', args, callback)  # returns 1 if error
 
     def image_stack_profile(self, inputs, points, output, callback=None):
         """Plots an image stack profile (i.e. signature) for a set of points and multispectral images.
@@ -5962,7 +5962,7 @@ Okay, that's it for now.
         args.append("--inputs='{}'".format(inputs))
         args.append("--points='{}'".format(points))
         args.append("--output='{}'".format(output))
-        return self.run_tool('image_stack_profile', args, callback) # returns 1 if error
+        return self.run_tool('image_stack_profile', args, callback)  # returns 1 if error
 
     def integral_image(self, i, output, callback=None):
         """Transforms an input image (summed area table) into its integral image equivalent.
@@ -5976,7 +5976,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('integral_image', args, callback) # returns 1 if error
+        return self.run_tool('integral_image', args, callback)  # returns 1 if error
 
     def line_thinning(self, i, output, callback=None):
         """Performs line thinning a on Boolean raster image; intended to be used with the RemoveSpurs tool.
@@ -5990,7 +5990,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('line_thinning', args, callback) # returns 1 if error
+        return self.run_tool('line_thinning', args, callback)  # returns 1 if error
 
     def mosaic(self, output, inputs=None, method="nn", callback=None):
         """Mosaics two or more images together.
@@ -6006,7 +6006,7 @@ Okay, that's it for now.
         if inputs is not None: args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
         args.append("--method={}".format(method))
-        return self.run_tool('mosaic', args, callback) # returns 1 if error
+        return self.run_tool('mosaic', args, callback)  # returns 1 if error
 
     def mosaic_with_feathering(self, input1, input2, output, method="cc", weight=4.0, callback=None):
         """Mosaics two images together using a feathering technique in overlapping areas to reduce edge-effects.
@@ -6026,7 +6026,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--method={}".format(method))
         args.append("--weight={}".format(weight))
-        return self.run_tool('mosaic_with_feathering', args, callback) # returns 1 if error
+        return self.run_tool('mosaic_with_feathering', args, callback)  # returns 1 if error
 
     def normalized_difference_index(self, input1, input2, output, clip=0.0, correction=0.0, callback=None):
         """Calculate a normalized-difference index (NDI) from two bands of multispectral image data.
@@ -6046,7 +6046,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--clip={}".format(clip))
         args.append("--correction={}".format(correction))
-        return self.run_tool('normalized_difference_index', args, callback) # returns 1 if error
+        return self.run_tool('normalized_difference_index', args, callback)  # returns 1 if error
 
     def opening(self, i, output, filterx=11, filtery=11, callback=None):
         """An opening is a mathematical morphology operation involving a dilation (max filter) of an erosion (min filter) set.
@@ -6064,7 +6064,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('opening', args, callback) # returns 1 if error
+        return self.run_tool('opening', args, callback)  # returns 1 if error
 
     def remove_spurs(self, i, output, iterations=10, callback=None):
         """Removes the spurs (pruning operation) from a Boolean line image; intended to be used on the output of the LineThinning tool.
@@ -6080,7 +6080,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--iterations={}".format(iterations))
-        return self.run_tool('remove_spurs', args, callback) # returns 1 if error
+        return self.run_tool('remove_spurs', args, callback)  # returns 1 if error
 
     def resample(self, inputs, output, cell_size=None, base=None, method="cc", callback=None):
         """Resamples one or more input images into a destination image.
@@ -6100,7 +6100,7 @@ Okay, that's it for now.
         if cell_size is not None: args.append("--cell_size='{}'".format(cell_size))
         if base is not None: args.append("--base='{}'".format(base))
         args.append("--method={}".format(method))
-        return self.run_tool('resample', args, callback) # returns 1 if error
+        return self.run_tool('resample', args, callback)  # returns 1 if error
 
     def rgb_to_ihs(self, intensity, hue, saturation, red=None, green=None, blue=None, composite=None, callback=None):
         """Converts red, green, and blue (RGB) images into intensity, hue, and saturation (IHS) images.
@@ -6124,7 +6124,7 @@ Okay, that's it for now.
         args.append("--intensity='{}'".format(intensity))
         args.append("--hue='{}'".format(hue))
         args.append("--saturation='{}'".format(saturation))
-        return self.run_tool('rgb_to_ihs', args, callback) # returns 1 if error
+        return self.run_tool('rgb_to_ihs', args, callback)  # returns 1 if error
 
     def split_colour_composite(self, i, red=None, green=None, blue=None, callback=None):
         """Splits an RGB colour composite image into separate multispectral images.
@@ -6142,7 +6142,7 @@ Okay, that's it for now.
         if red is not None: args.append("--red='{}'".format(red))
         if green is not None: args.append("--green='{}'".format(green))
         if blue is not None: args.append("--blue='{}'".format(blue))
-        return self.run_tool('split_colour_composite', args, callback) # returns 1 if error
+        return self.run_tool('split_colour_composite', args, callback)  # returns 1 if error
 
     def thicken_raster_line(self, i, output, callback=None):
         """Thickens single-cell wide lines within a raster image.
@@ -6156,7 +6156,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('thicken_raster_line', args, callback) # returns 1 if error
+        return self.run_tool('thicken_raster_line', args, callback)  # returns 1 if error
 
     def tophat_transform(self, i, output, filterx=11, filtery=11, variant="white", callback=None):
         """Performs either a white or black top-hat transform on an input image.
@@ -6176,7 +6176,7 @@ Okay, that's it for now.
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
         args.append("--variant={}".format(variant))
-        return self.run_tool('tophat_transform', args, callback) # returns 1 if error
+        return self.run_tool('tophat_transform', args, callback)  # returns 1 if error
 
     def write_function_memory_insertion(self, input1, input2, output, input3=None, callback=None):
         """Performs a write function memory insertion for single-band multi-date change detection.
@@ -6194,7 +6194,7 @@ Okay, that's it for now.
         args.append("--input2='{}'".format(input2))
         if input3 is not None: args.append("--input3='{}'".format(input3))
         args.append("--output='{}'".format(output))
-        return self.run_tool('write_function_memory_insertion', args, callback) # returns 1 if error
+        return self.run_tool('write_function_memory_insertion', args, callback)  # returns 1 if error
 
     #########################################
     # Image Processing Tools/Classification #
@@ -6216,7 +6216,7 @@ Okay, that's it for now.
         args.append("--polys='{}'".format(polys))
         args.append("--field='{}'".format(field))
         args.append("--output='{}'".format(output))
-        return self.run_tool('evaluate_training_sites', args, callback) # returns 1 if error
+        return self.run_tool('evaluate_training_sites', args, callback)  # returns 1 if error
 
     def generalize_classified_raster(self, i, output, min_size=4, method="longest", callback=None):
         """Generalizes a raster containing class or object features by removing small features.
@@ -6234,7 +6234,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--min_size={}".format(min_size))
         args.append("--method={}".format(method))
-        return self.run_tool('generalize_classified_raster', args, callback) # returns 1 if error
+        return self.run_tool('generalize_classified_raster', args, callback)  # returns 1 if error
 
     def generalize_with_similarity(self, i, similarity, output, min_size=4, callback=None):
         """Generalizes a raster containing class or object features by removing small features using similarity criteria of neighbouring features.
@@ -6252,7 +6252,7 @@ Okay, that's it for now.
         args.append("--similarity='{}'".format(similarity))
         args.append("--output='{}'".format(output))
         args.append("--min_size={}".format(min_size))
-        return self.run_tool('generalize_with_similarity', args, callback) # returns 1 if error
+        return self.run_tool('generalize_with_similarity', args, callback)  # returns 1 if error
 
     def image_segmentation(self, inputs, output, threshold=0.5, steps=10, min_area=4, callback=None):
         """Performs a region-growing based segmentation on a set of multi-spectral images.
@@ -6272,7 +6272,7 @@ Okay, that's it for now.
         args.append("--threshold={}".format(threshold))
         args.append("--steps={}".format(steps))
         args.append("--min_area={}".format(min_area))
-        return self.run_tool('image_segmentation', args, callback) # returns 1 if error
+        return self.run_tool('image_segmentation', args, callback)  # returns 1 if error
 
     def min_dist_classification(self, inputs, polys, field, output, threshold=None, callback=None):
         """Performs a supervised minimum-distance classification using training site polygons and multi-spectral images.
@@ -6292,7 +6292,7 @@ Okay, that's it for now.
         args.append("--field='{}'".format(field))
         args.append("--output='{}'".format(output))
         if threshold is not None: args.append("--threshold='{}'".format(threshold))
-        return self.run_tool('min_dist_classification', args, callback) # returns 1 if error
+        return self.run_tool('min_dist_classification', args, callback)  # returns 1 if error
 
     def parallelepiped_classification(self, inputs, polys, field, output, callback=None):
         """Performs a supervised parallelepiped classification using training site polygons and multi-spectral images.
@@ -6310,7 +6310,7 @@ Okay, that's it for now.
         args.append("--polys='{}'".format(polys))
         args.append("--field='{}'".format(field))
         args.append("--output='{}'".format(output))
-        return self.run_tool('parallelepiped_classification', args, callback) # returns 1 if error
+        return self.run_tool('parallelepiped_classification', args, callback)  # returns 1 if error
 
     ##################################
     # Image Processing Tools/Filters #
@@ -6334,7 +6334,7 @@ Okay, that's it for now.
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
         args.append("--threshold={}".format(threshold))
-        return self.run_tool('adaptive_filter', args, callback) # returns 1 if error
+        return self.run_tool('adaptive_filter', args, callback)  # returns 1 if error
 
     def bilateral_filter(self, i, output, sigma_dist=0.75, sigma_int=1.0, callback=None):
         """A bilateral filter is an edge-preserving smoothing filter introduced by Tomasi and Manduchi (1998).
@@ -6352,7 +6352,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--sigma_dist={}".format(sigma_dist))
         args.append("--sigma_int={}".format(sigma_int))
-        return self.run_tool('bilateral_filter', args, callback) # returns 1 if error
+        return self.run_tool('bilateral_filter', args, callback)  # returns 1 if error
 
     def canny_edge_detection(self, i, output, sigma=0.5, low=0.05, high=0.15, add_back=False, callback=None):
         """This tool performs a Canny edge-detection filter on an input image.
@@ -6374,7 +6374,7 @@ Okay, that's it for now.
         args.append("--low={}".format(low))
         args.append("--high={}".format(high))
         if add_back: args.append("--add_back")
-        return self.run_tool('canny_edge_detection', args, callback) # returns 1 if error
+        return self.run_tool('canny_edge_detection', args, callback)  # returns 1 if error
 
     def conservative_smoothing_filter(self, i, output, filterx=3, filtery=3, callback=None):
         """Performs a conservative-smoothing filter on an image.
@@ -6392,7 +6392,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('conservative_smoothing_filter', args, callback) # returns 1 if error
+        return self.run_tool('conservative_smoothing_filter', args, callback)  # returns 1 if error
 
     def corner_detection(self, i, output, callback=None):
         """Identifies corner patterns in boolean images using hit-and-miss pattern matching.
@@ -6406,7 +6406,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('corner_detection', args, callback) # returns 1 if error
+        return self.run_tool('corner_detection', args, callback)  # returns 1 if error
 
     def diff_of_gaussian_filter(self, i, output, sigma1=2.0, sigma2=4.0, callback=None):
         """Performs a Difference of Gaussian (DoG) filter on an image.
@@ -6424,7 +6424,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--sigma1={}".format(sigma1))
         args.append("--sigma2={}".format(sigma2))
-        return self.run_tool('diff_of_gaussian_filter', args, callback) # returns 1 if error
+        return self.run_tool('diff_of_gaussian_filter', args, callback)  # returns 1 if error
 
     def diversity_filter(self, i, output, filterx=11, filtery=11, callback=None):
         """Assigns each cell in the output grid the number of different values in a moving window centred on each grid cell in the input raster.
@@ -6442,7 +6442,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('diversity_filter', args, callback) # returns 1 if error
+        return self.run_tool('diversity_filter', args, callback)  # returns 1 if error
 
     def edge_preserving_mean_filter(self, i, output, threshold, filter=11, callback=None):
         """Performs a simple edge-preserving mean filter on an input image.
@@ -6460,7 +6460,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filter={}".format(filter))
         args.append("--threshold='{}'".format(threshold))
-        return self.run_tool('edge_preserving_mean_filter', args, callback) # returns 1 if error
+        return self.run_tool('edge_preserving_mean_filter', args, callback)  # returns 1 if error
 
     def emboss_filter(self, i, output, direction="n", clip=0.0, callback=None):
         """Performs an emboss filter on an image, similar to a hillshade operation.
@@ -6478,7 +6478,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--direction={}".format(direction))
         args.append("--clip={}".format(clip))
-        return self.run_tool('emboss_filter', args, callback) # returns 1 if error
+        return self.run_tool('emboss_filter', args, callback)  # returns 1 if error
 
     def fast_almost_gaussian_filter(self, i, output, sigma=1.8, callback=None):
         """Performs a fast approximate Gaussian filter on an image.
@@ -6494,7 +6494,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--sigma={}".format(sigma))
-        return self.run_tool('fast_almost_gaussian_filter', args, callback) # returns 1 if error
+        return self.run_tool('fast_almost_gaussian_filter', args, callback)  # returns 1 if error
 
     def gaussian_filter(self, i, output, sigma=0.75, callback=None):
         """Performs a Gaussian filter on an image.
@@ -6510,7 +6510,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--sigma={}".format(sigma))
-        return self.run_tool('gaussian_filter', args, callback) # returns 1 if error
+        return self.run_tool('gaussian_filter', args, callback)  # returns 1 if error
 
     def high_pass_bilateral_filter(self, i, output, sigma_dist=0.75, sigma_int=1.0, callback=None):
         """Performs a high-pass bilateral filter, by differencing an input image by the bilateral filter by Tomasi and Manduchi (1998).
@@ -6528,7 +6528,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--sigma_dist={}".format(sigma_dist))
         args.append("--sigma_int={}".format(sigma_int))
-        return self.run_tool('high_pass_bilateral_filter', args, callback) # returns 1 if error
+        return self.run_tool('high_pass_bilateral_filter', args, callback)  # returns 1 if error
 
     def high_pass_filter(self, i, output, filterx=11, filtery=11, callback=None):
         """Performs a high-pass filter on an input image.
@@ -6546,7 +6546,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('high_pass_filter', args, callback) # returns 1 if error
+        return self.run_tool('high_pass_filter', args, callback)  # returns 1 if error
 
     def high_pass_median_filter(self, i, output, filterx=11, filtery=11, sig_digits=2, callback=None):
         """Performs a high pass median filter on an input image.
@@ -6566,7 +6566,7 @@ Okay, that's it for now.
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
         args.append("--sig_digits={}".format(sig_digits))
-        return self.run_tool('high_pass_median_filter', args, callback) # returns 1 if error
+        return self.run_tool('high_pass_median_filter', args, callback)  # returns 1 if error
 
     def k_nearest_mean_filter(self, i, output, filterx=11, filtery=11, k=5, callback=None):
         """A k-nearest mean filter is a type of edge-preserving smoothing filter.
@@ -6586,7 +6586,7 @@ Okay, that's it for now.
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
         args.append("-k={}".format(k))
-        return self.run_tool('k_nearest_mean_filter', args, callback) # returns 1 if error
+        return self.run_tool('k_nearest_mean_filter', args, callback)  # returns 1 if error
 
     def laplacian_filter(self, i, output, variant="3x3(1)", clip=0.0, callback=None):
         """Performs a Laplacian filter on an image.
@@ -6604,7 +6604,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--variant={}".format(variant))
         args.append("--clip={}".format(clip))
-        return self.run_tool('laplacian_filter', args, callback) # returns 1 if error
+        return self.run_tool('laplacian_filter', args, callback)  # returns 1 if error
 
     def laplacian_of_gaussian_filter(self, i, output, sigma=0.75, callback=None):
         """Performs a Laplacian-of-Gaussian (LoG) filter on an image.
@@ -6620,7 +6620,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--sigma={}".format(sigma))
-        return self.run_tool('laplacian_of_gaussian_filter', args, callback) # returns 1 if error
+        return self.run_tool('laplacian_of_gaussian_filter', args, callback)  # returns 1 if error
 
     def lee_sigma_filter(self, i, output, filterx=11, filtery=11, sigma=10.0, m=5.0, callback=None):
         """Performs a Lee (Sigma) smoothing filter on an image.
@@ -6642,7 +6642,7 @@ Okay, that's it for now.
         args.append("--filtery={}".format(filtery))
         args.append("--sigma={}".format(sigma))
         args.append("-m={}".format(m))
-        return self.run_tool('lee_sigma_filter', args, callback) # returns 1 if error
+        return self.run_tool('lee_sigma_filter', args, callback)  # returns 1 if error
 
     def line_detection_filter(self, i, output, variant="vertical", absvals=False, clip=0.0, callback=None):
         """Performs a line-detection filter on an image.
@@ -6662,7 +6662,7 @@ Okay, that's it for now.
         args.append("--variant={}".format(variant))
         if absvals: args.append("--absvals")
         args.append("--clip={}".format(clip))
-        return self.run_tool('line_detection_filter', args, callback) # returns 1 if error
+        return self.run_tool('line_detection_filter', args, callback)  # returns 1 if error
 
     def majority_filter(self, i, output, filterx=11, filtery=11, callback=None):
         """Assigns each cell in the output grid the most frequently occurring value (mode) in a moving window centred on each grid cell in the input raster.
@@ -6680,7 +6680,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('majority_filter', args, callback) # returns 1 if error
+        return self.run_tool('majority_filter', args, callback)  # returns 1 if error
 
     def maximum_filter(self, i, output, filterx=11, filtery=11, callback=None):
         """Assigns each cell in the output grid the maximum value in a moving window centred on each grid cell in the input raster.
@@ -6698,7 +6698,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('maximum_filter', args, callback) # returns 1 if error
+        return self.run_tool('maximum_filter', args, callback)  # returns 1 if error
 
     def mean_filter(self, i, output, filterx=3, filtery=3, callback=None):
         """Performs a mean filter (low-pass filter) on an input image.
@@ -6716,7 +6716,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('mean_filter', args, callback) # returns 1 if error
+        return self.run_tool('mean_filter', args, callback)  # returns 1 if error
 
     def median_filter(self, i, output, filterx=11, filtery=11, sig_digits=2, callback=None):
         """Performs a median filter on an input image.
@@ -6736,7 +6736,7 @@ Okay, that's it for now.
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
         args.append("--sig_digits={}".format(sig_digits))
-        return self.run_tool('median_filter', args, callback) # returns 1 if error
+        return self.run_tool('median_filter', args, callback)  # returns 1 if error
 
     def minimum_filter(self, i, output, filterx=11, filtery=11, callback=None):
         """Assigns each cell in the output grid the minimum value in a moving window centred on each grid cell in the input raster.
@@ -6754,7 +6754,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('minimum_filter', args, callback) # returns 1 if error
+        return self.run_tool('minimum_filter', args, callback)  # returns 1 if error
 
     def olympic_filter(self, i, output, filterx=11, filtery=11, callback=None):
         """Performs an olympic smoothing filter on an image.
@@ -6772,7 +6772,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('olympic_filter', args, callback) # returns 1 if error
+        return self.run_tool('olympic_filter', args, callback)  # returns 1 if error
 
     def percentile_filter(self, i, output, filterx=11, filtery=11, sig_digits=2, callback=None):
         """Performs a percentile filter on an input image.
@@ -6792,7 +6792,7 @@ Okay, that's it for now.
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
         args.append("--sig_digits={}".format(sig_digits))
-        return self.run_tool('percentile_filter', args, callback) # returns 1 if error
+        return self.run_tool('percentile_filter', args, callback)  # returns 1 if error
 
     def prewitt_filter(self, i, output, clip=0.0, callback=None):
         """Performs a Prewitt edge-detection filter on an image.
@@ -6808,7 +6808,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--clip={}".format(clip))
-        return self.run_tool('prewitt_filter', args, callback) # returns 1 if error
+        return self.run_tool('prewitt_filter', args, callback)  # returns 1 if error
 
     def range_filter(self, i, output, filterx=11, filtery=11, callback=None):
         """Assigns each cell in the output grid the range of values in a moving window centred on each grid cell in the input raster.
@@ -6826,7 +6826,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('range_filter', args, callback) # returns 1 if error
+        return self.run_tool('range_filter', args, callback)  # returns 1 if error
 
     def roberts_cross_filter(self, i, output, clip=0.0, callback=None):
         """Performs a Robert's cross edge-detection filter on an image.
@@ -6842,7 +6842,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--clip={}".format(clip))
-        return self.run_tool('roberts_cross_filter', args, callback) # returns 1 if error
+        return self.run_tool('roberts_cross_filter', args, callback)  # returns 1 if error
 
     def scharr_filter(self, i, output, clip=0.0, callback=None):
         """Performs a Scharr edge-detection filter on an image.
@@ -6858,7 +6858,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--clip={}".format(clip))
-        return self.run_tool('scharr_filter', args, callback) # returns 1 if error
+        return self.run_tool('scharr_filter', args, callback)  # returns 1 if error
 
     def sobel_filter(self, i, output, variant="3x3", clip=0.0, callback=None):
         """Performs a Sobel edge-detection filter on an image.
@@ -6876,7 +6876,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--variant={}".format(variant))
         args.append("--clip={}".format(clip))
-        return self.run_tool('sobel_filter', args, callback) # returns 1 if error
+        return self.run_tool('sobel_filter', args, callback)  # returns 1 if error
 
     def standard_deviation_filter(self, i, output, filterx=11, filtery=11, callback=None):
         """Assigns each cell in the output grid the standard deviation of values in a moving window centred on each grid cell in the input raster.
@@ -6894,7 +6894,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('standard_deviation_filter', args, callback) # returns 1 if error
+        return self.run_tool('standard_deviation_filter', args, callback)  # returns 1 if error
 
     def total_filter(self, i, output, filterx=11, filtery=11, callback=None):
         """Performs a total filter on an input image.
@@ -6912,7 +6912,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--filterx={}".format(filterx))
         args.append("--filtery={}".format(filtery))
-        return self.run_tool('total_filter', args, callback) # returns 1 if error
+        return self.run_tool('total_filter', args, callback)  # returns 1 if error
 
     def unsharp_masking(self, i, output, sigma=0.75, amount=100.0, threshold=0.0, callback=None):
         """An image sharpening technique that enhances edges.
@@ -6932,7 +6932,7 @@ Okay, that's it for now.
         args.append("--sigma={}".format(sigma))
         args.append("--amount={}".format(amount))
         args.append("--threshold={}".format(threshold))
-        return self.run_tool('unsharp_masking', args, callback) # returns 1 if error
+        return self.run_tool('unsharp_masking', args, callback)  # returns 1 if error
 
     def user_defined_weights_filter(self, i, weights, output, center="center", normalize=False, callback=None):
         """Performs a user-defined weights filter on an image.
@@ -6952,7 +6952,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--center={}".format(center))
         if normalize: args.append("--normalize")
-        return self.run_tool('user_defined_weights_filter', args, callback) # returns 1 if error
+        return self.run_tool('user_defined_weights_filter', args, callback)  # returns 1 if error
 
     ############################################
     # Image Processing Tools/Image Enhancement #
@@ -6972,7 +6972,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--band_mean={}".format(band_mean))
-        return self.run_tool('balance_contrast_enhancement', args, callback) # returns 1 if error
+        return self.run_tool('balance_contrast_enhancement', args, callback)  # returns 1 if error
 
     def correct_vignetting(self, i, pp, output, focal_length=304.8, image_width=228.6, n=4.0, callback=None):
         """Corrects the darkening of images towards corners.
@@ -6994,7 +6994,7 @@ Okay, that's it for now.
         args.append("--focal_length={}".format(focal_length))
         args.append("--image_width={}".format(image_width))
         args.append("-n={}".format(n))
-        return self.run_tool('correct_vignetting', args, callback) # returns 1 if error
+        return self.run_tool('correct_vignetting', args, callback)  # returns 1 if error
 
     def direct_decorrelation_stretch(self, i, output, k=0.5, clip=1.0, callback=None):
         """Performs a direct decorrelation stretch enhancement on a colour-composite image of multispectral data.
@@ -7012,7 +7012,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("-k={}".format(k))
         args.append("--clip={}".format(clip))
-        return self.run_tool('direct_decorrelation_stretch', args, callback) # returns 1 if error
+        return self.run_tool('direct_decorrelation_stretch', args, callback)  # returns 1 if error
 
     def gamma_correction(self, i, output, gamma=0.5, callback=None):
         """Performs a gamma correction on an input images.
@@ -7028,7 +7028,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--gamma={}".format(gamma))
-        return self.run_tool('gamma_correction', args, callback) # returns 1 if error
+        return self.run_tool('gamma_correction', args, callback)  # returns 1 if error
 
     def gaussian_contrast_stretch(self, i, output, num_tones=256, callback=None):
         """Performs a Gaussian contrast stretch on input images.
@@ -7044,7 +7044,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--num_tones={}".format(num_tones))
-        return self.run_tool('gaussian_contrast_stretch', args, callback) # returns 1 if error
+        return self.run_tool('gaussian_contrast_stretch', args, callback)  # returns 1 if error
 
     def histogram_equalization(self, i, output, num_tones=256, callback=None):
         """Performs a histogram equalization contrast enhancement on an image.
@@ -7060,7 +7060,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--num_tones={}".format(num_tones))
-        return self.run_tool('histogram_equalization', args, callback) # returns 1 if error
+        return self.run_tool('histogram_equalization', args, callback)  # returns 1 if error
 
     def histogram_matching(self, i, histo_file, output, callback=None):
         """Alters the statistical distribution of a raster image matching it to a specified PDF.
@@ -7076,7 +7076,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--histo_file='{}'".format(histo_file))
         args.append("--output='{}'".format(output))
-        return self.run_tool('histogram_matching', args, callback) # returns 1 if error
+        return self.run_tool('histogram_matching', args, callback)  # returns 1 if error
 
     def histogram_matching_two_images(self, input1, input2, output, callback=None):
         """Alters the cumulative distribution function of a raster image to that of another image.
@@ -7092,7 +7092,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('histogram_matching_two_images', args, callback) # returns 1 if error
+        return self.run_tool('histogram_matching_two_images', args, callback)  # returns 1 if error
 
     def min_max_contrast_stretch(self, i, output, min_val, max_val, num_tones=256, callback=None):
         """Performs a min-max contrast stretch on an input greytone image.
@@ -7112,7 +7112,7 @@ Okay, that's it for now.
         args.append("--min_val='{}'".format(min_val))
         args.append("--max_val='{}'".format(max_val))
         args.append("--num_tones={}".format(num_tones))
-        return self.run_tool('min_max_contrast_stretch', args, callback) # returns 1 if error
+        return self.run_tool('min_max_contrast_stretch', args, callback)  # returns 1 if error
 
     def panchromatic_sharpening(self, pan, output, red=None, green=None, blue=None, composite=None, method="brovey", callback=None):
         """Increases the spatial resolution of image data by combining multispectral bands with panchromatic data.
@@ -7136,7 +7136,7 @@ Okay, that's it for now.
         args.append("--pan='{}'".format(pan))
         args.append("--output='{}'".format(output))
         args.append("--method={}".format(method))
-        return self.run_tool('panchromatic_sharpening', args, callback) # returns 1 if error
+        return self.run_tool('panchromatic_sharpening', args, callback)  # returns 1 if error
 
     def percentage_contrast_stretch(self, i, output, clip=1.0, tail="both", num_tones=256, callback=None):
         """Performs a percentage linear contrast stretch on input images.
@@ -7156,7 +7156,7 @@ Okay, that's it for now.
         args.append("--clip={}".format(clip))
         args.append("--tail={}".format(tail))
         args.append("--num_tones={}".format(num_tones))
-        return self.run_tool('percentage_contrast_stretch', args, callback) # returns 1 if error
+        return self.run_tool('percentage_contrast_stretch', args, callback)  # returns 1 if error
 
     def piecewise_contrast_stretch(self, i, output, function="", greytones=1024, callback=None):
         """Performs a piecewise contrast stretch on an input image.
@@ -7174,7 +7174,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--function={}".format(function))
         args.append("--greytones={}".format(greytones))
-        return self.run_tool('piecewise_contrast_stretch', args, callback) # returns 1 if error
+        return self.run_tool('piecewise_contrast_stretch', args, callback)  # returns 1 if error
 
     def sigmoidal_contrast_stretch(self, i, output, cutoff=0.0, gain=1.0, num_tones=256, callback=None):
         """Performs a sigmoidal contrast stretch on input images.
@@ -7194,7 +7194,7 @@ Okay, that's it for now.
         args.append("--cutoff={}".format(cutoff))
         args.append("--gain={}".format(gain))
         args.append("--num_tones={}".format(num_tones))
-        return self.run_tool('sigmoidal_contrast_stretch', args, callback) # returns 1 if error
+        return self.run_tool('sigmoidal_contrast_stretch', args, callback)  # returns 1 if error
 
     def standard_deviation_contrast_stretch(self, i, output, stdev=2.0, num_tones=256, callback=None):
         """Performs a standard-deviation contrast stretch on input images.
@@ -7212,7 +7212,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--stdev={}".format(stdev))
         args.append("--num_tones={}".format(num_tones))
-        return self.run_tool('standard_deviation_contrast_stretch', args, callback) # returns 1 if error
+        return self.run_tool('standard_deviation_contrast_stretch', args, callback)  # returns 1 if error
 
     ###############
     # LiDAR Tools #
@@ -7232,7 +7232,7 @@ Okay, that's it for now.
         args.append("--inputs='{}'".format(inputs))
         args.append("--pattern='{}'".format(pattern))
         if proj is not None: args.append("--proj='{}'".format(proj))
-        return self.run_tool('ascii_to_las', args, callback) # returns 1 if error
+        return self.run_tool('ascii_to_las', args, callback)  # returns 1 if error
 
     def classify_buildings_in_lidar(self, i, buildings, output, callback=None):
         """Reclassifies a LiDAR points that lie within vector building footprints.
@@ -7248,7 +7248,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--buildings='{}'".format(buildings))
         args.append("--output='{}'".format(output))
-        return self.run_tool('classify_buildings_in_lidar', args, callback) # returns 1 if error
+        return self.run_tool('classify_buildings_in_lidar', args, callback)  # returns 1 if error
 
     def classify_lidar(self, i=None, output=None, radius=1.5, grd_threshold=0.1, oto_threshold=2.0, planarity_threshold=0.85, linearity_threshold=0.70, iterations=30, facade_threshold=0.5, callback=None):
         """Classify points within a LiDAR point cloud based on point properties.
@@ -7276,7 +7276,7 @@ Okay, that's it for now.
         args.append("--linearity_threshold={}".format(linearity_threshold))
         args.append("--iterations={}".format(iterations))
         args.append("--facade_threshold={}".format(facade_threshold))
-        return self.run_tool('classify_lidar', args, callback) # returns 1 if error
+        return self.run_tool('classify_lidar', args, callback)  # returns 1 if error
 
     def classify_overlap_points(self, i, output, resolution=2.0, criterion="max scan angle", filter=False, callback=None):
         """Classifies or filters LAS points in regions of overlapping flight lines.
@@ -7296,7 +7296,7 @@ Okay, that's it for now.
         args.append("--resolution={}".format(resolution))
         args.append("--criterion={}".format(criterion))
         if filter: args.append("--filter")
-        return self.run_tool('classify_overlap_points', args, callback) # returns 1 if error
+        return self.run_tool('classify_overlap_points', args, callback)  # returns 1 if error
 
     def clip_lidar_to_polygon(self, i, polygons, output, callback=None):
         """Clips a LiDAR point cloud to a vector polygon or polygons.
@@ -7312,7 +7312,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--polygons='{}'".format(polygons))
         args.append("--output='{}'".format(output))
-        return self.run_tool('clip_lidar_to_polygon', args, callback) # returns 1 if error
+        return self.run_tool('clip_lidar_to_polygon', args, callback)  # returns 1 if error
 
     def colourize_based_on_class(self, i=None, output=None, intensity_blending=50.0, clr_str="", use_unique_clrs_for_buildings=False, radius="", callback=None):
         """Sets the RGB values of a LiDAR point cloud based on the point classification values.
@@ -7334,7 +7334,7 @@ Okay, that's it for now.
         args.append("--clr_str={}".format(clr_str))
         if use_unique_clrs_for_buildings: args.append("--use_unique_clrs_for_buildings")
         args.append("--radius={}".format(radius))
-        return self.run_tool('colourize_based_on_class', args, callback) # returns 1 if error
+        return self.run_tool('colourize_based_on_class', args, callback)  # returns 1 if error
 
     def colourize_based_on_point_returns(self, i=None, output=None, intensity_blending=50.0, only="(230,214,170)", first="(0,140,0)", intermediate="(255,0,255)", last="(0,0,255)", callback=None):
         """Sets the RGB values of a LiDAR point cloud based on the point returns.
@@ -7358,7 +7358,7 @@ Okay, that's it for now.
         args.append("--first={}".format(first))
         args.append("--intermediate={}".format(intermediate))
         args.append("--last={}".format(last))
-        return self.run_tool('colourize_based_on_point_returns', args, callback) # returns 1 if error
+        return self.run_tool('colourize_based_on_point_returns', args, callback)  # returns 1 if error
 
     def erase_polygon_from_lidar(self, i, polygons, output, callback=None):
         """Erases (cuts out) a vector polygon or polygons from a LiDAR point cloud.
@@ -7374,7 +7374,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--polygons='{}'".format(polygons))
         args.append("--output='{}'".format(output))
-        return self.run_tool('erase_polygon_from_lidar', args, callback) # returns 1 if error
+        return self.run_tool('erase_polygon_from_lidar', args, callback)  # returns 1 if error
 
     def filter_lidar(self, i=None, output=None, statement="", callback=None):
         """Filters points within a LiDAR point cloud based on point properties.
@@ -7390,7 +7390,7 @@ Okay, that's it for now.
         if i is not None: args.append("--input='{}'".format(i))
         if output is not None: args.append("--output='{}'".format(output))
         args.append("--statement={}".format(statement))
-        return self.run_tool('filter_lidar', args, callback) # returns 1 if error
+        return self.run_tool('filter_lidar', args, callback)  # returns 1 if error
 
     def filter_lidar_classes(self, i, output, exclude_cls=None, callback=None):
         """Removes points in a LAS file with certain specified class values.
@@ -7406,7 +7406,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if exclude_cls is not None: args.append("--exclude_cls='{}'".format(exclude_cls))
-        return self.run_tool('filter_lidar_classes', args, callback) # returns 1 if error
+        return self.run_tool('filter_lidar_classes', args, callback)  # returns 1 if error
 
     def filter_lidar_scan_angles(self, i, output, threshold, callback=None):
         """Removes points in a LAS file with scan angles greater than a threshold.
@@ -7422,7 +7422,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--threshold='{}'".format(threshold))
-        return self.run_tool('filter_lidar_scan_angles', args, callback) # returns 1 if error
+        return self.run_tool('filter_lidar_scan_angles', args, callback)  # returns 1 if error
 
     def find_flightline_edge_points(self, i, output, callback=None):
         """Identifies points along a flightline's edge in a LAS file.
@@ -7436,7 +7436,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('find_flightline_edge_points', args, callback) # returns 1 if error
+        return self.run_tool('find_flightline_edge_points', args, callback)  # returns 1 if error
 
     def flightline_overlap(self, i=None, output=None, resolution=1.0, callback=None):
         """Reads a LiDAR (LAS) point file and outputs a raster containing the number of overlapping flight-lines in each grid cell.
@@ -7452,7 +7452,7 @@ Okay, that's it for now.
         if i is not None: args.append("--input='{}'".format(i))
         if output is not None: args.append("--output='{}'".format(output))
         args.append("--resolution={}".format(resolution))
-        return self.run_tool('flightline_overlap', args, callback) # returns 1 if error
+        return self.run_tool('flightline_overlap', args, callback)  # returns 1 if error
 
     def height_above_ground(self, i=None, output=None, callback=None):
         """Normalizes a LiDAR point cloud, providing the height above the nearest ground-classified point.
@@ -7466,7 +7466,7 @@ Okay, that's it for now.
         args = []
         if i is not None: args.append("--input='{}'".format(i))
         if output is not None: args.append("--output='{}'".format(output))
-        return self.run_tool('height_above_ground', args, callback) # returns 1 if error
+        return self.run_tool('height_above_ground', args, callback)  # returns 1 if error
 
     def individual_tree_detection(self, i=None, output=None, min_search_radius=1.0, min_height=0.0, max_search_radius="", max_height="", only_use_veg=False, callback=None):
         """Identifies points in a LiDAR point cloud that are associated with the tops of individual trees.
@@ -7490,7 +7490,7 @@ Okay, that's it for now.
         args.append("--max_search_radius={}".format(max_search_radius))
         args.append("--max_height={}".format(max_height))
         if only_use_veg: args.append("--only_use_veg")
-        return self.run_tool('individual_tree_detection', args, callback) # returns 1 if error
+        return self.run_tool('individual_tree_detection', args, callback)  # returns 1 if error
 
     def las_to_ascii(self, inputs, callback=None):
         """Converts one or more LAS files into ASCII text files.
@@ -7502,7 +7502,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--inputs='{}'".format(inputs))
-        return self.run_tool('las_to_ascii', args, callback) # returns 1 if error
+        return self.run_tool('las_to_ascii', args, callback)  # returns 1 if error
 
     def las_to_laz(self, i=None, output=None, callback=None):
         """This tool converts one or more LAS files into the LAZ format.
@@ -7516,7 +7516,7 @@ Okay, that's it for now.
         args = []
         if i is not None: args.append("--input='{}'".format(i))
         if output is not None: args.append("--output='{}'".format(output))
-        return self.run_tool('las_to_laz', args, callback) # returns 1 if error
+        return self.run_tool('las_to_laz', args, callback)  # returns 1 if error
 
     def las_to_multipoint_shapefile(self, i=None, callback=None):
         """Converts one or more LAS files into MultipointZ vector Shapefiles. When the input parameter is not specified, the tool grids all LAS files contained within the working directory.
@@ -7528,7 +7528,7 @@ Okay, that's it for now.
         """
         args = []
         if i is not None: args.append("--input='{}'".format(i))
-        return self.run_tool('las_to_multipoint_shapefile', args, callback) # returns 1 if error
+        return self.run_tool('las_to_multipoint_shapefile', args, callback)  # returns 1 if error
 
     def las_to_shapefile(self, i=None, callback=None):
         """Converts one or more LAS files into a vector Shapefile of POINT ShapeType.
@@ -7540,7 +7540,7 @@ Okay, that's it for now.
         """
         args = []
         if i is not None: args.append("--input='{}'".format(i))
-        return self.run_tool('las_to_shapefile', args, callback) # returns 1 if error
+        return self.run_tool('las_to_shapefile', args, callback)  # returns 1 if error
 
     def las_to_zlidar(self, inputs=None, outdir=None, compress="brotli", level=5, callback=None):
         """Converts one or more LAS files into the zlidar compressed LiDAR data format.
@@ -7558,7 +7558,7 @@ Okay, that's it for now.
         if outdir is not None: args.append("--outdir='{}'".format(outdir))
         args.append("--compress={}".format(compress))
         args.append("--level={}".format(level))
-        return self.run_tool('las_to_zlidar', args, callback) # returns 1 if error
+        return self.run_tool('las_to_zlidar', args, callback)  # returns 1 if error
 
     def laz_to_las(self, i=None, output=None, callback=None):
         """This tool converts one or more LAZ files into the LAS format.
@@ -7572,7 +7572,7 @@ Okay, that's it for now.
         args = []
         if i is not None: args.append("--input='{}'".format(i))
         if output is not None: args.append("--output='{}'".format(output))
-        return self.run_tool('laz_to_las', args, callback) # returns 1 if error
+        return self.run_tool('laz_to_las', args, callback)  # returns 1 if error
 
     def lidar_block_maximum(self, i=None, output=None, resolution=1.0, callback=None):
         """Creates a block-maximum raster from an input LAS file. When the input/output parameters are not specified, the tool grids all LAS files contained within the working directory.
@@ -7588,7 +7588,7 @@ Okay, that's it for now.
         if i is not None: args.append("--input='{}'".format(i))
         if output is not None: args.append("--output='{}'".format(output))
         args.append("--resolution={}".format(resolution))
-        return self.run_tool('lidar_block_maximum', args, callback) # returns 1 if error
+        return self.run_tool('lidar_block_maximum', args, callback)  # returns 1 if error
 
     def lidar_block_minimum(self, i=None, output=None, resolution=1.0, callback=None):
         """Creates a block-minimum raster from an input LAS file. When the input/output parameters are not specified, the tool grids all LAS files contained within the working directory.
@@ -7604,7 +7604,7 @@ Okay, that's it for now.
         if i is not None: args.append("--input='{}'".format(i))
         if output is not None: args.append("--output='{}'".format(output))
         args.append("--resolution={}".format(resolution))
-        return self.run_tool('lidar_block_minimum', args, callback) # returns 1 if error
+        return self.run_tool('lidar_block_minimum', args, callback)  # returns 1 if error
 
     def lidar_classify_subset(self, base, subset, output, subset_class, nonsubset_class=None, callback=None):
         """Classifies the values in one LiDAR point cloud that correspond with points in a subset cloud.
@@ -7624,7 +7624,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--subset_class='{}'".format(subset_class))
         if nonsubset_class is not None: args.append("--nonsubset_class='{}'".format(nonsubset_class))
-        return self.run_tool('lidar_classify_subset', args, callback) # returns 1 if error
+        return self.run_tool('lidar_classify_subset', args, callback)  # returns 1 if error
 
     def lidar_colourize(self, in_lidar, in_image, output, callback=None):
         """Adds the red-green-blue colour fields of a LiDAR (LAS) file based on an input image.
@@ -7640,7 +7640,7 @@ Okay, that's it for now.
         args.append("--in_lidar='{}'".format(in_lidar))
         args.append("--in_image='{}'".format(in_image))
         args.append("--output='{}'".format(output))
-        return self.run_tool('lidar_colourize', args, callback) # returns 1 if error
+        return self.run_tool('lidar_colourize', args, callback)  # returns 1 if error
 
     def lidar_contour(self, i=None, output=None, interval=10.0, base=0.0, smooth=5, parameter="elevation", returns="all", exclude_cls=None, minz=None, maxz=None, max_triangle_edge_length=None, callback=None):
         """This tool creates a vector contour coverage from an input LiDAR point file.
@@ -7672,7 +7672,7 @@ Okay, that's it for now.
         if minz is not None: args.append("--minz='{}'".format(minz))
         if maxz is not None: args.append("--maxz='{}'".format(maxz))
         if max_triangle_edge_length is not None: args.append("--max_triangle_edge_length='{}'".format(max_triangle_edge_length))
-        return self.run_tool('lidar_contour', args, callback) # returns 1 if error
+        return self.run_tool('lidar_contour', args, callback)  # returns 1 if error
 
     def lidar_digital_surface_model(self, i=None, output=None, resolution=1.0, radius=0.5, minz=None, maxz=None, max_triangle_edge_length=None, callback=None):
         """Creates a top-surface digital surface model (DSM) from a LiDAR point cloud.
@@ -7696,7 +7696,7 @@ Okay, that's it for now.
         if minz is not None: args.append("--minz='{}'".format(minz))
         if maxz is not None: args.append("--maxz='{}'".format(maxz))
         if max_triangle_edge_length is not None: args.append("--max_triangle_edge_length='{}'".format(max_triangle_edge_length))
-        return self.run_tool('lidar_digital_surface_model', args, callback) # returns 1 if error
+        return self.run_tool('lidar_digital_surface_model', args, callback)  # returns 1 if error
 
     def lidar_eigenvalue_features(self, i=None, num_neighbours=None, radius=None, callback=None):
         """Calculate eigenvalue-based metrics from a LiDAR point cloud.
@@ -7712,7 +7712,7 @@ Okay, that's it for now.
         if i is not None: args.append("--input='{}'".format(i))
         if num_neighbours is not None: args.append("--num_neighbours='{}'".format(num_neighbours))
         if radius is not None: args.append("--radius='{}'".format(radius))
-        return self.run_tool('lidar_eigenvalue_features', args, callback) # returns 1 if error
+        return self.run_tool('lidar_eigenvalue_features', args, callback)  # returns 1 if error
 
     def lidar_elevation_slice(self, i, output, minz=None, maxz=None, cls=False, inclassval=2, outclassval=1, callback=None):
         """Outputs all of the points within a LiDAR (LAS) point file that lie between a specified elevation range.
@@ -7736,7 +7736,7 @@ Okay, that's it for now.
         if cls: args.append("--class")
         args.append("--inclassval={}".format(inclassval))
         args.append("--outclassval={}".format(outclassval))
-        return self.run_tool('lidar_elevation_slice', args, callback) # returns 1 if error
+        return self.run_tool('lidar_elevation_slice', args, callback)  # returns 1 if error
 
     def lidar_ground_point_filter(self, i, output, radius=2.0, min_neighbours=0, slope_threshold=45.0, height_threshold=1.0, classify=True, slope_norm=True, height_above_ground=False, callback=None):
         """Identifies ground points within LiDAR dataset using a slope-based method.
@@ -7764,7 +7764,7 @@ Okay, that's it for now.
         if classify: args.append("--classify")
         if slope_norm: args.append("--slope_norm")
         if height_above_ground: args.append("--height_above_ground")
-        return self.run_tool('lidar_ground_point_filter', args, callback) # returns 1 if error
+        return self.run_tool('lidar_ground_point_filter', args, callback)  # returns 1 if error
 
     def lidar_hex_binning(self, i, output, width, orientation="horizontal", callback=None):
         """Hex-bins a set of LiDAR points.
@@ -7782,7 +7782,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--width='{}'".format(width))
         args.append("--orientation={}".format(orientation))
-        return self.run_tool('lidar_hex_binning', args, callback) # returns 1 if error
+        return self.run_tool('lidar_hex_binning', args, callback)  # returns 1 if error
 
     def lidar_hillshade(self, i, output, azimuth=315.0, altitude=30.0, radius=1.0, callback=None):
         """Calculates a hillshade value for points within a LAS file and stores these data in the RGB field.
@@ -7802,7 +7802,7 @@ Okay, that's it for now.
         args.append("--azimuth={}".format(azimuth))
         args.append("--altitude={}".format(altitude))
         args.append("--radius={}".format(radius))
-        return self.run_tool('lidar_hillshade', args, callback) # returns 1 if error
+        return self.run_tool('lidar_hillshade', args, callback)  # returns 1 if error
 
     def lidar_histogram(self, i, output, parameter="elevation", clip=1.0, callback=None):
         """Creates a histogram of LiDAR data.
@@ -7820,7 +7820,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--parameter={}".format(parameter))
         args.append("--clip={}".format(clip))
-        return self.run_tool('lidar_histogram', args, callback) # returns 1 if error
+        return self.run_tool('lidar_histogram', args, callback)  # returns 1 if error
 
     def lidar_idw_interpolation(self, i=None, output=None, parameter="elevation", returns="all", resolution=1.0, weight=1.0, radius=2.5, exclude_cls=None, minz=None, maxz=None, callback=None):
         """Interpolates LAS files using an inverse-distance weighted (IDW) scheme. When the input/output parameters are not specified, the tool interpolates all LAS files contained within the working directory.
@@ -7850,7 +7850,7 @@ Okay, that's it for now.
         if exclude_cls is not None: args.append("--exclude_cls='{}'".format(exclude_cls))
         if minz is not None: args.append("--minz='{}'".format(minz))
         if maxz is not None: args.append("--maxz='{}'".format(maxz))
-        return self.run_tool('lidar_idw_interpolation', args, callback) # returns 1 if error
+        return self.run_tool('lidar_idw_interpolation', args, callback)  # returns 1 if error
 
     def lidar_info(self, i, output, density=True, vlr=True, geokeys=True, callback=None):
         """Prints information about a LiDAR (LAS) dataset, including header, point return frequency, and classification data and information about the variable length records (VLRs) and geokeys.
@@ -7870,7 +7870,7 @@ Okay, that's it for now.
         if density: args.append("--density")
         if vlr: args.append("--vlr")
         if geokeys: args.append("--geokeys")
-        return self.run_tool('lidar_info', args, callback) # returns 1 if error
+        return self.run_tool('lidar_info', args, callback)  # returns 1 if error
 
     def lidar_join(self, inputs, output, callback=None):
         """Joins multiple LiDAR (LAS) files into a single LAS file.
@@ -7884,7 +7884,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         args.append("--output='{}'".format(output))
-        return self.run_tool('lidar_join', args, callback) # returns 1 if error
+        return self.run_tool('lidar_join', args, callback)  # returns 1 if error
 
     def lidar_kappa_index(self, input1, input2, output, class_accuracy, resolution=1.0, callback=None):
         """Performs a kappa index of agreement (KIA) analysis on the classifications of two LAS files.
@@ -7904,7 +7904,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--class_accuracy='{}'".format(class_accuracy))
         args.append("--resolution={}".format(resolution))
-        return self.run_tool('lidar_kappa_index', args, callback) # returns 1 if error
+        return self.run_tool('lidar_kappa_index', args, callback)  # returns 1 if error
 
     def lidar_nearest_neighbour_gridding(self, i=None, output=None, parameter="elevation", returns="all", resolution=1.0, radius=2.5, exclude_cls=None, minz=None, maxz=None, callback=None):
         """Grids LiDAR files using nearest-neighbour scheme. When the input/output parameters are not specified, the tool grids all LAS files contained within the working directory.
@@ -7932,7 +7932,7 @@ Okay, that's it for now.
         if exclude_cls is not None: args.append("--exclude_cls='{}'".format(exclude_cls))
         if minz is not None: args.append("--minz='{}'".format(minz))
         if maxz is not None: args.append("--maxz='{}'".format(maxz))
-        return self.run_tool('lidar_nearest_neighbour_gridding', args, callback) # returns 1 if error
+        return self.run_tool('lidar_nearest_neighbour_gridding', args, callback)  # returns 1 if error
 
     def lidar_point_density(self, i=None, output=None, returns="all", resolution=1.0, radius=2.5, exclude_cls=None, minz=None, maxz=None, callback=None):
         """Calculates the spatial pattern of point density for a LiDAR data set. When the input/output parameters are not specified, the tool grids all LAS files contained within the working directory.
@@ -7958,7 +7958,7 @@ Okay, that's it for now.
         if exclude_cls is not None: args.append("--exclude_cls='{}'".format(exclude_cls))
         if minz is not None: args.append("--minz='{}'".format(minz))
         if maxz is not None: args.append("--maxz='{}'".format(maxz))
-        return self.run_tool('lidar_point_density', args, callback) # returns 1 if error
+        return self.run_tool('lidar_point_density', args, callback)  # returns 1 if error
 
     def lidar_point_return_analysis(self, i, output=None, callback=None):
         """This tool performs a quality control check on the return values of points in a LiDAR file.
@@ -7972,7 +7972,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         if output is not None: args.append("--output='{}'".format(output))
-        return self.run_tool('lidar_point_return_analysis', args, callback) # returns 1 if error
+        return self.run_tool('lidar_point_return_analysis', args, callback)  # returns 1 if error
 
     def lidar_point_stats(self, i=None, resolution=1.0, num_points=True, num_pulses=False, avg_points_per_pulse=True, z_range=False, intensity_range=False, predom_class=False, callback=None):
         """Creates several rasters summarizing the distribution of LAS point data. When the input/output parameters are not specified, the tool works on all LAS files contained within the working directory.
@@ -7998,7 +7998,7 @@ Okay, that's it for now.
         if z_range: args.append("--z_range")
         if intensity_range: args.append("--intensity_range")
         if predom_class: args.append("--predom_class")
-        return self.run_tool('lidar_point_stats', args, callback) # returns 1 if error
+        return self.run_tool('lidar_point_stats', args, callback)  # returns 1 if error
 
     def lidar_ransac_planes(self, i, output, radius=2.0, num_iter=50, num_samples=5, threshold=0.35, model_size=8, max_slope=80.0, classify=False, last_returns=False, callback=None):
         """Performs a RANSAC analysis to identify points within a LiDAR point cloud that belong to linear planes.
@@ -8028,7 +8028,7 @@ Okay, that's it for now.
         args.append("--max_slope={}".format(max_slope))
         if classify: args.append("--classify")
         if last_returns: args.append("--last_returns")
-        return self.run_tool('lidar_ransac_planes', args, callback) # returns 1 if error
+        return self.run_tool('lidar_ransac_planes', args, callback)  # returns 1 if error
 
     def lidar_rbf_interpolation(self, i=None, output=None, parameter="elevation", returns="all", resolution=1.0, num_points=20, exclude_cls=None, minz=None, maxz=None, func_type="ThinPlateSpline", poly_order="none", weight=5, callback=None):
         """Interpolates LAS files using a radial basis function (RBF) scheme. When the input/output parameters are not specified, the tool interpolates all LAS files contained within the working directory.
@@ -8062,7 +8062,7 @@ Okay, that's it for now.
         args.append("--func_type={}".format(func_type))
         args.append("--poly_order={}".format(poly_order))
         args.append("--weight={}".format(weight))
-        return self.run_tool('lidar_rbf_interpolation', args, callback) # returns 1 if error
+        return self.run_tool('lidar_rbf_interpolation', args, callback)  # returns 1 if error
 
     def lidar_remove_duplicates(self, i, output, include_z=False, callback=None):
         """Removes duplicate points from a LiDAR data set.
@@ -8078,7 +8078,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if include_z: args.append("--include_z")
-        return self.run_tool('lidar_remove_duplicates', args, callback) # returns 1 if error
+        return self.run_tool('lidar_remove_duplicates', args, callback)  # returns 1 if error
 
     def lidar_remove_outliers(self, i, output, radius=2.0, elev_diff=50.0, use_median=False, classify=True, callback=None):
         """Removes outliers (high and low points) in a LiDAR point cloud.
@@ -8100,7 +8100,7 @@ Okay, that's it for now.
         args.append("--elev_diff={}".format(elev_diff))
         if use_median: args.append("--use_median")
         if classify: args.append("--classify")
-        return self.run_tool('lidar_remove_outliers', args, callback) # returns 1 if error
+        return self.run_tool('lidar_remove_outliers', args, callback)  # returns 1 if error
 
     def lidar_rooftop_analysis(self, buildings, output, i=None, radius=2.0, num_iter=50, num_samples=10, threshold=0.15, model_size=15, max_slope=65.0, norm_diff=10.0, azimuth=180.0, altitude=30.0, callback=None):
         """Identifies roof segments in a LiDAR point cloud.
@@ -8134,7 +8134,7 @@ Okay, that's it for now.
         args.append("--norm_diff={}".format(norm_diff))
         args.append("--azimuth={}".format(azimuth))
         args.append("--altitude={}".format(altitude))
-        return self.run_tool('lidar_rooftop_analysis', args, callback) # returns 1 if error
+        return self.run_tool('lidar_rooftop_analysis', args, callback)  # returns 1 if error
 
     def lidar_segmentation(self, i, output, radius=2.0, num_iter=50, num_samples=10, threshold=0.15, model_size=15, max_slope=80.0, norm_diff=10.0, maxzdiff=1.0, classes=False, ground=False, callback=None):
         """Segments a LiDAR point cloud based on differences in the orientation of fitted planar surfaces and point proximity.
@@ -8168,7 +8168,7 @@ Okay, that's it for now.
         args.append("--maxzdiff={}".format(maxzdiff))
         if classes: args.append("--classes")
         if ground: args.append("--ground")
-        return self.run_tool('lidar_segmentation', args, callback) # returns 1 if error
+        return self.run_tool('lidar_segmentation', args, callback)  # returns 1 if error
 
     def lidar_segmentation_based_filter(self, i, output, radius=5.0, norm_diff=2.0, maxzdiff=1.0, classify=False, callback=None):
         """Identifies ground points within LiDAR point clouds using a segmentation based approach.
@@ -8190,7 +8190,7 @@ Okay, that's it for now.
         args.append("--norm_diff={}".format(norm_diff))
         args.append("--maxzdiff={}".format(maxzdiff))
         if classify: args.append("--classify")
-        return self.run_tool('lidar_segmentation_based_filter', args, callback) # returns 1 if error
+        return self.run_tool('lidar_segmentation_based_filter', args, callback)  # returns 1 if error
 
     def lidar_shift(self, i, output, x_shift="", y_shift="", z_shift="", callback=None):
         """Shifts the x,y,z coordinates of a LiDAR file.
@@ -8210,7 +8210,7 @@ Okay, that's it for now.
         args.append("--x_shift={}".format(x_shift))
         args.append("--y_shift={}".format(y_shift))
         args.append("--z_shift={}".format(z_shift))
-        return self.run_tool('lidar_shift', args, callback) # returns 1 if error
+        return self.run_tool('lidar_shift', args, callback)  # returns 1 if error
 
     def lidar_sibson_interpolation(self, i=None, output=None, parameter="elevation", returns="all", resolution=1.0, exclude_cls=None, minz=None, maxz=None, callback=None):
         """This tool interpolates one or more LiDAR tiles using Sibson's natural neighbour method.
@@ -8236,7 +8236,7 @@ Okay, that's it for now.
         if exclude_cls is not None: args.append("--exclude_cls='{}'".format(exclude_cls))
         if minz is not None: args.append("--minz='{}'".format(minz))
         if maxz is not None: args.append("--maxz='{}'".format(maxz))
-        return self.run_tool('lidar_sibson_interpolation', args, callback) # returns 1 if error
+        return self.run_tool('lidar_sibson_interpolation', args, callback)  # returns 1 if error
 
     def lidar_sort_by_time(self, i, output, callback=None):
         """This tool sorts the points in a LiDAR file by the GPS time.
@@ -8250,7 +8250,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('lidar_sort_by_time', args, callback) # returns 1 if error
+        return self.run_tool('lidar_sort_by_time', args, callback)  # returns 1 if error
 
     def lidar_thin(self, i, output, resolution=2.0, method="lowest", save_filtered=False, callback=None):
         """Thins a LiDAR point cloud, reducing point density.
@@ -8270,7 +8270,7 @@ Okay, that's it for now.
         args.append("--resolution={}".format(resolution))
         args.append("--method={}".format(method))
         if save_filtered: args.append("--save_filtered")
-        return self.run_tool('lidar_thin', args, callback) # returns 1 if error
+        return self.run_tool('lidar_thin', args, callback)  # returns 1 if error
 
     def lidar_thin_high_density(self, i, output, density, resolution=1.0, save_filtered=False, callback=None):
         """Thins points from high density areas within a LiDAR point cloud.
@@ -8290,7 +8290,7 @@ Okay, that's it for now.
         args.append("--resolution={}".format(resolution))
         args.append("--density='{}'".format(density))
         if save_filtered: args.append("--save_filtered")
-        return self.run_tool('lidar_thin_high_density', args, callback) # returns 1 if error
+        return self.run_tool('lidar_thin_high_density', args, callback)  # returns 1 if error
 
     def lidar_tile(self, i, width=1000.0, height=1000.0, origin_x=0.0, origin_y=0.0, min_points=2, callback=None):
         """Tiles a LiDAR LAS file into multiple LAS files.
@@ -8312,7 +8312,7 @@ Okay, that's it for now.
         args.append("--origin_x={}".format(origin_x))
         args.append("--origin_y={}".format(origin_y))
         args.append("--min_points={}".format(min_points))
-        return self.run_tool('lidar_tile', args, callback) # returns 1 if error
+        return self.run_tool('lidar_tile', args, callback)  # returns 1 if error
 
     def lidar_tile_footprint(self, output, i=None, hull=False, callback=None):
         """Creates a vector polygon of the convex hull of a LiDAR point cloud. When the input/output parameters are not specified, the tool works with all LAS files contained within the working directory.
@@ -8328,7 +8328,7 @@ Okay, that's it for now.
         if i is not None: args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if hull: args.append("--hull")
-        return self.run_tool('lidar_tile_footprint', args, callback) # returns 1 if error
+        return self.run_tool('lidar_tile_footprint', args, callback)  # returns 1 if error
 
     def lidar_tin_gridding(self, i=None, output=None, parameter="elevation", returns="all", resolution=1.0, exclude_cls="7,18", minz=None, maxz=None, max_triangle_edge_length=None, callback=None):
         """Creates a raster grid based on a Delaunay triangular irregular network (TIN) fitted to LiDAR points.
@@ -8356,7 +8356,7 @@ Okay, that's it for now.
         if minz is not None: args.append("--minz='{}'".format(minz))
         if maxz is not None: args.append("--maxz='{}'".format(maxz))
         if max_triangle_edge_length is not None: args.append("--max_triangle_edge_length='{}'".format(max_triangle_edge_length))
-        return self.run_tool('lidar_tin_gridding', args, callback) # returns 1 if error
+        return self.run_tool('lidar_tin_gridding', args, callback)  # returns 1 if error
 
     def lidar_tophat_transform(self, i, output, radius=1.0, callback=None):
         """Performs a white top-hat transform on a Lidar dataset; as an estimate of height above ground, this is useful for modelling the vegetation canopy.
@@ -8372,7 +8372,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--radius={}".format(radius))
-        return self.run_tool('lidar_tophat_transform', args, callback) # returns 1 if error
+        return self.run_tool('lidar_tophat_transform', args, callback)  # returns 1 if error
 
     def modify_lidar(self, i=None, output=None, statement="", callback=None):
         """Modify points within a LiDAR point cloud based on point properties.
@@ -8388,7 +8388,7 @@ Okay, that's it for now.
         if i is not None: args.append("--input='{}'".format(i))
         if output is not None: args.append("--output='{}'".format(output))
         args.append("--statement={}".format(statement))
-        return self.run_tool('modify_lidar', args, callback) # returns 1 if error
+        return self.run_tool('modify_lidar', args, callback)  # returns 1 if error
 
     def normal_vectors(self, i, output, radius=1.0, callback=None):
         """Calculates normal vectors for points within a LAS file and stores these data (XYZ vector components) in the RGB field.
@@ -8404,7 +8404,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--radius={}".format(radius))
-        return self.run_tool('normal_vectors', args, callback) # returns 1 if error
+        return self.run_tool('normal_vectors', args, callback)  # returns 1 if error
 
     def normalize_lidar(self, i, output, dtm, callback=None):
         """Normalizes a LiDAR point cloud.
@@ -8420,7 +8420,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--dtm='{}'".format(dtm))
-        return self.run_tool('normalize_lidar', args, callback) # returns 1 if error
+        return self.run_tool('normalize_lidar', args, callback)  # returns 1 if error
 
     def recover_flightline_info(self, i, output, max_time_diff=5.0, pt_src_id=False, user_data=False, rgb=False, callback=None):
         """Associates LiDAR points by their flightlines.
@@ -8442,7 +8442,7 @@ Okay, that's it for now.
         if pt_src_id: args.append("--pt_src_id")
         if user_data: args.append("--user_data")
         if rgb: args.append("--rgb")
-        return self.run_tool('recover_flightline_info', args, callback) # returns 1 if error
+        return self.run_tool('recover_flightline_info', args, callback)  # returns 1 if error
 
     def select_tiles_by_polygon(self, indir, outdir, polygons, callback=None):
         """Copies LiDAR tiles overlapping with a polygon into an output directory.
@@ -8458,7 +8458,7 @@ Okay, that's it for now.
         args.append("--indir='{}'".format(indir))
         args.append("--outdir='{}'".format(outdir))
         args.append("--polygons='{}'".format(polygons))
-        return self.run_tool('select_tiles_by_polygon', args, callback) # returns 1 if error
+        return self.run_tool('select_tiles_by_polygon', args, callback)  # returns 1 if error
 
     def sort_lidar(self, i=None, output=None, criteria="", callback=None):
         """Sorts LiDAR points based on their properties.
@@ -8474,7 +8474,7 @@ Okay, that's it for now.
         if i is not None: args.append("--input='{}'".format(i))
         if output is not None: args.append("--output='{}'".format(output))
         args.append("--criteria={}".format(criteria))
-        return self.run_tool('sort_lidar', args, callback) # returns 1 if error
+        return self.run_tool('sort_lidar', args, callback)  # returns 1 if error
 
     def split_lidar(self, i=None, criterion="num_pts", interval="", min_pts=5, callback=None):
         """Splits LiDAR points up into a series of new files based on their properties.
@@ -8492,7 +8492,7 @@ Okay, that's it for now.
         args.append("--criterion={}".format(criterion))
         args.append("--interval={}".format(interval))
         args.append("--min_pts={}".format(min_pts))
-        return self.run_tool('split_lidar', args, callback) # returns 1 if error
+        return self.run_tool('split_lidar', args, callback)  # returns 1 if error
 
     def zlidar_to_las(self, inputs=None, outdir=None, callback=None):
         """Converts one or more zlidar files into the LAS data format.
@@ -8506,7 +8506,7 @@ Okay, that's it for now.
         args = []
         if inputs is not None: args.append("--inputs='{}'".format(inputs))
         if outdir is not None: args.append("--outdir='{}'".format(outdir))
-        return self.run_tool('zlidar_to_las', args, callback) # returns 1 if error
+        return self.run_tool('zlidar_to_las', args, callback)  # returns 1 if error
 
     ####################
     # Machine Learning #
@@ -8530,7 +8530,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--search_dist={}".format(search_dist))
         args.append("--min_points={}".format(min_points))
-        return self.run_tool('dbscan', args, callback) # returns 1 if error
+        return self.run_tool('dbscan', args, callback)  # returns 1 if error
 
     def k_means_clustering(self, inputs, output, classes, out_html=None, max_iterations=10, class_change=2.0, initialize="diagonal", min_class_size=10, callback=None):
         """Performs a k-means clustering operation on a multi-spectral dataset.
@@ -8556,7 +8556,7 @@ Okay, that's it for now.
         args.append("--class_change={}".format(class_change))
         args.append("--initialize={}".format(initialize))
         args.append("--min_class_size={}".format(min_class_size))
-        return self.run_tool('k_means_clustering', args, callback) # returns 1 if error
+        return self.run_tool('k_means_clustering', args, callback)  # returns 1 if error
 
     def knn_classification(self, inputs, training, field, scaling="Normalize", output=None, k=5, clip=True, test_proportion=0.2, callback=None):
         """Performs a supervised k-nearest neighbour classification using training site polygons/points and predictor rasters.
@@ -8582,7 +8582,7 @@ Okay, that's it for now.
         args.append("-k={}".format(k))
         if clip: args.append("--clip")
         args.append("--test_proportion={}".format(test_proportion))
-        return self.run_tool('knn_classification', args, callback) # returns 1 if error
+        return self.run_tool('knn_classification', args, callback)  # returns 1 if error
 
     def knn_regression(self, inputs, training, field, scaling="Normalize", output=None, k=5, weight=True, test_proportion=0.2, callback=None):
         """Performs a supervised k-nearest neighbour regression using training site points and predictor rasters.
@@ -8608,7 +8608,7 @@ Okay, that's it for now.
         args.append("-k={}".format(k))
         if weight: args.append("--weight")
         args.append("--test_proportion={}".format(test_proportion))
-        return self.run_tool('knn_regression', args, callback) # returns 1 if error
+        return self.run_tool('knn_regression', args, callback)  # returns 1 if error
 
     def logistic_regression(self, inputs, training, field, scaling="Normalize", output=None, test_proportion=0.2, callback=None):
         """Performs a logistic regression analysis using training site polygons/points and predictor rasters.
@@ -8630,7 +8630,7 @@ Okay, that's it for now.
         args.append("--field='{}'".format(field))
         if output is not None: args.append("--output='{}'".format(output))
         args.append("--test_proportion={}".format(test_proportion))
-        return self.run_tool('logistic_regression', args, callback) # returns 1 if error
+        return self.run_tool('logistic_regression', args, callback)  # returns 1 if error
 
     def modified_k_means_clustering(self, inputs, output, out_html=None, start_clusters=1000, merge_dist=None, max_iterations=10, class_change=2.0, callback=None):
         """Performs a modified k-means clustering operation on a multi-spectral dataset.
@@ -8654,7 +8654,7 @@ Okay, that's it for now.
         if merge_dist is not None: args.append("--merge_dist='{}'".format(merge_dist))
         args.append("--max_iterations={}".format(max_iterations))
         args.append("--class_change={}".format(class_change))
-        return self.run_tool('modified_k_means_clustering', args, callback) # returns 1 if error
+        return self.run_tool('modified_k_means_clustering', args, callback)  # returns 1 if error
 
     def random_forest_classification(self, inputs, training, field, output=None, split_criterion="Gini", n_trees=500, min_samples_leaf=1, min_samples_split=2, test_proportion=0.2, callback=None):
         """Performs a supervised random forest classification using training site polygons/points and predictor rasters.
@@ -8682,7 +8682,7 @@ Okay, that's it for now.
         args.append("--min_samples_leaf={}".format(min_samples_leaf))
         args.append("--min_samples_split={}".format(min_samples_split))
         args.append("--test_proportion={}".format(test_proportion))
-        return self.run_tool('random_forest_classification', args, callback) # returns 1 if error
+        return self.run_tool('random_forest_classification', args, callback)  # returns 1 if error
 
     def random_forest_regression(self, inputs, training, field, output=None, n_trees=100, min_samples_leaf=1, min_samples_split=2, test_proportion=0.2, callback=None):
         """Performs a random forest regression analysis using training site data and predictor rasters.
@@ -8708,7 +8708,7 @@ Okay, that's it for now.
         args.append("--min_samples_leaf={}".format(min_samples_leaf))
         args.append("--min_samples_split={}".format(min_samples_split))
         args.append("--test_proportion={}".format(test_proportion))
-        return self.run_tool('random_forest_regression', args, callback) # returns 1 if error
+        return self.run_tool('random_forest_regression', args, callback)  # returns 1 if error
 
     def svm_classification(self, inputs, training, field, scaling="Normalize", output=None, c=200.0, gamma=50.0, tolerance=0.1, test_proportion=0.2, callback=None):
         """Performs an SVM binary classification using training site polygons/points and multiple input images.
@@ -8736,7 +8736,7 @@ Okay, that's it for now.
         args.append("--gamma={}".format(gamma))
         args.append("--tolerance={}".format(tolerance))
         args.append("--test_proportion={}".format(test_proportion))
-        return self.run_tool('svm_classification', args, callback) # returns 1 if error
+        return self.run_tool('svm_classification', args, callback)  # returns 1 if error
 
     def svm_regression(self, inputs, training, field, scaling="Normalize", output=None, c=50.0, eps=10.0, gamma=0.5, test_proportion=0.2, callback=None):
         """Performs a supervised SVM regression analysis using training site points and predictor rasters.
@@ -8764,7 +8764,7 @@ Okay, that's it for now.
         args.append("--eps={}".format(eps))
         args.append("--gamma={}".format(gamma))
         args.append("--test_proportion={}".format(test_proportion))
-        return self.run_tool('svm_regression', args, callback) # returns 1 if error
+        return self.run_tool('svm_regression', args, callback)  # returns 1 if error
 
     ########################
     # Math and Stats Tools #
@@ -8784,7 +8784,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('and', args, callback) # returns 1 if error
+        return self.run_tool('and', args, callback)  # returns 1 if error
 
     def Not(self, input1, input2, output, callback=None):
         """Performs a logical NOT operator on two Boolean raster images.
@@ -8800,7 +8800,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('not', args, callback) # returns 1 if error
+        return self.run_tool('not', args, callback)  # returns 1 if error
 
     def Or(self, input1, input2, output, callback=None):
         """Performs a logical OR operator on two Boolean raster images.
@@ -8816,7 +8816,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('or', args, callback) # returns 1 if error
+        return self.run_tool('or', args, callback)  # returns 1 if error
 
     def absolute_value(self, i, output, callback=None):
         """Calculates the absolute value of every cell in a raster.
@@ -8830,7 +8830,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('absolute_value', args, callback) # returns 1 if error
+        return self.run_tool('absolute_value', args, callback)  # returns 1 if error
 
     def add(self, input1, input2, output, callback=None):
         """Performs an addition operation on two rasters or a raster and a constant value.
@@ -8846,7 +8846,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('add', args, callback) # returns 1 if error
+        return self.run_tool('add', args, callback)  # returns 1 if error
 
     def anova(self, i, features, output, callback=None):
         """Performs an analysis of variance (ANOVA) test on a raster dataset.
@@ -8862,7 +8862,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--features='{}'".format(features))
         args.append("--output='{}'".format(output))
-        return self.run_tool('anova', args, callback) # returns 1 if error
+        return self.run_tool('anova', args, callback)  # returns 1 if error
 
     def arc_cos(self, i, output, callback=None):
         """Returns the inverse cosine (arccos) of each values in a raster.
@@ -8876,7 +8876,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('arc_cos', args, callback) # returns 1 if error
+        return self.run_tool('arc_cos', args, callback)  # returns 1 if error
 
     def arc_sin(self, i, output, callback=None):
         """Returns the inverse sine (arcsin) of each values in a raster.
@@ -8890,7 +8890,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('arc_sin', args, callback) # returns 1 if error
+        return self.run_tool('arc_sin', args, callback)  # returns 1 if error
 
     def arc_tan(self, i, output, callback=None):
         """Returns the inverse tangent (arctan) of each values in a raster.
@@ -8904,7 +8904,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('arc_tan', args, callback) # returns 1 if error
+        return self.run_tool('arc_tan', args, callback)  # returns 1 if error
 
     def arcosh(self, i, output, callback=None):
         """Returns the inverse hyperbolic cosine (arcosh) of each values in a raster.
@@ -8918,7 +8918,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('arcosh', args, callback) # returns 1 if error
+        return self.run_tool('arcosh', args, callback)  # returns 1 if error
 
     def arsinh(self, i, output, callback=None):
         """Returns the inverse hyperbolic sine (arsinh) of each values in a raster.
@@ -8932,7 +8932,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('arsinh', args, callback) # returns 1 if error
+        return self.run_tool('arsinh', args, callback)  # returns 1 if error
 
     def artanh(self, i, output, callback=None):
         """Returns the inverse hyperbolic tangent (arctanh) of each values in a raster.
@@ -8946,7 +8946,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('artanh', args, callback) # returns 1 if error
+        return self.run_tool('artanh', args, callback)  # returns 1 if error
 
     def atan2(self, input_y, input_x, output, callback=None):
         """Returns the 2-argument inverse tangent (atan2).
@@ -8962,7 +8962,7 @@ Okay, that's it for now.
         args.append("--input_y='{}'".format(input_y))
         args.append("--input_x='{}'".format(input_x))
         args.append("--output='{}'".format(output))
-        return self.run_tool('atan2', args, callback) # returns 1 if error
+        return self.run_tool('atan2', args, callback)  # returns 1 if error
 
     def attribute_correlation(self, i, output=None, callback=None):
         """Performs a correlation analysis on attribute fields from a vector database.
@@ -8976,7 +8976,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         if output is not None: args.append("--output='{}'".format(output))
-        return self.run_tool('attribute_correlation', args, callback) # returns 1 if error
+        return self.run_tool('attribute_correlation', args, callback)  # returns 1 if error
 
     def attribute_correlation_neighbourhood_analysis(self, i, field1, field2, radius=None, min_points=None, stat="pearson", callback=None):
         """Performs a correlation on two input vector attributes within a neighbourhood search windows.
@@ -8998,7 +8998,7 @@ Okay, that's it for now.
         if radius is not None: args.append("--radius='{}'".format(radius))
         if min_points is not None: args.append("--min_points='{}'".format(min_points))
         args.append("--stat={}".format(stat))
-        return self.run_tool('attribute_correlation_neighbourhood_analysis', args, callback) # returns 1 if error
+        return self.run_tool('attribute_correlation_neighbourhood_analysis', args, callback)  # returns 1 if error
 
     def attribute_histogram(self, i, field, output, callback=None):
         """Creates a histogram for the field values of a vector's attribute table.
@@ -9014,7 +9014,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--field='{}'".format(field))
         args.append("--output='{}'".format(output))
-        return self.run_tool('attribute_histogram', args, callback) # returns 1 if error
+        return self.run_tool('attribute_histogram', args, callback)  # returns 1 if error
 
     def attribute_scattergram(self, i, fieldx, fieldy, output, trendline=False, callback=None):
         """Creates a scattergram for two field values of a vector's attribute table.
@@ -9034,7 +9034,7 @@ Okay, that's it for now.
         args.append("--fieldy='{}'".format(fieldy))
         args.append("--output='{}'".format(output))
         if trendline: args.append("--trendline")
-        return self.run_tool('attribute_scattergram', args, callback) # returns 1 if error
+        return self.run_tool('attribute_scattergram', args, callback)  # returns 1 if error
 
     def ceil(self, i, output, callback=None):
         """Returns the smallest (closest to negative infinity) value that is greater than or equal to the values in a raster.
@@ -9048,7 +9048,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('ceil', args, callback) # returns 1 if error
+        return self.run_tool('ceil', args, callback)  # returns 1 if error
 
     def conditional_evaluation(self, i, output, statement="", true=None, false=None, callback=None):
         """Performs a conditional evaluation (if-then-else) operation on a raster.
@@ -9068,7 +9068,7 @@ Okay, that's it for now.
         if true is not None: args.append("--true='{}'".format(true))
         if false is not None: args.append("--false='{}'".format(false))
         args.append("--output='{}'".format(output))
-        return self.run_tool('conditional_evaluation', args, callback) # returns 1 if error
+        return self.run_tool('conditional_evaluation', args, callback)  # returns 1 if error
 
     def conditioned_latin_hypercube(self, inputs, output, samples=500, iterations=25000, seed=None, prob=0.5, threshold=None, temp=1.0, temp_decay=0.05, cycle=10, average=False, callback=None):
         """Implements conditioned Latin Hypercube sampling.
@@ -9100,7 +9100,7 @@ Okay, that's it for now.
         args.append("--temp_decay={}".format(temp_decay))
         args.append("--cycle={}".format(cycle))
         if average: args.append("--average")
-        return self.run_tool('conditioned_latin_hypercube', args, callback) # returns 1 if error
+        return self.run_tool('conditioned_latin_hypercube', args, callback)  # returns 1 if error
 
     def cos(self, i, output, callback=None):
         """Returns the cosine (cos) of each values in a raster.
@@ -9114,7 +9114,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('cos', args, callback) # returns 1 if error
+        return self.run_tool('cos', args, callback)  # returns 1 if error
 
     def cosh(self, i, output, callback=None):
         """Returns the hyperbolic cosine (cosh) of each values in a raster.
@@ -9128,7 +9128,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('cosh', args, callback) # returns 1 if error
+        return self.run_tool('cosh', args, callback)  # returns 1 if error
 
     def crispness_index(self, i, output=None, callback=None):
         """Calculates the Crispness Index, which is used to quantify how crisp (or conversely how fuzzy) a probability image is.
@@ -9142,7 +9142,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         if output is not None: args.append("--output='{}'".format(output))
-        return self.run_tool('crispness_index', args, callback) # returns 1 if error
+        return self.run_tool('crispness_index', args, callback)  # returns 1 if error
 
     def cross_tabulation(self, input1, input2, output, callback=None):
         """Performs a cross-tabulation on two categorical images.
@@ -9158,7 +9158,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('cross_tabulation', args, callback) # returns 1 if error
+        return self.run_tool('cross_tabulation', args, callback)  # returns 1 if error
 
     def cumulative_distribution(self, i, output, callback=None):
         """Converts a raster image to its cumulative distribution function.
@@ -9172,7 +9172,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('cumulative_distribution', args, callback) # returns 1 if error
+        return self.run_tool('cumulative_distribution', args, callback)  # returns 1 if error
 
     def decrement(self, i, output, callback=None):
         """Decreases the values of each grid cell in an input raster by 1.0 (see also InPlaceSubtract).
@@ -9186,7 +9186,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('decrement', args, callback) # returns 1 if error
+        return self.run_tool('decrement', args, callback)  # returns 1 if error
 
     def divide(self, input1, input2, output, callback=None):
         """Performs a division operation on two rasters or a raster and a constant value.
@@ -9202,7 +9202,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('divide', args, callback) # returns 1 if error
+        return self.run_tool('divide', args, callback)  # returns 1 if error
 
     def equal_to(self, input1, input2, output, callback=None):
         """Performs a equal-to comparison operation on two rasters or a raster and a constant value.
@@ -9218,7 +9218,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('equal_to', args, callback) # returns 1 if error
+        return self.run_tool('equal_to', args, callback)  # returns 1 if error
 
     def exp(self, i, output, callback=None):
         """Returns the exponential (base e) of values in a raster.
@@ -9232,7 +9232,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('exp', args, callback) # returns 1 if error
+        return self.run_tool('exp', args, callback)  # returns 1 if error
 
     def exp2(self, i, output, callback=None):
         """Returns the exponential (base 2) of values in a raster.
@@ -9246,7 +9246,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('exp2', args, callback) # returns 1 if error
+        return self.run_tool('exp2', args, callback)  # returns 1 if error
 
     def floor(self, i, output, callback=None):
         """Returns the largest (closest to positive infinity) value that is less than or equal to the values in a raster.
@@ -9260,7 +9260,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('floor', args, callback) # returns 1 if error
+        return self.run_tool('floor', args, callback)  # returns 1 if error
 
     def greater_than(self, input1, input2, output, incl_equals=False, callback=None):
         """Performs a greater-than comparison operation on two rasters or a raster and a constant value.
@@ -9278,7 +9278,7 @@ Okay, that's it for now.
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
         if incl_equals: args.append("--incl_equals")
-        return self.run_tool('greater_than', args, callback) # returns 1 if error
+        return self.run_tool('greater_than', args, callback)  # returns 1 if error
 
     def image_autocorrelation(self, inputs, output, contiguity="Rook", callback=None):
         """Performs Moran's I analysis on two or more input images.
@@ -9294,7 +9294,7 @@ Okay, that's it for now.
         args.append("--inputs='{}'".format(inputs))
         args.append("--contiguity={}".format(contiguity))
         args.append("--output='{}'".format(output))
-        return self.run_tool('image_autocorrelation', args, callback) # returns 1 if error
+        return self.run_tool('image_autocorrelation', args, callback)  # returns 1 if error
 
     def image_correlation(self, inputs, output=None, callback=None):
         """Performs image correlation on two or more input images.
@@ -9308,7 +9308,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         if output is not None: args.append("--output='{}'".format(output))
-        return self.run_tool('image_correlation', args, callback) # returns 1 if error
+        return self.run_tool('image_correlation', args, callback)  # returns 1 if error
 
     def image_correlation_neighbourhood_analysis(self, input1, input2, output1, output2, filter=11, stat="pearson", callback=None):
         """Performs image correlation on two input images neighbourhood search windows.
@@ -9330,7 +9330,7 @@ Okay, that's it for now.
         args.append("--output2='{}'".format(output2))
         args.append("--filter={}".format(filter))
         args.append("--stat={}".format(stat))
-        return self.run_tool('image_correlation_neighbourhood_analysis', args, callback) # returns 1 if error
+        return self.run_tool('image_correlation_neighbourhood_analysis', args, callback)  # returns 1 if error
 
     def image_regression(self, input1, input2, output, out_residuals=None, standardize=False, scattergram=False, num_samples=1000, callback=None):
         """Performs image regression analysis on two input images.
@@ -9354,7 +9354,7 @@ Okay, that's it for now.
         if standardize: args.append("--standardize")
         if scattergram: args.append("--scattergram")
         args.append("--num_samples={}".format(num_samples))
-        return self.run_tool('image_regression', args, callback) # returns 1 if error
+        return self.run_tool('image_regression', args, callback)  # returns 1 if error
 
     def in_place_add(self, input1, input2, callback=None):
         """Performs an in-place addition operation (input1 += input2).
@@ -9368,7 +9368,7 @@ Okay, that's it for now.
         args = []
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
-        return self.run_tool('in_place_add', args, callback) # returns 1 if error
+        return self.run_tool('in_place_add', args, callback)  # returns 1 if error
 
     def in_place_divide(self, input1, input2, callback=None):
         """Performs an in-place division operation (input1 /= input2).
@@ -9382,7 +9382,7 @@ Okay, that's it for now.
         args = []
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
-        return self.run_tool('in_place_divide', args, callback) # returns 1 if error
+        return self.run_tool('in_place_divide', args, callback)  # returns 1 if error
 
     def in_place_multiply(self, input1, input2, callback=None):
         """Performs an in-place multiplication operation (input1 *= input2).
@@ -9396,7 +9396,7 @@ Okay, that's it for now.
         args = []
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
-        return self.run_tool('in_place_multiply', args, callback) # returns 1 if error
+        return self.run_tool('in_place_multiply', args, callback)  # returns 1 if error
 
     def in_place_subtract(self, input1, input2, callback=None):
         """Performs an in-place subtraction operation (input1 -= input2).
@@ -9410,7 +9410,7 @@ Okay, that's it for now.
         args = []
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
-        return self.run_tool('in_place_subtract', args, callback) # returns 1 if error
+        return self.run_tool('in_place_subtract', args, callback)  # returns 1 if error
 
     def increment(self, i, output, callback=None):
         """Increases the values of each grid cell in an input raster by 1.0. (see also InPlaceAdd).
@@ -9424,7 +9424,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('increment', args, callback) # returns 1 if error
+        return self.run_tool('increment', args, callback)  # returns 1 if error
 
     def integer_division(self, input1, input2, output, callback=None):
         """Performs an integer division operation on two rasters or a raster and a constant value.
@@ -9440,7 +9440,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('integer_division', args, callback) # returns 1 if error
+        return self.run_tool('integer_division', args, callback)  # returns 1 if error
 
     def inverse_principal_component_analysis(self, inputs, report, callback=None):
         """This tool performs an inverse principal component analysis on a series of input component images.
@@ -9454,7 +9454,7 @@ Okay, that's it for now.
         args = []
         args.append("--inputs='{}'".format(inputs))
         args.append("--report='{}'".format(report))
-        return self.run_tool('inverse_principal_component_analysis', args, callback) # returns 1 if error
+        return self.run_tool('inverse_principal_component_analysis', args, callback)  # returns 1 if error
 
     def is_no_data(self, i, output, callback=None):
         """Identifies NoData valued pixels in an image.
@@ -9468,7 +9468,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('is_no_data', args, callback) # returns 1 if error
+        return self.run_tool('is_no_data', args, callback)  # returns 1 if error
 
     def kappa_index(self, input1, input2, output, callback=None):
         """Performs a kappa index of agreement (KIA) analysis on two categorical raster files.
@@ -9484,7 +9484,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('kappa_index', args, callback) # returns 1 if error
+        return self.run_tool('kappa_index', args, callback)  # returns 1 if error
 
     def ks_test_for_normality(self, i, output, num_samples=None, callback=None):
         """Evaluates whether the values in a raster are normally distributed.
@@ -9500,7 +9500,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if num_samples is not None: args.append("--num_samples='{}'".format(num_samples))
-        return self.run_tool('ks_test_for_normality', args, callback) # returns 1 if error
+        return self.run_tool('ks_test_for_normality', args, callback)  # returns 1 if error
 
     def less_than(self, input1, input2, output, incl_equals=False, callback=None):
         """Performs a less-than comparison operation on two rasters or a raster and a constant value.
@@ -9518,7 +9518,7 @@ Okay, that's it for now.
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
         if incl_equals: args.append("--incl_equals")
-        return self.run_tool('less_than', args, callback) # returns 1 if error
+        return self.run_tool('less_than', args, callback)  # returns 1 if error
 
     def list_unique_values(self, i, field, output, callback=None):
         """Lists the unique values contained in a field within a vector's attribute table.
@@ -9534,7 +9534,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--field='{}'".format(field))
         args.append("--output='{}'".format(output))
-        return self.run_tool('list_unique_values', args, callback) # returns 1 if error
+        return self.run_tool('list_unique_values', args, callback)  # returns 1 if error
 
     def list_unique_values_raster(self, i, callback=None):
         """Lists the unique values contained in a field within a vector's attribute table.
@@ -9546,7 +9546,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('list_unique_values_raster', args, callback) # returns 1 if error
+        return self.run_tool('list_unique_values_raster', args, callback)  # returns 1 if error
 
     def ln(self, i, output, callback=None):
         """Returns the natural logarithm of values in a raster.
@@ -9560,7 +9560,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('ln', args, callback) # returns 1 if error
+        return self.run_tool('ln', args, callback)  # returns 1 if error
 
     def log10(self, i, output, callback=None):
         """Returns the base-10 logarithm of values in a raster.
@@ -9574,7 +9574,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('log10', args, callback) # returns 1 if error
+        return self.run_tool('log10', args, callback)  # returns 1 if error
 
     def log2(self, i, output, callback=None):
         """Returns the base-2 logarithm of values in a raster.
@@ -9588,7 +9588,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('log2', args, callback) # returns 1 if error
+        return self.run_tool('log2', args, callback)  # returns 1 if error
 
     def max(self, input1, input2, output, callback=None):
         """Performs a MAX operation on two rasters or a raster and a constant value.
@@ -9604,7 +9604,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('max', args, callback) # returns 1 if error
+        return self.run_tool('max', args, callback)  # returns 1 if error
 
     def min(self, input1, input2, output, callback=None):
         """Performs a MIN operation on two rasters or a raster and a constant value.
@@ -9620,7 +9620,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('min', args, callback) # returns 1 if error
+        return self.run_tool('min', args, callback)  # returns 1 if error
 
     def modulo(self, input1, input2, output, callback=None):
         """Performs a modulo operation on two rasters or a raster and a constant value.
@@ -9636,7 +9636,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('modulo', args, callback) # returns 1 if error
+        return self.run_tool('modulo', args, callback)  # returns 1 if error
 
     def multiply(self, input1, input2, output, callback=None):
         """Performs a multiplication operation on two rasters or a raster and a constant value.
@@ -9652,7 +9652,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('multiply', args, callback) # returns 1 if error
+        return self.run_tool('multiply', args, callback)  # returns 1 if error
 
     def negate(self, i, output, callback=None):
         """Changes the sign of values in a raster or the 0-1 values of a Boolean raster.
@@ -9666,7 +9666,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('negate', args, callback) # returns 1 if error
+        return self.run_tool('negate', args, callback)  # returns 1 if error
 
     def not_equal_to(self, input1, input2, output, callback=None):
         """Performs a not-equal-to comparison operation on two rasters or a raster and a constant value.
@@ -9682,7 +9682,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('not_equal_to', args, callback) # returns 1 if error
+        return self.run_tool('not_equal_to', args, callback)  # returns 1 if error
 
     def paired_sample_t_test(self, input1, input2, output, num_samples=None, callback=None):
         """Performs a 2-sample K-S test for significant differences on two input rasters.
@@ -9700,7 +9700,7 @@ Okay, that's it for now.
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
         if num_samples is not None: args.append("--num_samples='{}'".format(num_samples))
-        return self.run_tool('paired_sample_t_test', args, callback) # returns 1 if error
+        return self.run_tool('paired_sample_t_test', args, callback)  # returns 1 if error
 
     def phi_coefficient(self, input1, input2, output, callback=None):
         """This tool performs a binary classification accuracy assessment.
@@ -9716,7 +9716,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('phi_coefficient', args, callback) # returns 1 if error
+        return self.run_tool('phi_coefficient', args, callback)  # returns 1 if error
 
     def power(self, input1, input2, output, callback=None):
         """Raises the values in grid cells of one rasters, or a constant value, by values in another raster or constant value.
@@ -9732,7 +9732,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('power', args, callback) # returns 1 if error
+        return self.run_tool('power', args, callback)  # returns 1 if error
 
     def principal_component_analysis(self, inputs, output, num_comp=None, standardized=False, callback=None):
         """Performs a principal component analysis (PCA) on a multi-spectral dataset.
@@ -9750,7 +9750,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if num_comp is not None: args.append("--num_comp='{}'".format(num_comp))
         if standardized: args.append("--standardized")
-        return self.run_tool('principal_component_analysis', args, callback) # returns 1 if error
+        return self.run_tool('principal_component_analysis', args, callback)  # returns 1 if error
 
     def quantiles(self, i, output, num_quantiles=5, callback=None):
         """Transforms raster values into quantiles.
@@ -9766,7 +9766,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--num_quantiles={}".format(num_quantiles))
-        return self.run_tool('quantiles', args, callback) # returns 1 if error
+        return self.run_tool('quantiles', args, callback)  # returns 1 if error
 
     def random_field(self, base, output, callback=None):
         """Creates an image containing random values.
@@ -9780,7 +9780,7 @@ Okay, that's it for now.
         args = []
         args.append("--base='{}'".format(base))
         args.append("--output='{}'".format(output))
-        return self.run_tool('random_field', args, callback) # returns 1 if error
+        return self.run_tool('random_field', args, callback)  # returns 1 if error
 
     def random_sample(self, base, output, num_samples=1000, callback=None):
         """Creates an image containing randomly located sample grid cells with unique IDs.
@@ -9796,7 +9796,7 @@ Okay, that's it for now.
         args.append("--base='{}'".format(base))
         args.append("--output='{}'".format(output))
         args.append("--num_samples={}".format(num_samples))
-        return self.run_tool('random_sample', args, callback) # returns 1 if error
+        return self.run_tool('random_sample', args, callback)  # returns 1 if error
 
     def raster_calculator(self, output, statement="", callback=None):
         """Performs a complex mathematical operations on one or more input raster images on a cell-to-cell basis.
@@ -9810,7 +9810,7 @@ Okay, that's it for now.
         args = []
         args.append("--statement={}".format(statement))
         args.append("--output='{}'".format(output))
-        return self.run_tool('raster_calculator', args, callback) # returns 1 if error
+        return self.run_tool('raster_calculator', args, callback)  # returns 1 if error
 
     def raster_histogram(self, i, output, callback=None):
         """Creates a histogram from raster values.
@@ -9824,7 +9824,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('raster_histogram', args, callback) # returns 1 if error
+        return self.run_tool('raster_histogram', args, callback)  # returns 1 if error
 
     def raster_summary_stats(self, i, callback=None):
         """Measures a rasters min, max, average, standard deviation, num. non-nodata cells, and total.
@@ -9836,7 +9836,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--input='{}'".format(i))
-        return self.run_tool('raster_summary_stats', args, callback) # returns 1 if error
+        return self.run_tool('raster_summary_stats', args, callback)  # returns 1 if error
 
     def reciprocal(self, i, output, callback=None):
         """Returns the reciprocal (i.e. 1 / z) of values in a raster.
@@ -9850,7 +9850,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('reciprocal', args, callback) # returns 1 if error
+        return self.run_tool('reciprocal', args, callback)  # returns 1 if error
 
     def rescale_value_range(self, i, output, out_min_val, out_max_val, clip_min=None, clip_max=None, callback=None):
         """Performs a min-max contrast stretch on an input greytone image.
@@ -9872,7 +9872,7 @@ Okay, that's it for now.
         args.append("--out_max_val='{}'".format(out_max_val))
         if clip_min is not None: args.append("--clip_min='{}'".format(clip_min))
         if clip_max is not None: args.append("--clip_max='{}'".format(clip_max))
-        return self.run_tool('rescale_value_range', args, callback) # returns 1 if error
+        return self.run_tool('rescale_value_range', args, callback)  # returns 1 if error
 
     def root_mean_square_error(self, i, base, callback=None):
         """Calculates the RMSE and other accuracy statistics.
@@ -9886,7 +9886,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--base='{}'".format(base))
-        return self.run_tool('root_mean_square_error', args, callback) # returns 1 if error
+        return self.run_tool('root_mean_square_error', args, callback)  # returns 1 if error
 
     def round(self, i, output, callback=None):
         """Rounds the values in an input raster to the nearest integer value.
@@ -9900,7 +9900,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('round', args, callback) # returns 1 if error
+        return self.run_tool('round', args, callback)  # returns 1 if error
 
     def sin(self, i, output, callback=None):
         """Returns the sine (sin) of each values in a raster.
@@ -9914,7 +9914,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('sin', args, callback) # returns 1 if error
+        return self.run_tool('sin', args, callback)  # returns 1 if error
 
     def sinh(self, i, output, callback=None):
         """Returns the hyperbolic sine (sinh) of each values in a raster.
@@ -9928,7 +9928,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('sinh', args, callback) # returns 1 if error
+        return self.run_tool('sinh', args, callback)  # returns 1 if error
 
     def square(self, i, output, callback=None):
         """Squares the values in a raster.
@@ -9942,7 +9942,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('square', args, callback) # returns 1 if error
+        return self.run_tool('square', args, callback)  # returns 1 if error
 
     def square_root(self, i, output, callback=None):
         """Returns the square root of the values in a raster.
@@ -9956,7 +9956,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('square_root', args, callback) # returns 1 if error
+        return self.run_tool('square_root', args, callback)  # returns 1 if error
 
     def subtract(self, input1, input2, output, callback=None):
         """Performs a differencing operation on two rasters or a raster and a constant value.
@@ -9972,7 +9972,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('subtract', args, callback) # returns 1 if error
+        return self.run_tool('subtract', args, callback)  # returns 1 if error
 
     def tan(self, i, output, callback=None):
         """Returns the tangent (tan) of each values in a raster.
@@ -9986,7 +9986,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('tan', args, callback) # returns 1 if error
+        return self.run_tool('tan', args, callback)  # returns 1 if error
 
     def tanh(self, i, output, callback=None):
         """Returns the hyperbolic tangent (tanh) of each values in a raster.
@@ -10000,7 +10000,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('tanh', args, callback) # returns 1 if error
+        return self.run_tool('tanh', args, callback)  # returns 1 if error
 
     def to_degrees(self, i, output, callback=None):
         """Converts a raster from radians to degrees.
@@ -10014,7 +10014,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('to_degrees', args, callback) # returns 1 if error
+        return self.run_tool('to_degrees', args, callback)  # returns 1 if error
 
     def to_radians(self, i, output, callback=None):
         """Converts a raster from degrees to radians.
@@ -10028,7 +10028,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('to_radians', args, callback) # returns 1 if error
+        return self.run_tool('to_radians', args, callback)  # returns 1 if error
 
     def trend_surface(self, i, output, order=1, callback=None):
         """Estimates the trend surface of an input raster file.
@@ -10044,7 +10044,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--order={}".format(order))
-        return self.run_tool('trend_surface', args, callback) # returns 1 if error
+        return self.run_tool('trend_surface', args, callback)  # returns 1 if error
 
     def trend_surface_vector_points(self, i, field, output, cell_size, order=1, callback=None):
         """Estimates a trend surface from vector points.
@@ -10064,7 +10064,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--order={}".format(order))
         args.append("--cell_size='{}'".format(cell_size))
-        return self.run_tool('trend_surface_vector_points', args, callback) # returns 1 if error
+        return self.run_tool('trend_surface_vector_points', args, callback)  # returns 1 if error
 
     def truncate(self, i, output, num_decimals=None, callback=None):
         """Truncates the values in a raster to the desired number of decimal places.
@@ -10080,7 +10080,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         if num_decimals is not None: args.append("--num_decimals='{}'".format(num_decimals))
-        return self.run_tool('truncate', args, callback) # returns 1 if error
+        return self.run_tool('truncate', args, callback)  # returns 1 if error
 
     def turning_bands_simulation(self, base, output, range, iterations=1000, callback=None):
         """Creates an image containing random values based on a turning-bands simulation.
@@ -10098,7 +10098,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--range='{}'".format(range))
         args.append("--iterations={}".format(iterations))
-        return self.run_tool('turning_bands_simulation', args, callback) # returns 1 if error
+        return self.run_tool('turning_bands_simulation', args, callback)  # returns 1 if error
 
     def two_sample_ks_test(self, input1, input2, output, num_samples=None, callback=None):
         """Performs a 2-sample K-S test for significant differences on two input rasters.
@@ -10116,7 +10116,7 @@ Okay, that's it for now.
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
         if num_samples is not None: args.append("--num_samples='{}'".format(num_samples))
-        return self.run_tool('two_sample_ks_test', args, callback) # returns 1 if error
+        return self.run_tool('two_sample_ks_test', args, callback)  # returns 1 if error
 
     def wilcoxon_signed_rank_test(self, input1, input2, output, num_samples=None, callback=None):
         """Performs a 2-sample K-S test for significant differences on two input rasters.
@@ -10134,7 +10134,7 @@ Okay, that's it for now.
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
         if num_samples is not None: args.append("--num_samples='{}'".format(num_samples))
-        return self.run_tool('wilcoxon_signed_rank_test', args, callback) # returns 1 if error
+        return self.run_tool('wilcoxon_signed_rank_test', args, callback)  # returns 1 if error
 
     def xor(self, input1, input2, output, callback=None):
         """Performs a logical XOR operator on two Boolean raster images.
@@ -10150,7 +10150,7 @@ Okay, that's it for now.
         args.append("--input1='{}'".format(input1))
         args.append("--input2='{}'".format(input2))
         args.append("--output='{}'".format(output))
-        return self.run_tool('xor', args, callback) # returns 1 if error
+        return self.run_tool('xor', args, callback)  # returns 1 if error
 
     def z_scores(self, i, output, callback=None):
         """Standardizes the values in an input raster by converting to z-scores.
@@ -10164,7 +10164,7 @@ Okay, that's it for now.
         args = []
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
-        return self.run_tool('z_scores', args, callback) # returns 1 if error
+        return self.run_tool('z_scores', args, callback)  # returns 1 if error
 
     def zonal_statistics(self, i, features, output=None, stat="mean", out_table=None, callback=None):
         """Extracts descriptive statistics for a group of patches in a raster.
@@ -10184,7 +10184,7 @@ Okay, that's it for now.
         if output is not None: args.append("--output='{}'".format(output))
         args.append("--stat={}".format(stat))
         if out_table is not None: args.append("--out_table='{}'".format(out_table))
-        return self.run_tool('zonal_statistics', args, callback) # returns 1 if error
+        return self.run_tool('zonal_statistics', args, callback)  # returns 1 if error
 
     #########################
     # Precision Agriculture #
@@ -10214,7 +10214,7 @@ Okay, that's it for now.
         if min_yield is not None: args.append("--min_yield='{}'".format(min_yield))
         if max_yield is not None: args.append("--max_yield='{}'".format(max_yield))
         if mean_tonnage is not None: args.append("--mean_tonnage='{}'".format(mean_tonnage))
-        return self.run_tool('reconcile_multiple_headers', args, callback) # returns 1 if error
+        return self.run_tool('reconcile_multiple_headers', args, callback)  # returns 1 if error
 
     def recreate_pass_lines(self, i, yield_field_name, output_lines, output_points, max_change_in_heading=25.0, ignore_zeros=False, callback=None):
         """This tool can be used to approximate the harvester pass lines from yield points.
@@ -10236,7 +10236,7 @@ Okay, that's it for now.
         args.append("--output_points='{}'".format(output_points))
         args.append("--max_change_in_heading={}".format(max_change_in_heading))
         if ignore_zeros: args.append("--ignore_zeros")
-        return self.run_tool('recreate_pass_lines', args, callback) # returns 1 if error
+        return self.run_tool('recreate_pass_lines', args, callback)  # returns 1 if error
 
     def remove_field_edge_points(self, i, output, dist=None, max_change_in_heading=25.0, flag_edges=False, callback=None):
         """This tool can be used to remove, or flag, most of the points along the edges from a crop yield data set.
@@ -10256,7 +10256,7 @@ Okay, that's it for now.
         if dist is not None: args.append("--dist='{}'".format(dist))
         args.append("--max_change_in_heading={}".format(max_change_in_heading))
         if flag_edges: args.append("--flag_edges")
-        return self.run_tool('remove_field_edge_points', args, callback) # returns 1 if error
+        return self.run_tool('remove_field_edge_points', args, callback)  # returns 1 if error
 
     def yield_filter(self, i, yield_field, pass_field, output, width=6.096, z_score_threshold=2.5, min_yield=0.0, max_yield=99999.9, callback=None):
         """Filters crop yield values of point data derived from combine harvester yield monitors.
@@ -10282,7 +10282,7 @@ Okay, that's it for now.
         args.append("--z_score_threshold={}".format(z_score_threshold))
         args.append("--min_yield={}".format(min_yield))
         args.append("--max_yield={}".format(max_yield))
-        return self.run_tool('yield_filter', args, callback) # returns 1 if error
+        return self.run_tool('yield_filter', args, callback)  # returns 1 if error
 
     def yield_map(self, i, pass_field_name, output, width=6.096, max_change_in_heading=25.0, callback=None):
         """This tool can be used to create a segmented-vector polygon yield map from a set of harvester points.
@@ -10302,7 +10302,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--width={}".format(width))
         args.append("--max_change_in_heading={}".format(max_change_in_heading))
-        return self.run_tool('yield_map', args, callback) # returns 1 if error
+        return self.run_tool('yield_map', args, callback)  # returns 1 if error
 
     def yield_normalization(self, i, yield_field, output, standardize=False, radius=None, min_yield=0.0, max_yield=99999.9, callback=None):
         """This tool can be used to normalize the yield points for a field.
@@ -10326,7 +10326,7 @@ Okay, that's it for now.
         if radius is not None: args.append("--radius='{}'".format(radius))
         args.append("--min_yield={}".format(min_yield))
         args.append("--max_yield={}".format(max_yield))
-        return self.run_tool('yield_normalization', args, callback) # returns 1 if error
+        return self.run_tool('yield_normalization', args, callback)  # returns 1 if error
 
     ###########################
     # Stream Network Analysis #
@@ -10350,7 +10350,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('distance_to_outlet', args, callback) # returns 1 if error
+        return self.run_tool('distance_to_outlet', args, callback)  # returns 1 if error
 
     def extract_streams(self, flow_accum, output, threshold, zero_background=False, callback=None):
         """Extracts stream grid cells from a flow accumulation raster.
@@ -10368,7 +10368,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--threshold='{}'".format(threshold))
         if zero_background: args.append("--zero_background")
-        return self.run_tool('extract_streams', args, callback) # returns 1 if error
+        return self.run_tool('extract_streams', args, callback)  # returns 1 if error
 
     def extract_valleys(self, dem, output, variant="LQ", line_thin=True, filter=5, callback=None):
         """Identifies potential valley bottom grid cells based on local topolography alone.
@@ -10388,7 +10388,7 @@ Okay, that's it for now.
         args.append("--variant={}".format(variant))
         if line_thin: args.append("--line_thin")
         args.append("--filter={}".format(filter))
-        return self.run_tool('extract_valleys', args, callback) # returns 1 if error
+        return self.run_tool('extract_valleys', args, callback)  # returns 1 if error
 
     def farthest_channel_head(self, d8_pntr, streams, output, esri_pntr=False, zero_background=False, callback=None):
         """Calculates the distance to the furthest upstream channel head for each stream cell.
@@ -10408,7 +10408,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('farthest_channel_head', args, callback) # returns 1 if error
+        return self.run_tool('farthest_channel_head', args, callback)  # returns 1 if error
 
     def find_main_stem(self, d8_pntr, streams, output, esri_pntr=False, zero_background=False, callback=None):
         """Finds the main stem, based on stream lengths, of each stream network.
@@ -10428,7 +10428,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('find_main_stem', args, callback) # returns 1 if error
+        return self.run_tool('find_main_stem', args, callback)  # returns 1 if error
 
     def hack_stream_order(self, d8_pntr, streams, output, esri_pntr=False, zero_background=False, callback=None):
         """Assigns the Hack stream order to each tributary in a stream network.
@@ -10448,7 +10448,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('hack_stream_order', args, callback) # returns 1 if error
+        return self.run_tool('hack_stream_order', args, callback)  # returns 1 if error
 
     def horton_stream_order(self, d8_pntr, streams, output, esri_pntr=False, zero_background=False, callback=None):
         """Assigns the Horton stream order to each tributary in a stream network.
@@ -10468,7 +10468,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('horton_stream_order', args, callback) # returns 1 if error
+        return self.run_tool('horton_stream_order', args, callback)  # returns 1 if error
 
     def length_of_upstream_channels(self, d8_pntr, streams, output, esri_pntr=False, zero_background=False, callback=None):
         """Calculates the total length of channels upstream.
@@ -10488,7 +10488,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('length_of_upstream_channels', args, callback) # returns 1 if error
+        return self.run_tool('length_of_upstream_channels', args, callback)  # returns 1 if error
 
     def long_profile(self, d8_pntr, streams, dem, output, esri_pntr=False, callback=None):
         """Plots the stream longitudinal profiles for one or more rivers.
@@ -10508,7 +10508,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('long_profile', args, callback) # returns 1 if error
+        return self.run_tool('long_profile', args, callback)  # returns 1 if error
 
     def long_profile_from_points(self, d8_pntr, points, dem, output, esri_pntr=False, callback=None):
         """Plots the longitudinal profiles from flow-paths initiating from a set of vector points.
@@ -10528,7 +10528,7 @@ Okay, that's it for now.
         args.append("--dem='{}'".format(dem))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('long_profile_from_points', args, callback) # returns 1 if error
+        return self.run_tool('long_profile_from_points', args, callback)  # returns 1 if error
 
     def raster_streams_to_vector(self, streams, d8_pntr, output, esri_pntr=False, callback=None):
         """Converts a raster stream file into a vector file.
@@ -10546,7 +10546,7 @@ Okay, that's it for now.
         args.append("--d8_pntr='{}'".format(d8_pntr))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('raster_streams_to_vector', args, callback) # returns 1 if error
+        return self.run_tool('raster_streams_to_vector', args, callback)  # returns 1 if error
 
     def rasterize_streams(self, streams, base, output, nodata=True, feature_id=False, callback=None):
         """Rasterizes vector streams based on Lindsay (2016) method.
@@ -10566,7 +10566,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if nodata: args.append("--nodata")
         if feature_id: args.append("--feature_id")
-        return self.run_tool('rasterize_streams', args, callback) # returns 1 if error
+        return self.run_tool('rasterize_streams', args, callback)  # returns 1 if error
 
     def remove_short_streams(self, d8_pntr, streams, output, min_length, esri_pntr=False, max_junctions=3, callback=None):
         """Removes short first-order streams from a stream network.
@@ -10588,7 +10588,7 @@ Okay, that's it for now.
         args.append("--min_length='{}'".format(min_length))
         args.append("--max_junctions='{}'".format(max_junctions))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('remove_short_streams', args, callback) # returns 1 if error
+        return self.run_tool('remove_short_streams', args, callback)  # returns 1 if error
 
     def repair_stream_vector_topology(self, i, output, dist="", callback=None):
         """This tool resolves topological errors and inconsistencies associated with digitized vector streams.
@@ -10604,7 +10604,7 @@ Okay, that's it for now.
         args.append("--input='{}'".format(i))
         args.append("--output='{}'".format(output))
         args.append("--dist={}".format(dist))
-        return self.run_tool('repair_stream_vector_topology', args, callback) # returns 1 if error
+        return self.run_tool('repair_stream_vector_topology', args, callback)  # returns 1 if error
 
     def shreve_stream_magnitude(self, d8_pntr, streams, output, esri_pntr=False, zero_background=False, callback=None):
         """Assigns the Shreve stream magnitude to each link in a stream network.
@@ -10624,7 +10624,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('shreve_stream_magnitude', args, callback) # returns 1 if error
+        return self.run_tool('shreve_stream_magnitude', args, callback)  # returns 1 if error
 
     def strahler_stream_order(self, d8_pntr, streams, output, esri_pntr=False, zero_background=False, callback=None):
         """Assigns the Strahler stream order to each link in a stream network.
@@ -10644,7 +10644,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('strahler_stream_order', args, callback) # returns 1 if error
+        return self.run_tool('strahler_stream_order', args, callback)  # returns 1 if error
 
     def prune_strahler_stream_order(self, streams, output, zero_background=False, callback=None):
         """Removes first-order streams and renumbers remaining Strahler orders downward by one.
@@ -10660,7 +10660,7 @@ Okay, that's it for now.
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
         if zero_background: args.append("--zero_background")
-        return self.run_tool('prune_strahler_stream_order', args, callback) # returns 1 if error
+        return self.run_tool('prune_strahler_stream_order', args, callback)  # returns 1 if error
 
     def stream_junction_identifier(self, d8_pntr, streams, output, esri_pntr=False, callback=None):
         """Creates a stream map of channel inflow counts.
@@ -10679,7 +10679,7 @@ Okay, that's it for now.
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
-        return self.run_tool('stream_junction_identifier', args, callback) # returns 1 if error
+        return self.run_tool('stream_junction_identifier', args, callback)  # returns 1 if error
     
     def stream_link_class(self, d8_pntr, streams, output, esri_pntr=False, zero_background=False, callback=None):
         """Identifies the exterior/interior links and nodes in a stream network.
@@ -10699,7 +10699,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('stream_link_class', args, callback) # returns 1 if error
+        return self.run_tool('stream_link_class', args, callback)  # returns 1 if error
 
     def stream_link_identifier(self, d8_pntr, streams, output, esri_pntr=False, zero_background=False, callback=None):
         """Assigns a unique identifier to each link in a stream network.
@@ -10719,7 +10719,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('stream_link_identifier', args, callback) # returns 1 if error
+        return self.run_tool('stream_link_identifier', args, callback)  # returns 1 if error
 
     def stream_link_length(self, d8_pntr, linkid, output, esri_pntr=False, zero_background=False, callback=None):
         """Estimates the length of each link (or tributary) in a stream network.
@@ -10739,7 +10739,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('stream_link_length', args, callback) # returns 1 if error
+        return self.run_tool('stream_link_length', args, callback)  # returns 1 if error
 
     def stream_link_slope(self, d8_pntr, linkid, dem, output, esri_pntr=False, zero_background=False, callback=None):
         """Estimates the average slope of each link (or tributary) in a stream network.
@@ -10761,7 +10761,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('stream_link_slope', args, callback) # returns 1 if error
+        return self.run_tool('stream_link_slope', args, callback)  # returns 1 if error
 
     def stream_slope_continuous(self, d8_pntr, streams, dem, output, esri_pntr=False, zero_background=False, callback=None):
         """Estimates the slope of each grid cell in a stream network.
@@ -10783,7 +10783,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('stream_slope_continuous', args, callback) # returns 1 if error
+        return self.run_tool('stream_slope_continuous', args, callback)  # returns 1 if error
 
     def topological_stream_order(self, d8_pntr, streams, output, esri_pntr=False, zero_background=False, callback=None):
         """Assigns each link in a stream network its topological order.
@@ -10803,7 +10803,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('topological_stream_order', args, callback) # returns 1 if error
+        return self.run_tool('topological_stream_order', args, callback)  # returns 1 if error
 
     def tributary_identifier(self, d8_pntr, streams, output, esri_pntr=False, zero_background=False, callback=None):
         """Assigns a unique identifier to each tributary in a stream network.
@@ -10823,7 +10823,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         if zero_background: args.append("--zero_background")
-        return self.run_tool('tributary_identifier', args, callback) # returns 1 if error
+        return self.run_tool('tributary_identifier', args, callback)  # returns 1 if error
 
     def vector_stream_network_analysis(self, streams, output, snap=0.1, callback=None):
         """This tool performs common stream network analysis operations on an input vector stream file.
@@ -10843,7 +10843,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--cutting_height={}".format(cutting_height))
         args.append("--snap={}".format(snap))
-        return self.run_tool('vector_stream_network_analysis', args, callback) # returns 1 if error
+        return self.run_tool('vector_stream_network_analysis', args, callback)  # returns 1 if error
 
     ######################
     # Whitebox Utilities #
@@ -10859,7 +10859,7 @@ Okay, that's it for now.
         """
         args = []
         args.append("--install_extension={}".format(install_extension))
-        return self.run_tool('install_wb_extension', args, callback) # returns 1 if error
+        return self.run_tool('install_wb_extension', args, callback)  # returns 1 if error
 
     def launch_wb_runner(self, clear_app_state=False, callback=None):
         """Opens the Whitebox Runner application.
@@ -10871,4 +10871,4 @@ Okay, that's it for now.
         """
         args = []
         if clear_app_state: args.append("--clear_app_state")
-        return self.run_tool('launch_wb_runner', args, callback) # returns 1 if error
+        return self.run_tool('launch_wb_runner', args, callback)  # returns 1 if error

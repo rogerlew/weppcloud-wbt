@@ -55,13 +55,16 @@ style in `DEVELOPING_TOOLS.md`.
 - Load the D8 pointer, stream mask, and watershed mask rasters and ensure they share dimensions; abort with a descriptive error otherwise.
 - Build a binary watershed mask (`Array2D<u8>`) from positive watershed cells, tracking the centroid (mean row/column) of the masked area and collecting perimeter cells (mask cells neighboured by outside cells or image edges). Record any streams that touch the perimeter for diagnostic output but do not fail immediately.
 - Run a breadth-first search outward from the perimeter to assign each interior cell its integer distance from the boundary; sort all interior cells by descending distance so the deepest interior locations are tried first (capped at 512 candidates).
+- Pre-compute a junction count raster using the stream network and D8 pointers so each stream cell records the number of inflowing channel neighbours.
 - For each candidate cell, walk the D8 flow path by translating pointer values through the Whitebox/ESRI lookup tables, keeping a `HashSet` of visited cells and enforcing an iteration ceiling (`rows * columns * 4`) to guard against loops.
-- Stop the walk when the next step would exit the mask or raster extent; confirm the last in-mask cell is a stream (non-zero, non-nodata). The first candidate whose terminating cell is on a stream is selected as the outlet, capturing the number of steps taken, candidate index, and distance-to-boundary metrics.
+- Ignore stream hits that occur strictly inside the watershed mask and continue tracing until the path reaches the mask boundary (the next step would leave the mask). If that boundary cell is a stream, accept it; otherwise, keep stepping downstream outside the mask until a stream is encountered or the raster extent is reached.
+- Apply a channel junction constraint: only accept a stream cell when its pre-computed junction count equals one. If the boundary stream does not satisfy this, continue stepping downstream until a qualifying junction is found or the raster edge is reached.
+- The first candidate whose terminating cell is on a stream (junction count = 1)—preferably on the watershed boundary, or otherwise downstream of it—is selected as the outlet, capturing the number of steps taken, downstream steps, candidate index, and distance-to-boundary metrics.
 - If no candidate succeeds, accumulate the first few failure reasons (loops, invalid pointers, non-stream boundaries, etc.) and raise an error summarizing them for easier debugging of problematic masks.
 
 #### Output
 - Emit a single-point GeoJSON `FeatureCollection` containing the outlet coordinates in map units with CRS metadata when an EPSG code is known.
-- Populate the feature properties with diagnostics required by automation (outlet row/column, centroid, distance to boundary, candidate rank, step count, watershed cell totals, perimeter-stream stats, EPSG, and sampled perimeter stream cells when present).
+- Populate the feature properties with diagnostics required by automation (outlet row/column, centroid, distance to boundary, candidate rank, step count, steps beyond the mask, mask value at the outlet, `outlet_in_mask`, `outlet_junction_count`, watershed cell totals, perimeter-stream stats, EPSG, and sampled perimeter stream cells when present).
 
 #### Failure Handling
-- Missing parameters, dimension mismatches, empty watershed masks, invalid D8 pointers, and candidates failing stream validation all surface as `ErrorKind::InvalidInput` messages with contextual details so upstream workflows can log and remediate issues quickly.
+- Missing parameters, dimension mismatches, empty watershed masks, invalid or unsupported D8 pointers, downstream searches that loop or exceed the step ceiling, and candidates failing stream or junction validation all surface as `ErrorKind::InvalidInput` messages with contextual details so upstream workflows can log and remediate issues quickly.
