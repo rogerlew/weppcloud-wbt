@@ -5174,24 +5174,57 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         return self.run_tool('find_parallel_flow', args, callback)  # returns 1 if error
 
-    def find_outlet(self, d8_pntr, streams, watershed, output, esri_pntr=False, callback=None):
-        """Identifies an outlet stream cell for a watershed mask and writes a pour point GeoJSON.
+    def find_outlet(
+        self,
+        d8_pntr,
+        streams,
+        watershed=None,
+        output=None,
+        esri_pntr=False,
+        requested_outlet_lng_lat=None,
+        requested_outlet_row_col=None,
+        callback=None,
+    ):
+        """Identifies an outlet stream cell and writes a pour point GeoJSON.
 
         Keyword arguments:
 
         d8_pntr -- Input raster D8 pointer file. 
         streams -- Input raster streams file (1=stream, 0=non-stream). 
-        watershed -- Input watershed mask raster file (1=inside, 0=outside). 
-        output -- Output GeoJSON pour point file. 
+        watershed -- Optional watershed mask raster file (1=inside, 0=outside). 
+        output -- Output GeoJSON pour point file. (required)
         esri_pntr -- D8 pointer uses the ESRI style scheme. 
+        requested_outlet_lng_lat -- Optional tuple or string "lon,lat" describing the requested outlet location in WGS84. 
+        requested_outlet_row_col -- Optional tuple or string "row,col" describing the requested outlet cell. 
         callback -- Custom function for handling tool text outputs.
         """
+        if output is None:
+            raise ValueError("Output GeoJSON path must be provided for find_outlet.")
+
         args = []
         args.append("--d8_pntr='{}'".format(d8_pntr))
         args.append("--streams='{}'".format(streams))
-        args.append("--watershed='{}'".format(watershed))
+        if watershed is not None:
+            args.append("--watershed='{}'".format(watershed))
         args.append("--output='{}'".format(output))
-        if esri_pntr: args.append("--esri_pntr")
+        if requested_outlet_lng_lat is not None:
+            if isinstance(requested_outlet_lng_lat, (list, tuple)):
+                lon, lat = requested_outlet_lng_lat
+                args.append("--requested_outlet_lng_lat='{},{}'".format(lon, lat))
+            else:
+                args.append(
+                    "--requested_outlet_lng_lat='{}'".format(requested_outlet_lng_lat)
+                )
+        if requested_outlet_row_col is not None:
+            if isinstance(requested_outlet_row_col, (list, tuple)):
+                row, col = requested_outlet_row_col
+                args.append("--requested_outlet_row_col='{},{}'".format(row, col))
+            else:
+                args.append(
+                    "--requested_outlet_row_col='{}'".format(requested_outlet_row_col)
+                )
+        if esri_pntr:
+            args.append("--esri_pntr")
         return self.run_tool('find_outlet', args, callback)  # returns 1 if error
 
     def flatten_lakes(self, dem, lakes, output, callback=None):

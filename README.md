@@ -9,6 +9,7 @@ This fork diverges from the upstream WhiteboxTools distribution in the following
   - Includes numerous performance optimizations (e.g., combined flood-fill phases, cached upstream areas) and additional output attributes such as `areaup` for each link.
 - `FindOutlet` (hydro_analysis/find_outlet.rs)
   - Derives a single stream outlet pour point GeoJSON by tracing D8 flow from interior candidates, embedding diagnostics needed by downstream WEPPcloud steps.
+  - Supports optional watershed masks and requested start locations (`--requested_outlet_lng_lat`, `--requested_outlet_row_col`) so interactive callers can walk downhill from arbitrary picks without bespoke Python search code.
 - `StreamJunctionIdentifier` (stream_network_analysis/stream_junctions.rs)
   - Counts inflowing tributaries for every stream pixel, producing junction maps that WEPPcloud uses to locate confluences, outlets, and pseudo-gauges.
 - `PruneStrahlerStreamOrder` (stream_network_analysis/prune_strahler_order.rs)

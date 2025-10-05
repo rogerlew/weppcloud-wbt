@@ -68,3 +68,24 @@ style in `DEVELOPING_TOOLS.md`.
 
 #### Failure Handling
 - Missing parameters, dimension mismatches, empty watershed masks, invalid or unsupported D8 pointers, downstream searches that loop or exceed the step ceiling, and candidates failing stream or junction validation all surface as `ErrorKind::InvalidInput` messages with contextual details so upstream workflows can log and remediate issues quickly.
+
+### Implementation Plan
+- Extend the existing tool rather than creating a sibling utility so the GeoJSON output, diagnostics, and CLI surface stay in one place for automation.
+- CLI updates
+  - Keep `--watershed` but mark it optional; emit an error unless either a watershed mask or a requested outlet location is supplied.
+  - Add `--requested_outlet_lng_lat` accepting a comma-delimited `lon,lat` pair in WGS84; also support an explicit `--requested_outlet_row_col` pair for pixel-based overrides and testing.
+  - Update help text, usage string, and parameter metadata; preserve backward compatibility for existing callers.
+  - Amend the Python wrapper to surface the optional watershed argument and the new requested-outlet flags so UI callers can switch modes without bespoke logic.
+- Requested outlet preprocessing
+  - Parse the new argument, validate numeric inputs, and record the requested lon/lat in the output properties.
+  - Convert lon/lat to raster indices when the grid is stored in geographic degrees (EPSG 4326); otherwise require a `--requested_outlet_row_col` override and return a helpful error when only lon/lat is supplied.
+  - Project the derived start cell into raster space; if the exact cell is `nodata` or falls outside the grid, locate the nearest in-bounds cell with a valid pointer value.
+- Flow-path tracing refactor
+  - Extract the existing downstream walk into a helper that accepts a starting cell and returns the first qualifying stream cell or a tagged failure reason while preserving loop protection and junction checks.
+  - Reuse the helper for current watershed-candidate mode; in requested-outlet mode, call it once from the derived start cell and step downstream until a non-junction stream cell is encountered or the raster edge is reached.
+  - When both a watershed mask and requested location are provided, continue populating watershed diagnostics but prefer the user-supplied starting point for the walk.
+- Output and diagnostics
+  - Add properties for the requested coordinates, start row/column, number of cells between the request and the accepted outlet, and a mode indicator (`"start_mode": "watershed" | "requested"`).
+  - If the trace exits the raster without finding a qualifying channel, return a descriptive error that includes how far the trace progressed.
+- Documentation and validation
+  - Expand the spec and tool docs with the new parameters and examples, and update the Python wrapper/tests once the interface stabilizes.
