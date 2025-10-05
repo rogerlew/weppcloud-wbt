@@ -4,11 +4,13 @@ from shutil import copyfile, copytree, make_archive, rmtree
 
 # To use this script:
 #
-# python3 build.py [args]
+# Example:
+# python build.py clean exclude_runner
 #
-# Script Keyword Arguments:
 #
-# do_clean           If present, the existing files will be cleaned before compiling.
+# python build.py [args]
+
+# clean           If present, the existing files will be cleaned before compiling.
 # exclude_runner     Excludes the WhiteboxTools Runner app from the build. 
 # zip                Creates a zip file output in addition to the WBT folder
 #
@@ -19,8 +21,6 @@ from shutil import copyfile, copytree, make_archive, rmtree
 # you are unable to figure out the set-up correctly and you do not need the Runner app, you
 # would be advised to use the exclude_runner argument on linux.
 #
-# Example:
-# python3 build.py do_clean exclude_runner zip
 
 
 def build(do_clean=False, exclude_runner=True, create_zip_artifact=False):
@@ -201,6 +201,12 @@ def main():
     do_clean = False
     if any("do_clean" in s for s in sys.argv):
         matching = [s for s in sys.argv if "do_clean" in s]
+        if len(matching) > 0:
+            if "false" not in matching[0].lower():
+                do_clean = True
+
+    if any("clean" in s for s in sys.argv):
+        matching = [s for s in sys.argv if "clean" in s]
         if len(matching) > 0:
             if "false" not in matching[0].lower():
                 do_clean = True
