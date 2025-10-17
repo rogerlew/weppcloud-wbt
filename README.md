@@ -31,6 +31,8 @@ This fork diverges from the upstream WhiteboxTools distribution in the following
 Developers extending this fork can follow the guidelines in [DEVELOPING_TOOLS.md](DEVELOPING_TOOLS.md).
 
 
+**This repository tracks the generated `WBT` build compiled on Linux (Ubuntu 24.04) so the deployment artifacts remain versioned alongside the code.**
+
 
 ![](./img/WhiteboxToolsLogoBlue.png)
 
@@ -88,7 +90,5 @@ Read the notes in the `build.py` file for detailed information about customizing
 script requires a Python environment. (Note, WhiteboxTools itself is pure Rust code.)
 
 Depending on your system, the compilation may take several minutes. Also depending on your system, it may be necessary to use the `python3` command instead. When completed, the script will have created a new `WBT` folder within `whitebox-tools`. This folder will contain all of the files needed to run the program, including the main Whitebox executable file (whitebox_tools.exe), the Whitebox Runner GUI application, and the various plugins.
-
-This repository tracks the generated `WBT` build compiled on Linux (Ubuntu 24.04) so the deployment artifacts remain versioned alongside the code.
 
 Be sure to follow the instructions for installing Rust carefully. In particular, if you are installing on MS Windows, you must have a linker installed prior to installing the Rust compiler (rustc). The Rust webpage recommends either the **MS Visual C++ 2015 Build Tools** or the GNU equivalent and offers details for each installation approach. You should also consider using **RustUp** to install the Rust compiler.
