@@ -187,6 +187,7 @@ impl ToolManager {
         tool_names.push("FloodOrder".to_string());
         tool_names.push("FlowAccumulationFullWorkflow".to_string());
         tool_names.push("FlowLengthDiff".to_string());
+        tool_names.push("FVSlope".to_string());
         tool_names.push("Hillslopes".to_string());
         tool_names.push("HillslopesTopaz".to_string());
         tool_names.push("ImpoundmentSizeIndex".to_string());
@@ -732,6 +733,7 @@ impl ToolManager {
                 Some(Box::new(hydro_analysis::FlowAccumulationFullWorkflow::new()))
             }
             "flowlengthdiff" => Some(Box::new(hydro_analysis::FlowLengthDiff::new())),
+            "fvslope" => Some(Box::new(hydro_analysis::FVSlope::new())),
             "hillslopes" => Some(Box::new(hydro_analysis::Hillslopes::new())),
             "hillslopestopaz" => Some(Box::new(hydro_analysis::HillslopesTopaz::new())),
             "impoundmentsizeindex" => Some(Box::new(hydro_analysis::ImpoundmentSizeIndex::new())),

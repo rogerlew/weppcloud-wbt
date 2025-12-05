@@ -19,6 +19,8 @@ This fork diverges from the upstream WhiteboxTools distribution in the following
 - `RemoveShortStreams` enhancement (stream_network_analysis/remove_short_streams.rs)
   - Adds `--max_junctions` pruning with iterative branch deletion so no junction retains more than the requested inflows; Python API updated with the new argument.
 - `Slope` tool modification (terrain_analysis/slope.rs) introducing ratio units and recording the chosen unit in output metadata; banner text updated to reflect maintenance through 2025.
+- `FVSlope` (hydro_analysis/fvslope.rs)
+  - Computes slope in the D8 flow direction (with ESRI pointer support, z-factor, and unit controls) to mirror TOPAZ-style flow-vector slopes used by WEPP channel hydraulics.
 - `Watershed` tool update (hydro_analysis/watershed.rs)
   - Accepts GeoJSON pour-point inputs (Point/MultiPoint) in addition to shapefiles and rasters, pulling in the `geojson` crate and documenting the extended behaviour.
 - CLI/runtime updates

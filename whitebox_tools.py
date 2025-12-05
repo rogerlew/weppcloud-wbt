@@ -188,10 +188,12 @@ class WhiteboxTools(object):
                 si.wShowWindow = 7 #Set window minimized and not activated
                 proc = Popen(args2, shell=False, stdout=PIPE,
                             stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace",
                             startupinfo=si)
             else:
                 proc = Popen(args2, shell=False, stdout=PIPE,
-                            stderr=STDOUT, bufsize=1, universal_newlines=True)
+                            stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace")
 
             while proc is not None:
                 line = proc.stdout.readline()
@@ -244,10 +246,12 @@ class WhiteboxTools(object):
                 si.wShowWindow = 7 #Set window minimized and not activated
                 proc = Popen(args2, shell=False, stdout=PIPE,
                             stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace",
                             startupinfo=si)
             else:
                 proc = Popen(args2, shell=False, stdout=PIPE,
-                            stderr=STDOUT, bufsize=1, universal_newlines=True)
+                            stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace")
 
             while proc is not None:
                 line = proc.stdout.readline()
@@ -294,10 +298,12 @@ class WhiteboxTools(object):
                 si.wShowWindow = 7 # Set window minimized and not activated
                 proc = Popen(args2, shell=False, stdout=PIPE,
                             stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace",
                             startupinfo=si)
             else:
                 proc = Popen(args2, shell=False, stdout=PIPE,
-                            stderr=STDOUT, bufsize=1, universal_newlines=True)
+                            stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace")
 
             while proc is not None:
                 line = proc.stdout.readline()
@@ -367,10 +373,12 @@ class WhiteboxTools(object):
                 si.wShowWindow = 7 #Set window minimized and not activated
                 proc = Popen(args2, shell=False, stdout=PIPE,
                             stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace",
                             startupinfo=si)
             else:
                 proc = Popen(args2, shell=False, stdout=PIPE,
                             stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace",
                             env=self.__env)
 
             while proc is not None:
@@ -412,7 +420,8 @@ class WhiteboxTools(object):
             args.append("-h")
 
             proc = Popen(args, shell=False, stdout=PIPE,
-                         stderr=STDOUT, bufsize=1, universal_newlines=True)
+                         stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace")
             ret = ""
             while True:
                 line = proc.stdout.readline()
@@ -438,7 +447,8 @@ class WhiteboxTools(object):
                 args.append(f"={toolname}")
 
             proc = Popen(args, shell=False, stdout=PIPE,
-                         stderr=STDOUT, bufsize=1, universal_newlines=True)
+                         stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace")
             ret = ""
             while True:
                 line = proc.stdout.readline()
@@ -462,7 +472,8 @@ class WhiteboxTools(object):
             args.append("--version")
 
             proc = Popen(args, shell=False, stdout=PIPE,
-                         stderr=STDOUT, bufsize=1, universal_newlines=True)
+                         stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace")
             ret = ""
             while True:
                 line = proc.stdout.readline()
@@ -486,7 +497,8 @@ class WhiteboxTools(object):
             args.append("--toolhelp={}".format(to_camelcase(tool_name)))
 
             proc = Popen(args, shell=False, stdout=PIPE,
-                         stderr=STDOUT, bufsize=1, universal_newlines=True)
+                         stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace")
             ret = ""
             while True:
                 line = proc.stdout.readline()
@@ -510,7 +522,8 @@ class WhiteboxTools(object):
             args.append("--toolparameters={}".format(to_camelcase(tool_name)))
 
             proc = Popen(args, shell=False, stdout=PIPE,
-                         stderr=STDOUT, bufsize=1, universal_newlines=True)
+                         stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace")
             ret = ""
             while True:
                 line = proc.stdout.readline()
@@ -534,7 +547,8 @@ class WhiteboxTools(object):
             args.append("--toolbox={}".format(to_camelcase(tool_name)))
 
             proc = Popen(args, shell=False, stdout=PIPE,
-                         stderr=STDOUT, bufsize=1, universal_newlines=True)
+                         stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace")
             ret = ""
             while True:
                 line = proc.stdout.readline()
@@ -559,7 +573,8 @@ class WhiteboxTools(object):
             args.append("--viewcode={}".format(to_camelcase(tool_name)))
 
             proc = Popen(args, shell=False, stdout=PIPE,
-                         stderr=STDOUT, bufsize=1, universal_newlines=True)
+                         stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace")
             ret = ""
             while True:
                 line = proc.stdout.readline()
@@ -586,7 +601,8 @@ class WhiteboxTools(object):
                     args.append(kw)
 
             proc = Popen(args, shell=False, stdout=PIPE,
-                         stderr=STDOUT, bufsize=1, universal_newlines=True)
+                         stderr=STDOUT, bufsize=1, universal_newlines=True,
+                            encoding="utf-8", errors="replace")
             ret = {}
             line = proc.stdout.readline()  # skip number of available tools header
             while True:
@@ -4839,6 +4855,33 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         if esri_pntr: args.append("--esri_pntr")
         return self.run_tool('d8_pointer', args, callback)  # returns 1 if error
+
+    def fvslope(self, dem, d8_pntr, output, esri_pntr=False, zfactor=None, units="degrees", callback=None):
+        """Calculates slope gradient in the direction of flow (flow vector slope).
+
+        Unlike the standard slope tool which calculates maximum terrain gradient,
+        this tool calculates slope along the D8 flow direction. This is more
+        appropriate for channel hydraulic modeling where along-channel gradient
+        determines flow velocity and erosion, not cross-channel valley wall slopes.
+
+        Keyword arguments:
+
+        dem -- Input raster DEM file.
+        d8_pntr -- Input D8 pointer (flow direction) raster.
+        output -- Output raster file.
+        esri_pntr -- Use ESRI's D8 flow direction convention (powers of 2).
+        zfactor -- Optional multiplier for when vertical and horizontal units differ.
+        units -- Units of output: 'degrees', 'radians', 'percent', or 'ratio'.
+        callback -- Custom function for handling tool text outputs.
+        """
+        args = []
+        args.append("--dem='{}'".format(dem))
+        args.append("--d8_pntr='{}'".format(d8_pntr))
+        args.append("--output='{}'".format(output))
+        if esri_pntr: args.append("--esri_pntr")
+        if zfactor is not None: args.append("--zfactor={}".format(zfactor))
+        args.append("--units={}".format(units))
+        return self.run_tool('fvslope', args, callback)  # returns 1 if error
 
     def d_inf_flow_accumulation(self, i, output, out_type="Specific Contributing Area", threshold=None, log=False, clip=False, pntr=False, callback=None):
         """Calculates a D-infinity flow accumulation raster from an input DEM.
