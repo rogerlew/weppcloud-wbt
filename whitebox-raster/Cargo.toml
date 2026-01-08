@@ -11,4 +11,5 @@ lzw = "0.10.0"
 miniz_oxide = "0.3.6"
 num_cpus = "1.14.0"
 num-traits = "0.2.14"
+quick-xml = "0.31.0"
 whitebox_common = { path = "../whitebox-common" }

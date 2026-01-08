@@ -24,6 +24,7 @@ mod saga_raster;
 mod surfer7_raster;
 mod surfer_ascii_raster;
 mod whitebox_raster;
+pub mod vrt;
 
 use self::arcascii_raster::*;
 use self::arcbinary_raster::*;
@@ -35,6 +36,7 @@ use self::saga_raster::*;
 use self::surfer7_raster::*;
 use self::surfer_ascii_raster::*;
 use self::whitebox_raster::*;
+use self::vrt::read_vrt;
 use num_traits::cast::AsPrimitive;
 use std::cmp::Ordering::Equal;
 use std::default::Default;
@@ -176,6 +178,36 @@ impl Raster {
                 }
                 RasterType::Whitebox => {
                     let _ = read_whitebox(&r.file_name, &mut r.configs, &mut r.data)?;
+                }
+                RasterType::Vrt => {
+                    let vrt = read_vrt(&r.file_name)?;
+                    let source_path = vrt
+                        .raster_band
+                        .simple_source
+                        .resolve_source_path(Path::new(&r.file_name));
+                    let source_path_str = source_path.to_string_lossy().to_string();
+                    let src_rect = vrt.raster_band.simple_source.src_rect;
+                    let _ = read_geotiff_window(
+                        &source_path_str,
+                        src_rect.x_off,
+                        src_rect.y_off,
+                        src_rect.x_size,
+                        src_rect.y_size,
+                        &mut r.configs,
+                        &mut r.data,
+                    )?;
+                    if let Some(data_type) = vrt.raster_band.data_type {
+                        if data_type != r.configs.data_type {
+                            return Err(Error::new(
+                                ErrorKind::InvalidData,
+                                "VRT dataType does not match the source GeoTIFF.",
+                            ));
+                        }
+                    }
+                    if let Some(srs) = vrt.srs.as_ref() {
+                        validate_vrt_srs(srs, &r.configs)?;
+                    }
+                    r.update_min_max();
                 }
                 RasterType::Unknown => {
                     return Err(Error::new(ErrorKind::Other, "Unrecognized raster type"));
@@ -1209,6 +1241,12 @@ impl Raster {
                     Err(e) => println!("error while writing: {:?}", e),
                 };
             }
+            RasterType::Vrt => {
+                return Err(Error::new(
+                    ErrorKind::Other,
+                    "Writing VRT rasters is not supported.",
+                ));
+            }
             RasterType::Unknown => {
                 return Err(Error::new(ErrorKind::Other, "Unrecognized raster type"));
             }
@@ -1354,6 +1392,7 @@ pub enum RasterType {
     Surfer7Binary,
     SurferAscii,
     Whitebox,
+    Vrt,
 }
 
 impl Default for RasterType {
@@ -1382,6 +1421,8 @@ fn get_raster_type_from_file(file_name: String, file_mode: String) -> RasterType
         || extension == "gtiff"
     {
         return RasterType::GeoTiff;
+    } else if extension == "vrt" {
+        return RasterType::Vrt;
     } else if extension == "bil" {
         return RasterType::EsriBil;
     } else if extension == "flt" {
@@ -1441,6 +1482,108 @@ fn get_raster_type_from_file(file_name: String, file_mode: String) -> RasterType
     }
 
     RasterType::Unknown
+}
+
+fn validate_vrt_srs(srs: &str, configs: &RasterConfigs) -> Result<(), Error> {
+    if let Some(vrt_epsg) = extract_epsg_code_from_srs(srs) {
+        if configs.epsg_code == 0 {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "VRT SRS specifies an EPSG code, but the source GeoTIFF has none.",
+            ));
+        }
+        if configs.epsg_code != vrt_epsg {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "VRT SRS does not match the source GeoTIFF EPSG code.",
+            ));
+        }
+        return Ok(());
+    }
+
+    let source_wkt = configs.coordinate_ref_system_wkt.trim();
+    if source_wkt.is_empty() || source_wkt.eq_ignore_ascii_case("not specified") {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "VRT SRS cannot be validated because the source GeoTIFF SRS is missing.",
+        ));
+    }
+
+    let vrt_norm = normalize_wkt(&strip_authority(srs));
+    let source_norm = normalize_wkt(&strip_authority(source_wkt));
+    if vrt_norm != source_norm {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "VRT SRS does not match the source GeoTIFF WKT.",
+        ));
+    }
+
+    Ok(())
+}
+
+fn extract_epsg_code_from_srs(srs: &str) -> Option<u16> {
+    let upper = srs.to_ascii_uppercase();
+    let bytes = upper.as_bytes();
+    let mut i = 0usize;
+    let mut last = None;
+
+    while i + 4 <= bytes.len() {
+        if &bytes[i..i + 4] == b"EPSG" {
+            let mut j = i + 4;
+            while j < bytes.len() && !bytes[j].is_ascii_digit() {
+                j += 1;
+            }
+            let start = j;
+            while j < bytes.len() && bytes[j].is_ascii_digit() {
+                j += 1;
+            }
+            if start < j {
+                if let Ok(code) = upper[start..j].parse::<u16>() {
+                    last = Some(code);
+                }
+            }
+            i = j;
+        } else {
+            i += 1;
+        }
+    }
+
+    last
+}
+
+fn normalize_wkt(wkt: &str) -> String {
+    wkt.chars()
+        .filter(|c| !c.is_whitespace())
+        .collect::<String>()
+        .to_ascii_uppercase()
+}
+
+fn strip_authority(wkt: &str) -> String {
+    let upper = wkt.to_ascii_uppercase();
+    let bytes = upper.as_bytes();
+    let original = wkt.as_bytes();
+    let mut out: Vec<u8> = Vec::with_capacity(original.len());
+    let mut i = 0usize;
+
+    while i < bytes.len() {
+        if i + 10 <= bytes.len() && &bytes[i..i + 10] == b"AUTHORITY[" {
+            i += 10;
+            let mut depth = 1usize;
+            while i < bytes.len() && depth > 0 {
+                if bytes[i] == b'[' {
+                    depth += 1;
+                } else if bytes[i] == b']' {
+                    depth -= 1;
+                }
+                i += 1;
+            }
+            continue;
+        }
+        out.push(original[i]);
+        i += 1;
+    }
+
+    String::from_utf8_lossy(&out).to_string()
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]

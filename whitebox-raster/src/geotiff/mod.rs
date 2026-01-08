@@ -228,6 +228,182 @@ pub fn print_tags<'a>(file_name: &'a String) -> Result<(), Error> {
     Ok(())
 }
 
+pub fn read_geotiff_dimensions(file_name: &str) -> Result<(usize, usize), Error> {
+    let f = File::open(file_name)?;
+
+    let br = BufReader::new(f);
+    let mut th = ByteOrderReader::<BufReader<File>>::new(br, Endianness::LittleEndian);
+
+    let bo_indicator1 = th.read_u8()?;
+    let bo_indicator2 = th.read_u8()?;
+    let mut endian = Endianness::LittleEndian;
+    if bo_indicator1 == 73 && bo_indicator2 == 73 {
+        endian = Endianness::LittleEndian;
+    } else if bo_indicator1 == 77 && bo_indicator2 == 77 {
+        endian = Endianness::BigEndian;
+    } else {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "Incorrect TIFF header. Unrecognized byte-order indicator.",
+        ));
+    }
+
+    if th.get_byte_order() != endian {
+        th.set_byte_order(endian);
+    }
+
+    let is_big_tiff = match th.read_u16()? {
+        42 => false,
+        43 => true,
+        _ => {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "Incorrect TIFF header. Unrecognized magic number.",
+            ))
+        }
+    };
+
+    if is_big_tiff && mem::size_of::<usize>() != 8 {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "The BigTIFF raster format cannot be read on a 32-bit system.",
+        ));
+    }
+
+    let mut ifd_offset = if !is_big_tiff {
+        th.read_u32()? as usize
+    } else {
+        if th.read_u16()? != 8 {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "Incorrect BigTIFF header. Unsupported bytesize of offsets.",
+            ));
+        }
+        if th.read_u16()? != 0 {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "Incorrect BigTIFF header.",
+            ));
+        }
+        th.read_u64()? as usize
+    };
+
+    let mut width: Option<usize> = None;
+    let mut height: Option<usize> = None;
+    let mut cur_pos: usize;
+
+    while ifd_offset > 0 {
+        th.seek(ifd_offset);
+        let num_directories = if !is_big_tiff {
+            th.read_u16()? as u64
+        } else {
+            th.read_u64()?
+        };
+
+        for _ in 0..num_directories {
+            let tag_id = th.read_u16()?;
+            let field_type = th.read_u16()?;
+
+            let num_values = if !is_big_tiff {
+                th.read_u32()? as u64
+            } else {
+                th.read_u64()?
+            };
+
+            let value_offset = if !is_big_tiff {
+                th.read_u32()? as u64
+            } else {
+                th.read_u64()?
+            };
+
+            if tag_id != 256 && tag_id != 257 {
+                continue;
+            }
+
+            let data_size = match field_type {
+                1u16 | 2u16 | 6u16 | 7u16 => 1u64,
+                3u16 | 8u16 => 2u64,
+                4u16 | 9u16 | 11u16 => 4u64,
+                5u16 | 10u16 | 12u16 => 8u64,
+                16u16 | 17u16 | 18u16 => 8u64,
+                _ => {
+                    return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        "Error reading the IFDs.",
+                    ))
+                }
+            };
+
+            let mut data: Vec<u8> = vec![];
+            if !is_big_tiff {
+                if (data_size * num_values) > 4 {
+                    cur_pos = th.pos();
+                    th.seek(value_offset as usize);
+                    for _ in 0..num_values * data_size {
+                        data.push(th.read_u8()?);
+                    }
+                    th.seek(cur_pos);
+                } else {
+                    cur_pos = th.pos();
+                    th.seek(cur_pos - 4);
+                    for _ in 0..num_values * data_size {
+                        data.push(th.read_u8()?);
+                    }
+                    th.seek(cur_pos);
+                }
+            } else {
+                if (data_size * num_values) > 8 {
+                    cur_pos = th.pos();
+                    th.seek(value_offset as usize);
+                    for _ in 0..num_values * data_size {
+                        data.push(th.read_u8()?);
+                    }
+                    th.seek(cur_pos);
+                } else {
+                    cur_pos = th.pos();
+                    th.seek(cur_pos - 8);
+                    for _ in 0..num_values * data_size {
+                        data.push(th.read_u8()?);
+                    }
+                    th.seek(cur_pos);
+                }
+            }
+
+            let ifd = Ifd::new(tag_id, field_type, num_values, value_offset, data, endian);
+
+            let value = if ifd.ifd_type == 3 {
+                ifd.interpret_as_u16()[0] as usize
+            } else if ifd.ifd_type == 4 {
+                ifd.interpret_as_u32()[0] as usize
+            } else if ifd.ifd_type == 16 {
+                ifd.interpret_as_u64()[0] as usize
+            } else {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "The raster dimensions value was not read correctly",
+                ));
+            };
+
+            if tag_id == 256 {
+                width = Some(value);
+            } else {
+                height = Some(value);
+            }
+
+            if let (Some(w), Some(h)) = (width, height) {
+                return Ok((w, h));
+            }
+        }
+
+        ifd_offset = 0; // only read the first image.
+    }
+
+    Err(Error::new(
+        ErrorKind::InvalidData,
+        "The raster dimensions were not read correctly.",
+    ))
+}
+
 pub fn read_geotiff<'a>(
     file_name: &'a String,
     configs: &'a mut RasterConfigs,
@@ -1691,6 +1867,1443 @@ pub fn read_geotiff<'a>(
     map_sorter.clear();
     for (key, _) in geokeys_map.iter() {
         map_sorter.push(key);
+    }
+
+    Ok(())
+}
+
+pub fn read_geotiff_window<'a>(
+    file_name: &'a String,
+    x_off: isize,
+    y_off: isize,
+    x_size: isize,
+    y_size: isize,
+    configs: &'a mut RasterConfigs,
+    data: &'a mut Vec<f64>,
+) -> Result<(), Error> {
+    let f = File::open(file_name.clone())?;
+
+    //////////////////////////
+    // Read the TIFF header //
+    //////////////////////////
+    let br = BufReader::new(f);
+    let mut th = ByteOrderReader::<BufReader<File>>::new(br, configs.endian);
+
+    let bo_indicator1 = th.read_u8()?;
+    let bo_indicator2 = th.read_u8()?;
+    if bo_indicator1 == 73 && bo_indicator2 == 73 {
+        configs.endian = Endianness::LittleEndian;
+    } else if bo_indicator1 == 77 && bo_indicator2 == 77 {
+        configs.endian = Endianness::BigEndian;
+    } else {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "Incorrect TIFF header. Unrecognized byte-order indicator.",
+        ));
+    }
+
+    if th.get_byte_order() != configs.endian {
+        th.set_byte_order(configs.endian);
+    }
+
+    let is_big_tiff = match th.read_u16()? {
+        42 => false,
+        43 => true,
+        _ => {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "Incorrect TIFF header. Unrecognized magic number.",
+            ))
+        }
+    };
+
+    if is_big_tiff && mem::size_of::<usize>() != 8 {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "The BigTIFF raster format cannot be read on a 32-bit system.",
+        ));
+    }
+
+    let mut ifd_offset = if !is_big_tiff {
+        th.read_u32()? as usize
+    } else {
+        // Bytesize of offsets
+        if th.read_u16()? != 8 {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "Incorrect BigTIFF header. Unsupported bytesize of offsets.",
+            ));
+        }
+        // the next two bytes must be set to zero
+        if th.read_u16()? != 0 {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "Incorrect BigTIFF header.",
+            ));
+        }
+        th.read_u64()? as usize
+    };
+
+    //////////////////
+    // Read the IFD //
+    //////////////////
+
+    let mut ifd_map = HashMap::new();
+    let mut geokeys: GeoKeys = Default::default();
+    let mut cur_pos: usize;
+    while ifd_offset > 0 {
+        th.seek(ifd_offset);
+        let num_directories = if !is_big_tiff {
+            th.read_u16()? as u64
+        } else {
+            th.read_u64()?
+        };
+
+        for _ in 0..num_directories {
+            let tag_id = th.read_u16()?;
+            let field_type = th.read_u16()?;
+
+            let num_values = if !is_big_tiff {
+                th.read_u32()? as u64
+            } else {
+                th.read_u64()?
+            };
+
+            let value_offset = if !is_big_tiff {
+                th.read_u32()? as u64
+            } else {
+                th.read_u64()?
+            };
+
+            let data_size = match field_type {
+                1u16 | 2u16 | 6u16 | 7u16 => 1u64,
+                3u16 | 8u16 => 2u64,
+                4u16 | 9u16 | 11u16 => 4u64,
+                5u16 | 10u16 | 12u16 => 8u64,
+                16u16 | 17u16 | 18u16 => 8u64,
+                _ => {
+                    return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        "Error reading the IFDs.",
+                    ))
+                }
+            };
+
+            // read the tag data
+            let mut data: Vec<u8> = vec![];
+            if !is_big_tiff {
+                if (data_size * num_values) > 4 {
+                    // the values are stored at the offset location
+                    cur_pos = th.pos();
+                    th.seek(value_offset as usize);
+                    for _ in 0..num_values * data_size {
+                        data.push(th.read_u8()?);
+                    }
+                    th.seek(cur_pos);
+                } else {
+                    // the value(s) are contained in the offset
+                    cur_pos = th.pos();
+                    th.seek(cur_pos - 4);
+                    for _ in 0..num_values * data_size {
+                        data.push(th.read_u8()?);
+                    }
+                    th.seek(cur_pos);
+                }
+            } else {
+                if (data_size * num_values) > 8 {
+                    // the values are stored at the offset location
+                    cur_pos = th.pos();
+                    th.seek(value_offset as usize);
+                    for _ in 0..num_values * data_size {
+                        data.push(th.read_u8()?);
+                    }
+                    th.seek(cur_pos);
+                } else {
+                    // the value(s) are contained in the offset
+                    cur_pos = th.pos();
+                    th.seek(cur_pos - 8);
+                    for _ in 0..num_values * data_size {
+                        data.push(th.read_u8()?);
+                    }
+                    th.seek(cur_pos);
+                }
+            }
+
+            let ifd = Ifd::new(
+                tag_id,
+                field_type,
+                num_values,
+                value_offset,
+                data,
+                configs.endian,
+            );
+
+            ifd_map.insert(tag_id, ifd.clone());
+        }
+
+        ifd_offset = 0; // comment this out if you want to read additional images.
+    }
+
+    configs.columns = match ifd_map.get(&256) {
+        Some(ifd) => {
+            // The 256 tag can be either u16 or u32 type
+            if ifd.ifd_type == 3 {
+                ifd.interpret_as_u16()[0] as usize
+            } else {
+                ifd.interpret_as_u32()[0] as usize
+            }
+        }
+        _ => {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "The raster Columns value was not read correctly",
+            ))
+        }
+    };
+
+    configs.rows = match ifd_map.get(&257) {
+        Some(ifd) => {
+            // The 257 tag can be either u16 or u32 type
+            if ifd.ifd_type == 3 {
+                ifd.interpret_as_u16()[0] as usize
+            } else {
+                ifd.interpret_as_u32()[0] as usize
+            }
+        }
+        _ => {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "The raster Rows value was not read correctly",
+            ))
+        }
+    };
+
+    let source_columns = configs.columns;
+    let source_rows = configs.rows;
+
+    if x_off < 0 || y_off < 0 {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "Window offsets must be >= 0.",
+        ));
+    }
+    if x_size <= 0 || y_size <= 0 {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "Window sizes must be > 0.",
+        ));
+    }
+
+    let x_off_u = usize::try_from(x_off).map_err(|_| {
+        Error::new(
+            ErrorKind::InvalidInput,
+            "Window offsets must be >= 0.",
+        )
+    })?;
+    let y_off_u = usize::try_from(y_off).map_err(|_| {
+        Error::new(
+            ErrorKind::InvalidInput,
+            "Window offsets must be >= 0.",
+        )
+    })?;
+    let x_size_u = usize::try_from(x_size).map_err(|_| {
+        Error::new(
+            ErrorKind::InvalidInput,
+            "Window sizes must be > 0.",
+        )
+    })?;
+    let y_size_u = usize::try_from(y_size).map_err(|_| {
+        Error::new(
+            ErrorKind::InvalidInput,
+            "Window sizes must be > 0.",
+        )
+    })?;
+
+    let x_end = x_off_u.checked_add(x_size_u).ok_or(Error::new(
+        ErrorKind::InvalidInput,
+        "Window size overflows source bounds.",
+    ))?;
+    let y_end = y_off_u.checked_add(y_size_u).ok_or(Error::new(
+        ErrorKind::InvalidInput,
+        "Window size overflows source bounds.",
+    ))?;
+
+    if x_end > source_columns || y_end > source_rows {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "Window exceeds source bounds.",
+        ));
+    }
+
+    let bits_per_sample = match ifd_map.get(&258) {
+        Some(ifd) => ifd.interpret_as_u16(),
+        _ => {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "The raster BitsPerSample value was not read correctly",
+            ))
+        }
+    };
+
+    let compression = match ifd_map.get(&259) {
+        Some(ifd) => ifd.interpret_as_u16()[0],
+        _ => {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "The raster Compression method value was not read correctly",
+            ))
+        }
+    };
+
+    if compression != COMPRESS_NONE
+        && compression != COMPRESS_PACKBITS
+        && compression != COMPRESS_LZW
+        && compression != COMPRESS_DEFLATE
+    {
+        println!("Compression: {}", compression);
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "The WhiteboxTools GeoTIFF decoder currently only supports PACKBITS, LZW, and DEFLATE compression.",
+        ));
+    }
+
+    let photometric_interp = match ifd_map.get(&262) {
+        Some(ifd) => ifd.interpret_as_u16()[0],
+        _ => {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "The raster PhotometricInterpretation value was not read correctly",
+            ))
+        }
+    };
+
+    match ifd_map.get(&280) {
+        Some(ifd) => {
+            configs.display_min = ifd.interpret_as_u16()[0] as f64;
+        }
+        _ => {}
+    };
+
+    match ifd_map.get(&281) {
+        Some(ifd) => {
+            configs.display_max = ifd.interpret_as_u16()[0] as f64;
+        }
+        _ => {}
+    };
+
+    let extra_samples = match ifd_map.get(&338) {
+        Some(ifd) => ifd.interpret_as_u16()[0],
+        _ => 0,
+    };
+
+    let sample_format = match ifd_map.get(&339) {
+        Some(ifd) => ifd.interpret_as_u16(),
+        _ => [0].to_vec(),
+    };
+
+    configs.nodata = match ifd_map.get(&TAG_GDAL_NODATA) {
+        Some(ifd) => {
+            let s = ifd.interpret_as_ascii().trim().to_string();
+            if bits_per_sample[0] == 32 && sample_format[0] == 3 {
+                s.parse::<f32>().unwrap_or(-32768f32) as f64
+            } else {
+                s.parse::<f64>().unwrap_or(-32768f64)
+            }
+        }
+        _ => -32768f64,
+    };
+
+    // GeoKeyDirectoryTag
+    match ifd_map.get(&34735) {
+        Some(ifd) => {
+            configs.geo_key_directory = ifd.interpret_as_u16();
+            geokeys.add_key_directory(&ifd.data, configs.endian);
+        }
+        _ => {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "The TIFF file does not contain geokeys",
+            ))
+        }
+    };
+
+    // GeoDoubleParamsTag
+    match ifd_map.get(&34736) {
+        Some(ifd) => {
+            configs.geo_double_params = ifd.interpret_as_f64();
+            geokeys.add_double_params(&ifd.data, configs.endian);
+        }
+        _ => {}
+    };
+
+    // GeoAsciiParamsTag
+    match ifd_map.get(&34737) {
+        Some(ifd) => {
+            configs.geo_ascii_params = ifd.interpret_as_ascii();
+            geokeys.add_ascii_params(&ifd.data);
+        }
+        _ => {}
+    };
+
+    let geokeys_map = geokeys.get_ifd_map(configs.endian);
+
+    // ModelTiePointTag
+    configs.model_tiepoint = match ifd_map.get(&33922) {
+        Some(ifd) => ifd.interpret_as_f64(),
+        _ => vec![0.0],
+    };
+
+    // ModelPixelScale
+    match ifd_map.get(&33550) {
+        Some(ifd) => {
+            let vals = ifd.interpret_as_f64();
+            if vals.len() != 3 {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "Error: the ModelPixelScaleTag (33550) is not specified correctly in the GeoTIFF file.",
+                ));
+            }
+            for i in 0..3 {
+                configs.model_pixel_scale[i] = vals[i];
+            }
+        }
+        _ => {}
+    }
+
+    // ModelTransformationTag
+    match ifd_map.get(&33920) {
+        Some(ifd) => {
+            let vals = ifd.interpret_as_f64();
+            if vals.len() != 16 {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "Error: the ModelTransformationTag (33920) is not specified correctly in the GeoTIFF file.",
+                ));
+            }
+            for i in 0..16 {
+                configs.model_transformation[i] = vals[i];
+            }
+        }
+        _ => {}
+    }
+    match ifd_map.get(&34264) {
+        Some(ifd) => {
+            let vals = ifd.interpret_as_f64();
+            if vals.len() != 16 {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "Error: the ModelTransformationTag (34264) is not specified correctly in the GeoTIFF file.",
+                ));
+            }
+            for i in 0..16 {
+                configs.model_transformation[i] = vals[i];
+            }
+        }
+        _ => {}
+    }
+
+    let x_off_f = x_off as f64;
+    let y_off_f = y_off as f64;
+    configs.columns = x_size_u;
+    configs.rows = y_size_u;
+
+    if configs.model_tiepoint.len() == 6 {
+        // see if the model_pixel_scale tag was actually specified
+        if configs.model_pixel_scale[0] == 0.0 {
+            configs.model_pixel_scale[0] = 1.0;
+            configs.model_pixel_scale[1] = 1.0;
+            println!("Warning: The ModelPixelScaleTag (33550) is not specified. A pixel resolution of 1.0 has been assumed.");
+        }
+        // The common case of one tie-point and pixel size.
+        configs.resolution_x = configs.model_pixel_scale[0];
+        configs.resolution_y = configs.model_pixel_scale[1];
+        let tx = configs.model_tiepoint[3] - configs.model_tiepoint[0] / configs.resolution_x;
+        let ty = configs.model_tiepoint[4] + configs.model_tiepoint[1] / configs.resolution_y;
+
+        let win_col0 = x_off_f;
+        let win_row0 = y_off_f;
+        let win_col1 = x_off_f + x_size as f64 - 1.0;
+        let win_row1 = y_off_f + y_size as f64 - 1.0;
+
+        configs.west = configs.resolution_x * win_col0 + tx;
+        configs.north = -configs.resolution_y * win_row0 + ty;
+        configs.east = configs.resolution_x * win_col1 + tx;
+        configs.south = -configs.resolution_y * win_row1 + ty;
+        configs.model_tiepoint = vec![0.0, 0.0, 0.0, configs.west, configs.north, 0.0];
+    } else if configs.model_tiepoint.len() > 6 {
+        let num_tie_points = configs.model_tiepoint.len() / 6;
+        let mut x = Vec::with_capacity(num_tie_points);
+        let mut y = Vec::with_capacity(num_tie_points);
+        let mut x_prime = Vec::with_capacity(num_tie_points);
+        let mut y_prime = Vec::with_capacity(num_tie_points);
+        for a in 0..num_tie_points {
+            let b = a * 6;
+            x.push(configs.model_tiepoint[b] - x_off_f);
+            y.push(configs.model_tiepoint[b + 1] - y_off_f);
+            x_prime.push(configs.model_tiepoint[b + 3]);
+            y_prime.push(configs.model_tiepoint[b + 4]);
+        }
+
+        let mut shifted_tiepoints = configs.model_tiepoint.clone();
+        for a in 0..num_tie_points {
+            let b = a * 6;
+            shifted_tiepoints[b] -= x_off_f;
+            shifted_tiepoints[b + 1] -= y_off_f;
+        }
+        configs.model_tiepoint = shifted_tiepoints;
+
+        let mut minxp = std::f64::MAX;
+        for i in 0..num_tie_points {
+            if x_prime[i] < minxp {
+                minxp = x_prime[i];
+            }
+        }
+        for i in 0..num_tie_points {
+            x_prime[i] -= minxp;
+        }
+
+        let mut minyp = std::f64::MAX;
+        for i in 0..num_tie_points {
+            if y_prime[i] < minyp {
+                minyp = y_prime[i];
+            }
+        }
+        for i in 0..num_tie_points {
+            y_prime[i] -= minyp;
+        }
+
+        let poly_order = 3;
+        let pr2d = PolynomialRegression2D::new(poly_order, &x_prime, &y_prime, &x, &y).unwrap();
+
+        // upper-left corner coordinates
+        let mut col = 0.0f64;
+        let mut row = 0.0f64;
+        let mut val = pr2d.get_value(col, row);
+        let upper_left_x = minxp + val.0;
+        let upper_left_y = minyp + val.1;
+
+        // upper-right corner coordinates
+        col = (configs.columns - 1) as f64;
+        row = 0.0;
+        val = pr2d.get_value(col, row);
+        let upper_right_x = minxp + val.0;
+        let upper_right_y = minyp + val.1;
+
+        // lower-left corner coordinates
+        col = 0.0;
+        row = (configs.rows - 1) as f64;
+        val = pr2d.get_value(col, row);
+        let lower_left_x = minxp + val.0;
+        let lower_left_y = minyp + val.1;
+
+        // lower-right corner coordinates
+        col = (configs.columns - 1) as f64;
+        row = (configs.rows - 1) as f64;
+        val = pr2d.get_value(col, row);
+        let lower_right_x = minxp + val.0;
+        let lower_right_y = minyp + val.1;
+
+        configs.west = lower_left_x.min(upper_left_x);
+        configs.east = lower_right_x.max(upper_right_x);
+        configs.south = lower_left_y.min(lower_right_y);
+        configs.north = upper_left_y.max(upper_right_y);
+
+        // resolution
+        let upper_right = Point2D::new(upper_right_x, upper_right_y);
+        let upper_left = Point2D::new(upper_left_x, upper_left_y);
+        let lower_left = Point2D::new(lower_left_x, lower_left_y);
+        configs.resolution_x = upper_right.distance(&upper_left) / configs.columns as f64;
+        configs.resolution_y = upper_left.distance(&lower_left) / configs.rows as f64;
+    } else if configs.model_transformation[0] != 0.0 {
+        let mut model_transformation = configs.model_transformation;
+        model_transformation[3] = model_transformation[3]
+            + model_transformation[0] * x_off_f
+            + model_transformation[1] * y_off_f;
+        model_transformation[7] = model_transformation[7]
+            + model_transformation[4] * x_off_f
+            + model_transformation[5] * y_off_f;
+        configs.model_transformation = model_transformation;
+
+        configs.resolution_x = model_transformation[0];
+        configs.resolution_y = model_transformation[5].abs();
+        // upper-left corner coordinates
+        let mut col = 0.0;
+        let mut row = 0.0;
+        let upper_left_x = model_transformation[0] * col
+            + model_transformation[1] * row
+            + model_transformation[3];
+        let upper_left_y = model_transformation[4] * col
+            + model_transformation[5] * row
+            + model_transformation[7];
+
+        // upper-right corner coordinates
+        col = (configs.columns - 1) as f64;
+        row = 0.0;
+        let upper_right_x = model_transformation[0] * col
+            + model_transformation[1] * row
+            + model_transformation[3];
+        let upper_right_y = model_transformation[4] * col
+            + model_transformation[5] * row
+            + model_transformation[7];
+
+        // lower-left corner coordinates
+        col = 0.0;
+        row = (configs.rows - 1) as f64;
+        let lower_left_x = model_transformation[0] * col
+            + model_transformation[1] * row
+            + model_transformation[3];
+        let lower_left_y = model_transformation[4] * col
+            + model_transformation[5] * row
+            + model_transformation[7];
+
+        // lower-right corner coordinates
+        col = (configs.columns - 1) as f64;
+        row = (configs.rows - 1) as f64;
+        let lower_right_x = model_transformation[0] * col
+            + model_transformation[1] * row
+            + model_transformation[3];
+        let lower_right_y = model_transformation[4] * col
+            + model_transformation[5] * row
+            + model_transformation[7];
+
+        configs.west = lower_left_x.min(upper_left_x);
+        configs.east = lower_right_x.max(upper_right_x);
+        configs.south = lower_left_y.min(lower_right_y);
+        configs.north = upper_left_y.max(upper_right_y);
+    } else {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "The model-space/raster-space transformation cannot be defined.",
+        ));
+    }
+
+    // Get the EPSG code and WKT CRS
+    configs.epsg_code = geokeys.find_epsg_code();
+    configs.coordinate_ref_system_wkt = esri_wkt_from_epsg(configs.epsg_code);
+
+    let kw_map = get_keyword_map();
+
+    configs.xy_units = match geokeys_map.get(&3076) {
+        Some(ifd) => {
+            let val = ifd.interpret_as_u16()[0];
+            let proj_linear_units_map = kw_map.get(&3076u16).unwrap();
+            proj_linear_units_map.get(&val).unwrap().to_string()
+        }
+        None => "not specified".to_string(),
+    };
+
+    configs.z_units = match geokeys_map.get(&4099u16) {
+        Some(ifd) => {
+            let val = ifd.interpret_as_u16()[0];
+            let vertical_units_map = kw_map.get(&4099u16).unwrap();
+            vertical_units_map.get(&val).unwrap().to_string()
+        }
+        None => "not specified".to_string(),
+    };
+
+    // Determine the image mode.
+    let photomet_map = kw_map.get(&262).unwrap();
+    let photomet_str: String = photomet_map.get(&photometric_interp).unwrap().to_string();
+    let mode: u16;
+    let mut palette = vec![];
+    if photomet_str == "RGB" {
+        configs.photometric_interp = PhotometricInterpretation::RGB;
+        if bits_per_sample[0] == 16 {
+            if bits_per_sample[1] != 16 || bits_per_sample[2] != 16 {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "Wrong number of samples for 16bit RGB.",
+                ));
+            }
+        } else {
+            if bits_per_sample[0] != 8 || bits_per_sample[1] != 8 || bits_per_sample[2] != 8 {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "Wrong number of samples for 8bit RGB.",
+                ));
+            }
+        }
+        mode = match bits_per_sample.len() {
+            3 => IM_RGB,
+            4 => {
+                match extra_samples {
+                    0 | 1 => IM_RGBA,
+                    2 => IM_NRGBA,
+                    _ => {
+                        return Err(Error::new(
+                            ErrorKind::InvalidData,
+                            "Wrong number of samples for RGB.",
+                        ))
+                    }
+                }
+            }
+            _ => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "Wrong number of samples for RGB.",
+                ))
+            }
+        };
+    } else if photomet_str == "Paletted" {
+        configs.photometric_interp = PhotometricInterpretation::Categorical;
+        mode = IM_PALETTED;
+        let color_map = match ifd_map.get(&320) {
+            Some(ifd) => ifd.interpret_as_u16(),
+            _ => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "Colour map not present in Paletted TIFF.",
+                ))
+            }
+        };
+        let num_colors = color_map.len() / 3;
+        if color_map.len() % 3 != 0 || num_colors <= 0 || num_colors > 256 {
+            return Err(Error::new(ErrorKind::InvalidData, "bad ColorMap length"));
+        }
+        for i in 0..num_colors {
+            let red = (color_map[i] as f64 / 65535.0 * 255.0) as u32;
+            let green = (color_map[i + num_colors] as f64 / 65535.0 * 255.0) as u32;
+            let blue = (color_map[i + 2 * num_colors] as f64 / 65535.0 * 255.0) as u32;
+            let a = 255u32;
+            let val = ((a << 24) | (red << 16) | (green << 8) | blue) as u32;
+            palette.push(val);
+        }
+    } else if photomet_str == "WhiteIsZero" {
+        configs.photometric_interp = PhotometricInterpretation::Continuous;
+        mode = IM_GRAYINVERT;
+    } else if photomet_str == "BlackIsZero" {
+        configs.photometric_interp = PhotometricInterpretation::Continuous;
+        mode = IM_GRAY;
+    } else {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "Unsupported image format.",
+        ));
+    }
+
+    match mode {
+        IM_GRAYINVERT | IM_GRAY => {
+            configs.photometric_interp = PhotometricInterpretation::Continuous;
+            match sample_format[0] {
+                1 => {
+                    match bits_per_sample[0] {
+                        8 => configs.data_type = DataType::U8,
+                        16 => configs.data_type = DataType::U16,
+                        32 => configs.data_type = DataType::U32,
+                        64 => configs.data_type = DataType::U64,
+                        _ => {
+                            return Err(Error::new(
+                                ErrorKind::InvalidData,
+                                "The raster was not read correctly",
+                            ))
+                        }
+                    }
+                }
+                2 => {
+                    match bits_per_sample[0] {
+                        8 => configs.data_type = DataType::I8,
+                        16 => configs.data_type = DataType::I16,
+                        32 => configs.data_type = DataType::I32,
+                        64 => configs.data_type = DataType::I64,
+                        _ => {
+                            return Err(Error::new(
+                                ErrorKind::InvalidData,
+                                "The raster was not read correctly",
+                            ))
+                        }
+                    }
+                }
+                3 => {
+                    match bits_per_sample[0] {
+                        32 => configs.data_type = DataType::F32,
+                        64 => configs.data_type = DataType::F64,
+                        _ => {
+                            return Err(Error::new(
+                                ErrorKind::InvalidData,
+                                "The raster was not read correctly",
+                            ))
+                        }
+                    }
+                }
+                _ => {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        "The raster was not read correctly",
+                    ))
+                }
+            }
+        }
+        IM_PALETTED => {
+            configs.photometric_interp = PhotometricInterpretation::Categorical;
+            configs.data_type = DataType::U8;
+        }
+        IM_RGB => {
+            configs.photometric_interp = PhotometricInterpretation::RGB;
+            if bits_per_sample[0] == 8 {
+                configs.data_type = DataType::U8;
+            } else if bits_per_sample[0] == 16 {
+                configs.data_type = DataType::U16;
+            } else {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "The raster was not read correctly",
+                ));
+            }
+        }
+        IM_NRGBA | IM_RGBA => {
+            if bits_per_sample[0] == 8 && bits_per_sample.len() == 4 {
+                configs.data_type = DataType::RGBA32;
+            } else if bits_per_sample[0] == 8 && bits_per_sample.len() == 3 {
+                configs.data_type = DataType::RGB24;
+            } else if bits_per_sample[0] == 16 {
+                configs.data_type = DataType::U16;
+            } else {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "The raster was not read correctly",
+                ));
+            }
+        }
+        _ => {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "The raster was not read correctly",
+            ))
+        }
+    }
+
+    let predictor = match ifd_map.get(&317) {
+        Some(ifd) => ifd.interpret_as_u16()[0],
+        _ => 1,
+    };
+    if predictor == 3 {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "The GeoTIFF reader does not currently support floating-point predictors (PREDICTOR=3).",
+        ));
+    }
+
+    let width = source_columns;
+    let height = source_rows;
+
+    let mut block_padding = false;
+    let mut block_width = width;
+    let block_height;
+    let mut blocks_across = 1;
+    let _blocks_down;
+
+    let block_offsets: Vec<u64>;
+    let block_counts: Vec<u64>;
+
+    if ifd_map.contains_key(&322) {
+        // it's a tile oriented file.
+        block_padding = true;
+
+        block_width = match ifd_map.get(&322) {
+            Some(ifd) => {
+                if ifd.ifd_type == 3 {
+                    ifd.interpret_as_u16()[0] as usize
+                } else {
+                    ifd.interpret_as_u32()[0] as usize
+                }
+            }
+            _ => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "The TileWidth value was not read correctly",
+                ))
+            }
+        };
+
+        block_height = match ifd_map.get(&323) {
+            Some(ifd) => {
+                if ifd.ifd_type == 3 {
+                    ifd.interpret_as_u16()[0] as usize
+                } else {
+                    ifd.interpret_as_u32()[0] as usize
+                }
+            }
+            _ => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "The TileLength value was not read correctly",
+                ))
+            }
+        };
+
+        blocks_across = (width + block_width - 1) / block_width;
+        _blocks_down = (height + block_height - 1) / block_height;
+
+        block_offsets = match ifd_map.get(&324) {
+            Some(ifd) => {
+                if ifd.ifd_type == 3 {
+                    let ifd_data = ifd.interpret_as_u16();
+                    let mut ret: Vec<u64> = vec![];
+                    for val in ifd_data.iter() {
+                        ret.push(*val as u64);
+                    }
+                    ret
+                } else if ifd.ifd_type == 4 {
+                    let ifd_data = ifd.interpret_as_u32();
+                    let mut ret: Vec<u64> = vec![];
+                    for val in ifd_data.iter() {
+                        ret.push(*val as u64);
+                    }
+                    ret
+                } else if ifd.ifd_type == 16 {
+                    ifd.interpret_as_u64()
+                } else {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        "The raster TileOffsets values were not read correctly",
+                    ));
+                }
+            }
+            _ => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "The raster TileOffsets value was not read correctly",
+                ))
+            }
+        };
+
+        block_counts = match ifd_map.get(&325) {
+            Some(ifd) => {
+                if ifd.ifd_type == 3 {
+                    let ifd_data = ifd.interpret_as_u16();
+                    let mut ret: Vec<u64> = vec![];
+                    for val in ifd_data.iter() {
+                        ret.push(*val as u64);
+                    }
+                    ret
+                } else if ifd.ifd_type == 4 {
+                    let ifd_data = ifd.interpret_as_u32();
+                    let mut ret: Vec<u64> = vec![];
+                    for val in ifd_data.iter() {
+                        ret.push(*val as u64);
+                    }
+                    ret
+                } else if ifd.ifd_type == 16 {
+                    ifd.interpret_as_u64()
+                } else {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        "The raster TileLength values were not read correctly",
+                    ));
+                }
+            }
+            _ => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "The TileLength values were not read correctly",
+                ))
+            }
+        };
+    } else {
+        block_height = match ifd_map.get(&278) {
+            Some(ifd) => {
+                if ifd.ifd_type == 3 {
+                    ifd.interpret_as_u16()[0] as usize
+                } else {
+                    ifd.interpret_as_u32()[0] as usize
+                }
+            }
+            _ => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "The RowsPerStrip value was not read correctly",
+                ))
+            }
+        };
+
+        _blocks_down = (height + block_height - 1) / block_height;
+
+        block_offsets = match ifd_map.get(&273) {
+            Some(ifd) => {
+                if ifd.ifd_type == 3 {
+                    let ifd_data = ifd.interpret_as_u16();
+                    let mut ret: Vec<u64> = vec![];
+                    for val in ifd_data.iter() {
+                        ret.push(*val as u64);
+                    }
+                    ret
+                } else if ifd.ifd_type == 4 {
+                    let ifd_data = ifd.interpret_as_u32();
+                    let mut ret: Vec<u64> = vec![];
+                    for val in ifd_data.iter() {
+                        ret.push(*val as u64);
+                    }
+                    ret
+                } else if ifd.ifd_type == 16 {
+                    ifd.interpret_as_u64()
+                } else {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        "The raster StripOffsets values were not read correctly",
+                    ));
+                }
+            }
+            _ => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "The raster StripOffsets values were not read correctly",
+                ))
+            }
+        };
+
+        block_counts = match ifd_map.get(&279) {
+            Some(ifd) => {
+                if ifd.ifd_type == 3 {
+                    let ifd_data = ifd.interpret_as_u16();
+                    let mut ret: Vec<u64> = vec![];
+                    for val in ifd_data.iter() {
+                        ret.push(*val as u64);
+                    }
+                    ret
+                } else if ifd.ifd_type == 4 {
+                    let ifd_data = ifd.interpret_as_u32();
+                    let mut ret: Vec<u64> = vec![];
+                    for val in ifd_data.iter() {
+                        ret.push(*val as u64);
+                    }
+                    ret
+                } else if ifd.ifd_type == 16 {
+                    ifd.interpret_as_u64()
+                } else {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        "The raster StripByteCounts value was not read correctly",
+                    ));
+                }
+            }
+            _ => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "The raster StripByteCounts value was not read correctly",
+                ))
+            }
+        };
+    }
+
+    if data.len() > 0 {
+        data.clear();
+    }
+    data.resize(configs.rows * configs.columns, configs.nodata);
+
+    let block_x_start = x_off_u / block_width;
+    let block_x_end = (x_end - 1) / block_width;
+    let block_y_start = y_off_u / block_height;
+    let block_y_end = (y_end - 1) / block_height;
+
+    for j in block_y_start..=block_y_end {
+        for i in block_x_start..=block_x_end {
+            let offset = block_offsets[j * blocks_across + i] as usize;
+            let n = block_counts[j * blocks_across + i] as usize;
+
+            let xmin = i * block_width;
+            let ymin = j * block_height;
+            let xmax = min(xmin + block_width, width);
+            let ymax = min(ymin + block_height, height);
+            let block_cols = xmax - xmin;
+            let block_rows = ymax - ymin;
+
+            let inter_xmin = std::cmp::max(xmin, x_off_u);
+            let inter_ymin = std::cmp::max(ymin, y_off_u);
+            let inter_xmax = min(xmax, x_end);
+            let inter_ymax = min(ymax, y_end);
+            if inter_xmin >= inter_xmax || inter_ymin >= inter_ymax {
+                continue;
+            }
+
+            if n == 0 {
+                continue;
+            }
+
+            let mut buf: Vec<u8> = vec![];
+            match compression {
+                COMPRESS_NONE => {
+                    buf.reserve_exact(n);
+                    unsafe { buf.set_len(n); }
+                    th.seek(offset);
+                    th.read_exact(&mut buf)?;
+                }
+                COMPRESS_PACKBITS => {
+                    let mut b = vec![0u8; n];
+                    th.seek(offset);
+                    th.read_exact(&mut b).expect("Error reading bytes from file.");
+                    buf = packbits_decoder(b);
+                }
+                COMPRESS_LZW => {
+                    let mut compressed = vec![0; n];
+                    th.seek(offset);
+                    th.read_exact(&mut compressed).expect("Error reading bytes from file.");
+                    let max_uncompressed_length = block_width
+                        * block_height
+                        * bits_per_sample.len()
+                        * bits_per_sample[0] as usize
+                        / 8;
+                    buf = Vec::with_capacity(max_uncompressed_length);
+                    let mut decoder = lzw::DecoderEarlyChange::new(lzw::MsbReader::new(), 8);
+                    let mut bytes_read = 0;
+                    while bytes_read < n && buf.len() < max_uncompressed_length {
+                        let (len, bytes) = decoder
+                            .decode_bytes(&compressed[bytes_read..])
+                            .expect("Error encountered while decoding the LZW compressed GeoTIFF file.");
+                        bytes_read += len;
+                        buf.extend_from_slice(bytes);
+                    }
+                }
+                COMPRESS_DEFLATE => {
+                    th.seek(offset);
+                    let mut compressed = vec![0u8; n];
+                    th.read_exact(&mut compressed)
+                        .expect("Error reading bytes from file.");
+                    buf.extend(
+                        decompress_to_vec_zlib(&compressed)
+                            .expect("Error encountered while decoding the DEFLATE compressed GeoTIFF file."),
+                    );
+                }
+                _ => {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        "The WhiteboxTools GeoTIFF decoder currently only supports PACKBITS and DEFLATE compression.",
+                    ))
+                }
+            }
+
+            let mut bor =
+                ByteOrderReader::<Cursor<Vec<u8>>>::new(Cursor::new(buf), configs.endian);
+            let skip_bytes = if block_padding && xmin + block_width > width {
+                xmin + block_width - width
+            } else if !block_padding {
+                0
+            } else {
+                0
+            };
+
+            let mut block_data = vec![0.0; block_cols * block_rows];
+            let mut off = 0;
+            let mut i: usize;
+            let (mut red, mut green, mut blue): (u32, u32, u32);
+
+            match mode {
+                IM_GRAYINVERT | IM_GRAY => {
+                    match sample_format[0] {
+                        1 => {
+                            match bits_per_sample[0] {
+                                8 => {
+                                    for row in 0..block_rows {
+                                        for col in 0..block_cols {
+                                            if off <= bor.len() {
+                                                i = row * block_cols + col;
+                                                block_data[i] = bor.read_u8()? as f64;
+                                                off += 1;
+                                            }
+                                        }
+                                        if skip_bytes > 0 {
+                                            bor.inc_pos(skip_bytes);
+                                            off += skip_bytes;
+                                        }
+                                    }
+                                }
+                                16 => {
+                                    for row in 0..block_rows {
+                                        for col in 0..block_cols {
+                                            if off <= bor.len() {
+                                                i = row * block_cols + col;
+                                                block_data[i] = bor.read_u16()? as f64;
+                                                off += 2;
+                                            }
+                                        }
+                                        if skip_bytes > 0 {
+                                            bor.inc_pos(skip_bytes * 2);
+                                            off += skip_bytes * 2;
+                                        }
+                                    }
+                                }
+                                32 => {
+                                    for row in 0..block_rows {
+                                        for col in 0..block_cols {
+                                            if off <= bor.len() {
+                                                i = row * block_cols + col;
+                                                block_data[i] = bor.read_u32()? as f64;
+                                                off += 4;
+                                            }
+                                        }
+                                        if skip_bytes > 0 {
+                                            bor.inc_pos(skip_bytes * 4);
+                                            off += skip_bytes * 4;
+                                        }
+                                    }
+                                }
+                                64 => {
+                                    for row in 0..block_rows {
+                                        for col in 0..block_cols {
+                                            if off <= bor.len() {
+                                                i = row * block_cols + col;
+                                                block_data[i] = bor.read_u64()? as f64;
+                                                off += 8;
+                                            }
+                                        }
+                                        if skip_bytes > 0 {
+                                            bor.inc_pos(skip_bytes * 8);
+                                            off += skip_bytes * 8;
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    return Err(Error::new(
+                                        ErrorKind::InvalidData,
+                                        "The raster was not read correctly",
+                                    ))
+                                }
+                            }
+                        }
+                        2 => {
+                            match bits_per_sample[0] {
+                                8 => {
+                                    for row in 0..block_rows {
+                                        for col in 0..block_cols {
+                                            if off <= bor.len() {
+                                                i = row * block_cols + col;
+                                                block_data[i] = bor.read_i8()? as f64;
+                                                off += 1;
+                                            }
+                                        }
+                                        if skip_bytes > 0 {
+                                            bor.inc_pos(skip_bytes);
+                                            off += skip_bytes;
+                                        }
+                                    }
+                                }
+                                16 => {
+                                    for row in 0..block_rows {
+                                        for col in 0..block_cols {
+                                            if off <= bor.len() {
+                                                i = row * block_cols + col;
+                                                block_data[i] = bor.read_i16()? as f64;
+                                                off += 2;
+                                            }
+                                        }
+                                        if skip_bytes > 0 {
+                                            bor.inc_pos(skip_bytes * 2);
+                                            off += skip_bytes * 2;
+                                        }
+                                    }
+                                }
+                                32 => {
+                                    for row in 0..block_rows {
+                                        for col in 0..block_cols {
+                                            if off <= bor.len() {
+                                                i = row * block_cols + col;
+                                                block_data[i] = bor.read_i32()? as f64;
+                                                off += 4;
+                                            }
+                                        }
+                                        if skip_bytes > 0 {
+                                            bor.inc_pos(skip_bytes * 4);
+                                            off += skip_bytes * 4;
+                                        }
+                                    }
+                                }
+                                64 => {
+                                    for row in 0..block_rows {
+                                        for col in 0..block_cols {
+                                            if off <= bor.len() {
+                                                i = row * block_cols + col;
+                                                block_data[i] = bor.read_i64()? as f64;
+                                                off += 8;
+                                            }
+                                        }
+                                        if skip_bytes > 0 {
+                                            bor.inc_pos(skip_bytes * 8);
+                                            off += skip_bytes * 8;
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    return Err(Error::new(
+                                        ErrorKind::InvalidData,
+                                        "The raster was not read correctly",
+                                    ))
+                                }
+                            }
+                        }
+                        3 => {
+                            match bits_per_sample[0] {
+                                32 => {
+                                    for row in 0..block_rows {
+                                        for col in 0..block_cols {
+                                            i = row * block_cols + col;
+                                            block_data[i] = bor.read_f32()? as f64;
+                                            off += 4;
+                                        }
+                                        if skip_bytes > 0 {
+                                            bor.inc_pos(skip_bytes * 4);
+                                            off += skip_bytes * 4;
+                                        }
+                                    }
+                                }
+                                64 => {
+                                    for row in 0..block_rows {
+                                        for col in 0..block_cols {
+                                            if off <= bor.len() {
+                                                i = row * block_cols + col;
+                                                block_data[i] = bor.read_f64()?;
+                                                off += 8;
+                                            }
+                                        }
+                                        if skip_bytes > 0 {
+                                            bor.inc_pos(skip_bytes * 8);
+                                            off += skip_bytes * 8;
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    return Err(Error::new(
+                                        ErrorKind::InvalidData,
+                                        "The raster was not read correctly",
+                                    ))
+                                }
+                            }
+                        }
+                        _ => {
+                            return Err(Error::new(
+                                ErrorKind::InvalidData,
+                                "The raster was not read correctly",
+                            ))
+                        }
+                    }
+                }
+                IM_PALETTED => {
+                    let mut value: usize;
+                    for row in 0..block_rows {
+                        for col in 0..block_cols {
+                            i = row * block_cols + col;
+                            value = bor.read_u8()? as usize;
+                            block_data[i] = palette[value] as f64;
+                        }
+                        if skip_bytes > 0 {
+                            bor.inc_pos(skip_bytes);
+                            off += skip_bytes;
+                        }
+                    }
+                }
+                IM_RGB => {
+                    let mut value: u32;
+                    let mut a: u32;
+                    if bits_per_sample[0] == 8 {
+                        for row in 0..block_rows {
+                            for col in 0..block_cols {
+                                red = bor.read_u8()? as u32;
+                                green = bor.read_u8()? as u32;
+                                blue = bor.read_u8()? as u32;
+                                a = 255u32;
+                                value = (a << 24) | (blue << 16) | (green << 8) | red;
+                                i = row * block_cols + col;
+                                block_data[i] = value as f64;
+                            }
+                            if skip_bytes > 0 {
+                                bor.inc_pos(skip_bytes * 3);
+                            }
+                        }
+                    } else if bits_per_sample[0] == 16 {
+                        let mut value: u32;
+                        let mut a: u32;
+                        for row in 0..block_rows {
+                            for col in 0..block_cols {
+                                red = (bor.read_u16()? as f64 / 65535f64 * 255f64) as u32;
+                                green = (bor.read_u16()? as f64 / 65535f64 * 255f64) as u32;
+                                blue = (bor.read_u16()? as f64 / 65535f64 * 255f64) as u32;
+                                a = 255u32;
+                                value = (a << 24) | (blue << 16) | (green << 8) | red;
+                                i = row * block_cols + col;
+                                block_data[i] = value as f64;
+                            }
+                            if skip_bytes > 0 {
+                                bor.inc_pos(skip_bytes * 6);
+                            }
+                        }
+                    } else {
+                        return Err(Error::new(
+                            ErrorKind::InvalidData,
+                            "The raster was not read correctly",
+                        ));
+                    }
+                }
+                IM_NRGBA | IM_RGBA => {
+                    let mut value: u32;
+                    let mut a: u32;
+                    if bits_per_sample[0] == 8 {
+                        for row in 0..block_rows {
+                            for col in 0..block_cols {
+                                red = bor.read_u8()? as u32;
+                                green = bor.read_u8()? as u32;
+                                blue = bor.read_u8()? as u32;
+                                a = bor.read_u8()? as u32;
+                                value = (a << 24) | (blue << 16) | (green << 8) | red;
+                                i = row * block_cols + col;
+                                block_data[i] = value as f64;
+                            }
+                            if skip_bytes > 0 {
+                                bor.inc_pos(skip_bytes * 4);
+                            }
+                        }
+                    } else if bits_per_sample[0] == 16 {
+                        let mut value: u32;
+                        let mut a: u32;
+                        for row in 0..block_rows {
+                            for col in 0..block_cols {
+                                red = (bor.read_u16()? as f64 / 65535f64 * 255f64) as u32;
+                                green = (bor.read_u16()? as f64 / 65535f64 * 255f64) as u32;
+                                blue = (bor.read_u16()? as f64 / 65535f64 * 255f64) as u32;
+                                a = (bor.read_u16()? as f64 / 65535f64 * 255f64) as u32;
+                                value = (a << 24) | (blue << 16) | (green << 8) | red;
+                                i = row * block_cols + col;
+                                block_data[i] = value as f64;
+                            }
+                            if skip_bytes > 0 {
+                                bor.inc_pos(skip_bytes * 8);
+                            }
+                        }
+                    } else {
+                        return Err(Error::new(
+                            ErrorKind::InvalidData,
+                            "The raster was not read correctly",
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        "The raster was not read correctly",
+                    ))
+                }
+            }
+
+            if predictor == 2 {
+                for row in 0..block_rows {
+                    let row_start = row * block_cols;
+                    for col in 1..block_cols {
+                        let idx = row_start + col;
+                        block_data[idx] += block_data[idx - 1];
+                    }
+                }
+            }
+
+            let output_width = configs.columns;
+            for y in inter_ymin..inter_ymax {
+                let block_row = y - ymin;
+                let out_row = y - y_off_u;
+                let block_row_offset = block_row * block_cols;
+                let out_row_offset = out_row * output_width;
+                for x in inter_xmin..inter_xmax {
+                    let block_col = x - xmin;
+                    let out_col = x - x_off_u;
+                    data[out_row_offset + out_col] = block_data[block_row_offset + block_col];
+                }
+            }
+        }
     }
 
     Ok(())
