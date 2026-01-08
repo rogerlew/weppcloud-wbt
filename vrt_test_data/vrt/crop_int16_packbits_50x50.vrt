@@ -1,0 +1,26 @@
+<VRTDataset rasterXSize="50" rasterYSize="50">
+  <SRS dataAxisToSRSAxisMapping="1,2">PROJCS["WGS 84 / UTM zone 19N",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",0],PARAMETER["central_meridian",-69],PARAMETER["scale_factor",0.9996],PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["EPSG","32619"]]</SRS>
+  <GeoTransform>  2.7604300000177883e+05,  9.9999999999609990e-01,  0.0000000000000000e+00,  4.8703650001186738e+06,  0.0000000000000000e+00, -9.9999999999611244e-01</GeoTransform>
+  <Metadata>
+    <MDI key="AREA_OR_POINT">Area</MDI>
+    <MDI key="TIFFTAG_RESOLUTIONUNIT">2 (pixels/inch)</MDI>
+    <MDI key="TIFFTAG_SOFTWARE">WhiteboxTools</MDI>
+    <MDI key="TIFFTAG_XRESOLUTION">72</MDI>
+    <MDI key="TIFFTAG_YRESOLUTION">72</MDI>
+  </Metadata>
+  <Metadata domain="IMAGE_STRUCTURE">
+    <MDI key="INTERLEAVE">BAND</MDI>
+    <MDI key="COMPRESSION">PACKBITS</MDI>
+  </Metadata>
+  <VRTRasterBand dataType="Int16" band="1">
+    <NoDataValue>0</NoDataValue>
+    <ColorInterp>Gray</ColorInterp>
+    <SimpleSource>
+      <SourceFilename relativeToVRT="1">../source/dem_100x100_int16_packbits.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="100" RasterYSize="100" DataType="Int16" BlockXSize="100" BlockYSize="40" />
+      <SrcRect xOff="25" yOff="25" xSize="50" ySize="50" />
+      <DstRect xOff="0" yOff="0" xSize="50" ySize="50" />
+    </SimpleSource>
+  </VRTRasterBand>
+</VRTDataset>
