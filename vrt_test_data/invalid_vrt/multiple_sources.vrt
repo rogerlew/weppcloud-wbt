@@ -1,0 +1,16 @@
+<VRTDataset rasterXSize="100" rasterYSize="100">
+  <VRTRasterBand dataType="Float64" band="1">
+    <SimpleSource>
+      <SourceFilename relativeToVRT="1">../source/dem_500x500.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SrcRect xOff="0" yOff="0" xSize="50" ySize="100" />
+      <DstRect xOff="0" yOff="0" xSize="50" ySize="100" />
+    </SimpleSource>
+    <SimpleSource>
+      <SourceFilename relativeToVRT="1">../source/dem_500x500.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SrcRect xOff="50" yOff="0" xSize="50" ySize="100" />
+      <DstRect xOff="50" yOff="0" xSize="50" ySize="100" />
+    </SimpleSource>
+  </VRTRasterBand>
+</VRTDataset>
