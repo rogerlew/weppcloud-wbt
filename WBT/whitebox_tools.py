@@ -10722,19 +10722,21 @@ Okay, that's it for now.
         if zero_background: args.append("--zero_background")
         return self.run_tool('strahler_stream_order', args, callback)  # returns 1 if error
 
-    def prune_strahler_stream_order(self, streams, output, zero_background=False, callback=None):
+    def prune_strahler_stream_order(self, streams, output, binary_output=False, zero_background=False, callback=None):
         """Removes first-order streams and renumbers remaining Strahler orders downward by one.
 
         Keyword arguments:
 
         streams -- Input raster containing Strahler stream orders. 
         output -- Output raster file. 
+        binary_output -- Convert the pruned stream orders to a binary stream mask. 
         zero_background -- Flag indicating whether a background value of zero should be used. 
         callback -- Custom function for handling tool text outputs.
         """
         args = []
         args.append("--streams='{}'".format(streams))
         args.append("--output='{}'".format(output))
+        if binary_output: args.append("--binary_output")
         if zero_background: args.append("--zero_background")
         return self.run_tool('prune_strahler_stream_order', args, callback)  # returns 1 if error
 
