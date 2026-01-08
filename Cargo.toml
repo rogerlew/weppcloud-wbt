@@ -1,5 +1,9 @@
 [workspace]
+resolver = "2"
 members = ["whitebox-common", "whitebox-lidar", "whitebox-plugins", "whitebox-raster", "whitebox-tools-app", "whitebox-vector"]
+
+[patch.crates-io]
+tsp-rs = { git = "https://github.com/stoksc/tsp-rs.git" }
 
 [profile.release]
     incremental = true
