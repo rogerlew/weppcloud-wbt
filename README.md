@@ -1,4 +1,4 @@
-# https://github.com/rogerlew/whitebox-tools
+# https://github.com/rogerlew/weppcloud-wbt
 
 This is a fork of John Lindsay's WhiteBoxTools. 
 
@@ -26,6 +26,9 @@ This fork diverges from the upstream WhiteboxTools distribution in the following
 - CLI/runtime updates
   - Command-line entry point now propagates errors (`main.rs` returns `Result`), enabling backtraces from scripted environments.
   - Python wrapper enhancements provide optional `raise_on_error` semantics, custom exceptions, environment propagation, and richer error reporting for all tools.
+- VRT support (read-only, single SimpleSource)
+  - Adds `.vrt` detection, a minimal VRT parser, and a windowed GeoTIFF read path to avoid full in-memory loads for cropped inputs.
+  - Supports full-size VRTs without SrcRect/DstRect when dimensions match the source; includes fixtures, tests, and performance notes for WEPPcloud workflows.
 - General code cleanup by CODEX ( gpt-5-codex high unprompted :| )
   - Tightened tool documentation, aligned specs/readmes with new diagnostics, and refreshed error messaging to keep automated workflows resilient.
 

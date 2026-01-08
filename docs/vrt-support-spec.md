@@ -186,12 +186,20 @@ Deliverables:
 - End-to-end VRT -> Raster -> WBT tool tests (see `docs/vrt-support-acceptance-test-report.md`).
 
 ### Phase 4: Performance and Regression
-Status: Pending.
+Status: Complete (see `docs/vrt-performance-notes.md`).
 - Add a simple performance harness (documented, not necessarily automated) to compare IO time and memory between full and windowed reads.
 - Run regression tests with existing GeoTIFF inputs to ensure no change for non-VRT paths.
 
 Deliverables:
-- Performance notes and regression checklist.
+- Performance notes (see `docs/vrt-performance-notes.md`).
+- Regression verification captured in the acceptance report (see `docs/vrt-support-acceptance-test-report.md`).
+
+### Phase 5: Acceptance Sign-off
+Status: Complete (see `docs/vrt-support-acceptance-test-report.md`).
+- Validate acceptance criteria across tool workflows and regression cases.
+
+Deliverables:
+- Acceptance test report (see `docs/vrt-support-acceptance-test-report.md`).
 
 ## Testing Plan
 ### Unit Tests
@@ -227,6 +235,7 @@ Deliverables:
   - full read of a large GeoTIFF
   - VRT read of a small crop window
 - Target: memory proportional to window size and no full-image read IO.
+- Results captured in `docs/vrt-performance-notes.md`.
 
 ## Test Fixtures: vrt_test_data
 Canonical fixture set for VRT implementation and validation.
