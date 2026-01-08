@@ -16,6 +16,8 @@ use whitebox_raster::*;
 /// stream-order raster and then renumbers the remaining orders so that every retained
 /// channel order is decreased by one. Non-stream cells are assigned either the input
 /// raster's NoData value or zero when the `--zero_background` flag is supplied.
+/// Optionally, the output can be converted to a binary stream mask using
+/// `--binary_output`, in which case stream cells are assigned a value of one.
 ///
 /// The user must specify the names of an input Strahler-order raster (`--streams`) and
 /// an output raster (`--output`). The input raster is expected to contain integer order
@@ -68,6 +70,16 @@ impl PruneStrahlerStreamOrder {
             optional: true,
         });
 
+        parameters.push(ToolParameter {
+            name: "Should the output be a binary stream raster?".to_owned(),
+            flags: vec!["--binary_output".to_owned()],
+            description: "Convert the pruned stream orders to a binary stream mask."
+                .to_owned(),
+            parameter_type: ParameterType::Boolean,
+            default_value: Some("false".to_owned()),
+            optional: true,
+        });
+
         let sep: String = path::MAIN_SEPARATOR.to_string();
         let e = format!("{}", env::current_exe().unwrap().display());
         let mut parent = env::current_exe().unwrap();
@@ -81,7 +93,7 @@ impl PruneStrahlerStreamOrder {
         if e.contains(".exe") {
             short_exe += ".exe";
         }
-        let usage = format!(">>.*{0} -r={1} -v --wd=\"*path*to*data*\" --streams=strahler.tif -o=pruned.tif\n>>.*{0} -r={1} -v --wd=\"*path*to*data*\" --streams=strahler.tif -o=pruned.tif --zero_background", short_exe, name).replace("*", &sep);
+        let usage = format!(">>.*{0} -r={1} -v --wd=\"*path*to*data*\" --streams=strahler.tif -o=pruned.tif\n>>.*{0} -r={1} -v --wd=\"*path*to*data*\" --streams=strahler.tif -o=pruned.tif --zero_background\n>>.*{0} -r={1} -v --wd=\"*path*to*data*\" --streams=strahler.tif -o=netful.tif --binary_output --zero_background", short_exe, name).replace("*", &sep);
 
         PruneStrahlerStreamOrder {
             name: name,
@@ -137,6 +149,7 @@ impl WhiteboxTool for PruneStrahlerStreamOrder {
         let mut streams_file = String::new();
         let mut output_file = String::new();
         let mut zero_background = false;
+        let mut binary_output = false;
 
         if args.len() == 0 {
             return Err(Error::new(
@@ -169,6 +182,10 @@ impl WhiteboxTool for PruneStrahlerStreamOrder {
             } else if flag_val == "-zero_background" {
                 if vec.len() == 1 || !vec[1].to_string().to_lowercase().contains("false") {
                     zero_background = true;
+                }
+            } else if flag_val == "-binary_output" {
+                if vec.len() == 1 || !vec[1].to_string().to_lowercase().contains("false") {
+                    binary_output = true;
                 }
             }
         }
@@ -234,14 +251,26 @@ impl WhiteboxTool for PruneStrahlerStreamOrder {
         for row in 0..rows {
             for col in 0..columns {
                 let z = streams.get_value(row, col);
-                if z == nodata {
-                    output.set_value(row, col, nodata);
+                let pruned_val = if z == nodata {
+                    nodata
                 } else if z > 1.0 {
-                    output.set_value(row, col, z - 1.0);
+                    z - 1.0
                 } else {
                     // Includes order-one streams and background cells.
-                    output.set_value(row, col, background_val);
-                }
+                    background_val
+                };
+                let out_val = if binary_output {
+                    if pruned_val == nodata {
+                        nodata
+                    } else if pruned_val > 0.0 {
+                        1.0
+                    } else {
+                        background_val
+                    }
+                } else {
+                    pruned_val
+                };
+                output.set_value(row, col, out_val);
             }
             if verbose && rows > 0 {
                 progress = (100.0_f64 * (row + 1) as f64 / rows as f64) as usize;
@@ -258,6 +287,7 @@ impl WhiteboxTool for PruneStrahlerStreamOrder {
             self.get_tool_name()
         ));
         output.add_metadata_entry(format!("Input streams file: {}", streams_file));
+        output.add_metadata_entry(format!("Binary output: {}", binary_output));
         output.add_metadata_entry(format!("Zero background: {}", zero_background));
         output.add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed_time));
 
