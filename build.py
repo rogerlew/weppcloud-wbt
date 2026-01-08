@@ -45,14 +45,20 @@ def build(do_clean=False, exclude_runner=True, create_zip_artifact=False):
 
 
     # Create the Cargo.toml file
-    workspace_str = '[workspace]\nmembers = ["whitebox-common", "whitebox-lidar", "whitebox-plugins", "whitebox-raster", "whitebox-runner", "whitebox-tools-app", "whitebox-vector"]\n\n'
+    workspace_str = '[workspace]\nresolver = "2"\nmembers = ["whitebox-common", "whitebox-lidar", "whitebox-plugins", "whitebox-raster", "whitebox-runner", "whitebox-tools-app", "whitebox-vector"]\n\n'
     if exclude_runner:
         # Exclude the runner if the second command line arg is set to True or if the platform is linux
-        workspace_str = '[workspace]\nmembers = ["whitebox-common", "whitebox-lidar", "whitebox-plugins", "whitebox-raster", "whitebox-tools-app", "whitebox-vector"]\n\n'
+        workspace_str = '[workspace]\nresolver = "2"\nmembers = ["whitebox-common", "whitebox-lidar", "whitebox-plugins", "whitebox-raster", "whitebox-tools-app", "whitebox-vector"]\n\n'
 
     with open('Cargo.toml', "w") as cargo_file:
         cargo_file.write(workspace_str)
-        
+
+        # Patch for broken tsp-rs crate on crates.io (missing rand dependency)
+        cargo_file.write("""[patch.crates-io]
+tsp-rs = { git = "https://github.com/stoksc/tsp-rs.git" }
+
+""")
+
         cargo_file.write("""[profile.release]
     incremental = true
     strip = true""")
