@@ -1241,21 +1241,38 @@ impl WhiteboxTool for HillslopesTopaz {
 }
 
 /// Check if all rasters share the same geometry
+fn geometry_epsilon(configs: &RasterConfigs) -> f64 {
+    1e-9_f64
+        * configs
+            .resolution_x
+            .abs()
+            .max(configs.resolution_y.abs())
+            .max(1.0)
+}
+
+fn approx_eq(a: f64, b: f64, tol: f64) -> bool {
+    if a.is_nan() || b.is_nan() {
+        return false;
+    }
+    (a - b).abs() <= tol
+}
+
 fn rasters_share_geometry(rasters: &[&Raster]) -> bool {
     if rasters.is_empty() {
         return true;
     }
 
     let base = &rasters[0].configs;
+    let tol = geometry_epsilon(base);
     for raster in rasters.iter().skip(1) {
         if raster.configs.rows != base.rows
             || raster.configs.columns != base.columns
-            || raster.configs.north != base.north
-            || raster.configs.south != base.south
-            || raster.configs.east != base.east
-            || raster.configs.west != base.west
-            || raster.configs.resolution_x != base.resolution_x
-            || raster.configs.resolution_y != base.resolution_y
+            || !approx_eq(raster.configs.north, base.north, tol)
+            || !approx_eq(raster.configs.south, base.south, tol)
+            || !approx_eq(raster.configs.east, base.east, tol)
+            || !approx_eq(raster.configs.west, base.west, tol)
+            || !approx_eq(raster.configs.resolution_x, base.resolution_x, tol)
+            || !approx_eq(raster.configs.resolution_y, base.resolution_y, tol)
         {
             return false;
         }
