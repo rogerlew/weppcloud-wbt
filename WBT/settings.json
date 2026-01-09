@@ -1,6 +1,6 @@
 {
-  "verbose_mode": true,
-  "working_directory": "/var/www/wbt/",
-  "compress_rasters": true,
+  "verbose_mode": false,
+  "working_directory": "/workdir/weppcloud-wbt/test_fixtures/minimal_2pixel_stream/",
+  "compress_rasters": false,
   "max_procs": -1
 }
