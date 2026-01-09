@@ -1,0 +1,2 @@
+id	topaz_id	ds_x	ds_y	us_x	us_y	inflow0_id	inflow1_id	inflow2_id	length_m	ds_z	us_z	drop_m	order	areaup	is_headwater	is_outlet
+0	24	9	50	9	50	-1	-1	-1	0.000	501.692	501.692	0.000	0	0.000	true	true

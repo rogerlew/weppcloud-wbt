@@ -1,0 +1,20 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          278362.5000017698,
+          4868384.500118681
+        ]
+      },
+      "properties": {
+        "TopazID": 1,
+        "IsChannel": 0,
+        "Subwatershed": 1
+      }
+    }
+  ]
+}

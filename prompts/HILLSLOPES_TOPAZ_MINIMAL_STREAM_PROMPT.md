@@ -19,12 +19,21 @@ Background / problem:
   neighbor), not from the stream mask. With 566 headwaters but only 2 stream
   cells, the link-walking logic fails.
 
-Test fixture:
-- Location: `test_fixtures/minimal_2pixel_stream/`
-- Files: `netw0.tif` (2-pixel stream), `flovec.tif`, `relief.tif`, `bound.tif`,
-  `strahler.tif`, `chnjnt.tif`, `outlet.geojson`
-- Watershed: 144 cells, 18x57 pixels
-- Stream: outlet pixel (9,50) + upstream pixel (10,49) connected by D8 flow
+Test fixtures:
+
+1. **1-pixel stream** (`test_fixtures/minimal_1pixel_stream/`)
+   - Files: `netw0.tif` (1-pixel), `flovec.tif`, `relief.tif`, `bound.tif`,
+     `strahler.tif`, `chnjnt.tif`, `outlet.geojson`
+   - Watershed: 144 cells, 18x57 pixels
+   - Stream: single outlet pixel (9,50) at lowest elevation
+   - Use case: point outlet, entire watershed as single hillslope
+
+2. **2-pixel stream** (`test_fixtures/minimal_2pixel_stream/`)
+   - Files: `netw0.tif` (2-pixel), `flovec.tif`, `relief.tif`, `bound.tif`,
+     `strahler.tif`, `chnjnt.tif`, `outlet.geojson`
+   - Watershed: 144 cells, 18x57 pixels
+   - Stream: outlet pixel (9,50) + upstream pixel (10,49) connected by D8 flow
+   - Use case: minimal channel segment with potential left/right hillslopes
 
 Expected behavior:
 When given a 2-pixel stream, `hillslopes_topaz` should:
@@ -55,7 +64,21 @@ Files to update:
   - Ensure `subwta.tif` and `netw.tsv` are written for minimal cases
 
 Validation:
-1. Run against the test fixture:
+1. Run against the 1-pixel fixture:
+   ```bash
+   ./WBT --run=hillslopes_topaz \
+     --dem=test_fixtures/minimal_1pixel_stream/relief.tif \
+     --d8_pntr=test_fixtures/minimal_1pixel_stream/flovec.tif \
+     --streams=test_fixtures/minimal_1pixel_stream/netw0.tif \
+     --pour_pts=test_fixtures/minimal_1pixel_stream/outlet.geojson \
+     --watershed=test_fixtures/minimal_1pixel_stream/bound.tif \
+     --chnjnt=test_fixtures/minimal_1pixel_stream/chnjnt.tif \
+     --subwta=test_fixtures/minimal_1pixel_stream/subwta.tif \
+     --order=test_fixtures/minimal_1pixel_stream/strahler.tif \
+     --netw=test_fixtures/minimal_1pixel_stream/netw.tsv \
+     -v
+   ```
+2. Run against the 2-pixel fixture:
    ```bash
    ./WBT --run=hillslopes_topaz \
      --dem=test_fixtures/minimal_2pixel_stream/relief.tif \
@@ -67,12 +90,13 @@ Validation:
      --subwta=test_fixtures/minimal_2pixel_stream/subwta.tif \
      --order=test_fixtures/minimal_2pixel_stream/strahler.tif \
      --netw=test_fixtures/minimal_2pixel_stream/netw.tsv \
+     --esri_pntr \
      -v
    ```
-2. Verify outputs:
+3. Verify outputs for both:
    - `subwta.tif` exists with valid TOPAZ subcatchment IDs
    - `netw.tsv` exists with at least 1 channel entry
-3. Run existing tests to ensure no regression
+4. Run existing tests to ensure no regression
 
 Context:
 - This enables culvert-at-risk processing for small drainage areas that lack

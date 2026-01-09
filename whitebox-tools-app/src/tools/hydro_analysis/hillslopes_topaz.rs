@@ -670,7 +670,38 @@ impl WhiteboxTool for HillslopesTopaz {
         let mut headwaters = Vec::new();
         for row in 0..rows {
             for col in 0..columns {
-                if chnjnt[(row, col)] == 0.0 && watershed[(row, col)] == 1.0 {
+                if watershed[(row, col)] != 1.0 {
+                    continue;
+                }
+
+                let stream_val = streams.get_value(row, col);
+                if stream_val <= 0.0 || stream_val == streams_nodata {
+                    continue;
+                }
+
+                let mut has_upstream = false;
+                for n in 0..8 {
+                    let row_n = row + dy[n];
+                    let col_n = col + dx[n];
+
+                    if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
+                        continue;
+                    }
+
+                    let stream_n = streams.get_value(row_n, col_n);
+                    if stream_n <= 0.0 || stream_n == streams_nodata {
+                        continue;
+                    }
+
+                    let dir = d8_pntr.get_value(row_n, col_n) as usize;
+                    let c = pntr_matches[dir];
+                    if row_n + dy[c] == row && col_n + dx[c] == col {
+                        has_upstream = true;
+                        break;
+                    }
+                }
+
+                if !has_upstream {
                     headwaters.push((row, col));
                 }
             }
