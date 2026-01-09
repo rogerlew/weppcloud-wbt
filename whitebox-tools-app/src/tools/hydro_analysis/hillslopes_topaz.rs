@@ -822,6 +822,20 @@ impl WhiteboxTool for HillslopesTopaz {
             if inflows.len() > 2 {
                 links[i].inflow2_id = inflows[2];
             }
+
+            // Validate non-headwater links have at least 2 inflows
+            if !links[i].is_headwater && inflows.len() < 2 {
+                let us = links[i].us;
+                let chnjnt_val = chnjnt[us];
+                if verbose {
+                    println!(
+                        "WARNING: Non-headwater link {} at row={}, col={} has only {} inflow(s) \
+                        but chnjnt={:.0}. This indicates a stream enters the junction from \
+                        outside the watershed or a headwater is missing in the streams raster.",
+                        i, us.0, us.1, inflows.len(), chnjnt_val
+                    );
+                }
+            }
         }
 
         // Calculate link lengths and drops
@@ -892,7 +906,16 @@ impl WhiteboxTool for HillslopesTopaz {
             if links[link_idx].inflow0_id == -1 || links[link_idx].inflow1_id == -1 {
                 return Err(Error::new(
                     ErrorKind::InvalidInput,
-                    "Link does not have two inflows",
+                    format!(
+                        "Link {} does not have two inflows (inflow0={}, inflow1={}). \
+                        Upstream junction at row={}, col={}. This typically means a stream \
+                        enters the junction from outside the watershed or a headwater is missing.",
+                        link_idx,
+                        links[link_idx].inflow0_id,
+                        links[link_idx].inflow1_id,
+                        links[link_idx].us.0,
+                        links[link_idx].us.1
+                    ),
                 ));
             }
 
