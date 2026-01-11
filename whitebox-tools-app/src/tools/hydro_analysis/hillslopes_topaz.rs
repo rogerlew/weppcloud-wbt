@@ -12,6 +12,8 @@ use std::f64;
 use std::fs::File;
 use std::io::{self, Error, ErrorKind, Write};
 use std::path;
+use std::sync::{mpsc, Arc};
+use std::thread;
 use std::time::Instant;
 use whitebox_common::algorithms::calculate_rotation_degrees;
 use whitebox_common::structures::Array2D;
@@ -223,6 +225,15 @@ impl HillslopesTopaz {
             optional: false,
         });
 
+        parameters.push(ToolParameter {
+            name: "Emit profiling diagnostics?".to_owned(),
+            flags: vec!["--profile".to_owned()],
+            description: "Print extra timing and counter diagnostics.".to_owned(),
+            parameter_type: ParameterType::Boolean,
+            default_value: Some("false".to_owned()),
+            optional: true,
+        });
+
         let sep: String = path::MAIN_SEPARATOR.to_string();
         let e = format!("{}", env::current_exe().unwrap().display());
         let mut parent = env::current_exe().unwrap();
@@ -389,6 +400,7 @@ impl WhiteboxTool for HillslopesTopaz {
         let mut subwta_file = String::new();
         let mut netw_file = String::new();
         let mut esri_style = false;
+        let mut profile = false;
 
         if args.len() == 0 {
             return Err(Error::new(
@@ -464,6 +476,10 @@ impl WhiteboxTool for HillslopesTopaz {
                 if vec.len() == 1 || !vec[1].to_string().to_lowercase().contains("false") {
                     esri_style = true;
                 }
+            } else if flag_val == "-profile" {
+                if vec.len() == 1 || !vec[1].to_string().to_lowercase().contains("false") {
+                    profile = true;
+                }
             }
         }
 
@@ -493,25 +509,25 @@ impl WhiteboxTool for HillslopesTopaz {
         if verbose {
             println!("Reading {} file.", dem_file);
         }
-        let dem = Raster::new(&dem_file, "r")?;
+        let dem = Arc::new(Raster::new(&dem_file, "r")?);
 
         if verbose {
             println!("Reading {} file.", d8_file);
         }
-        let d8_pntr = Raster::new(&d8_file, "r")?;
+        let d8_pntr = Arc::new(Raster::new(&d8_file, "r")?);
 
         if verbose {
             println!("Reading {} file.", streams_file);
         }
-        let streams = Raster::new(&streams_file, "r")?;
+        let streams = Arc::new(Raster::new(&streams_file, "r")?);
         if verbose {
             println!("Reading {} file.", watershed_file);
         }
-        let watershed = Raster::new(&watershed_file, "r")?;
+        let watershed = Arc::new(Raster::new(&watershed_file, "r")?);
         if verbose {
             println!("Reading {} file.", chnjnt_file);
         }
-        let chnjnt = Raster::new(&chnjnt_file, "r")?;
+        let chnjnt = Arc::new(Raster::new(&chnjnt_file, "r")?);
         if order_file.is_empty() {
             return Err(Error::new(
                 ErrorKind::InvalidInput,
@@ -521,7 +537,7 @@ impl WhiteboxTool for HillslopesTopaz {
         if verbose {
             println!("Reading {} file.", order_file);
         }
-        let order = Raster::new(&order_file, "r")?;
+        let order = Arc::new(Raster::new(&order_file, "r")?);
 
         let start = Instant::now();
 
@@ -560,6 +576,7 @@ impl WhiteboxTool for HillslopesTopaz {
         let columns = dem.configs.columns as isize;
         let _nodata = dem.configs.nodata;
         let streams_nodata = streams.configs.nodata;
+        let chnjnt_nodata = chnjnt.configs.nodata;
         let cellsize_x = dem.configs.resolution_x;
         let cellsize_y = dem.configs.resolution_y.abs();
         let diag_cellsize = (cellsize_x * cellsize_x + cellsize_y * cellsize_y).sqrt();
@@ -667,48 +684,92 @@ impl WhiteboxTool for HillslopesTopaz {
         if verbose {
             println!("Finding headwaters.");
         }
+        let start_headwaters = Instant::now();
         let mut headwaters = Vec::new();
-        for row in 0..rows {
-            for col in 0..columns {
-                if watershed[(row, col)] != 1.0 {
-                    continue;
-                }
-
-                let stream_val = streams.get_value(row, col);
-                if stream_val <= 0.0 || stream_val == streams_nodata {
-                    continue;
-                }
-
-                let mut has_upstream = false;
-                for n in 0..8 {
-                    let row_n = row + dy[n];
-                    let col_n = col + dx[n];
-
-                    if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
-                        continue;
-                    }
-
-                    let stream_n = streams.get_value(row_n, col_n);
-                    if stream_n <= 0.0 || stream_n == streams_nodata {
-                        continue;
-                    }
-
-                    let dir = d8_pntr.get_value(row_n, col_n) as usize;
-                    let c = pntr_matches[dir];
-                    if row_n + dy[c] == row && col_n + dx[c] == col {
-                        has_upstream = true;
-                        break;
-                    }
-                }
-
-                if !has_upstream {
-                    headwaters.push((row, col));
-                }
-            }
+        let mut stream_candidates = 0usize;
+        let mut num_procs = num_cpus::get() as isize;
+        let configs = whitebox_common::configs::get_configs()?;
+        let max_procs = configs.max_procs;
+        if max_procs > 0 && max_procs < num_procs {
+            num_procs = max_procs;
         }
+        if num_procs < 1 {
+            num_procs = 1;
+        }
+
+        let (tx, rx) = mpsc::channel();
+        for tid in 0..num_procs {
+            let streams = streams.clone();
+            let watershed = watershed.clone();
+            let d8_pntr = d8_pntr.clone();
+            let tx1 = tx.clone();
+            let pntr_matches = pntr_matches;
+            let dx = dx;
+            let dy = dy;
+            thread::spawn(move || {
+                let mut local_headwaters = Vec::new();
+                let mut local_candidates = 0usize;
+                for row in (0..rows).filter(|r| r % num_procs == tid) {
+                    for col in 0..columns {
+                        if watershed[(row, col)] != 1.0 {
+                            continue;
+                        }
+
+                        let stream_val = streams.get_value(row, col);
+                        if stream_val <= 0.0 || stream_val == streams_nodata {
+                            continue;
+                        }
+                        local_candidates += 1;
+
+                        let mut has_upstream = false;
+                        for n in 0..8 {
+                            let row_n = row + dy[n];
+                            let col_n = col + dx[n];
+
+                            if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
+                                continue;
+                            }
+
+                            let stream_n = streams.get_value(row_n, col_n);
+                            if stream_n <= 0.0 || stream_n == streams_nodata {
+                                continue;
+                            }
+
+                            let dir = d8_pntr.get_value(row_n, col_n) as usize;
+                            let c = pntr_matches[dir];
+                            if row_n + dy[c] == row && col_n + dx[c] == col {
+                                has_upstream = true;
+                                break;
+                            }
+                        }
+
+                        if !has_upstream {
+                            local_headwaters.push((row, col));
+                        }
+                    }
+                }
+                tx1.send((local_headwaters, local_candidates)).unwrap();
+            });
+        }
+        drop(tx);
+
+        for _ in 0..num_procs {
+            let (mut local_headwaters, local_candidates) =
+                rx.recv().expect("Error receiving data from thread.");
+            headwaters.append(&mut local_headwaters);
+            stream_candidates += local_candidates;
+        }
+        headwaters.sort_unstable();
 
         if verbose {
             println!("Found {} headwaters.", headwaters.len());
+        }
+        if profile {
+            let elapsed = start_headwaters.elapsed();
+            println!(
+                "Profile: Headwater scan {:.2?} (stream_candidates={}, headwaters={}).",
+                elapsed, stream_candidates, headwaters.len()
+            );
         }
 
         let mut link_id_grid = Array2D::new(rows, columns, -1i32, -1i32)?;
@@ -717,6 +778,8 @@ impl WhiteboxTool for HillslopesTopaz {
         if verbose {
             println!("Walk down headwaters to identify links.");
         }
+        let start_link_walk = Instant::now();
+        let mut link_path_steps = 0usize;
         for hw in headwaters {
             // Skip if this headwater is already part of a link
             if link_id_grid[hw] != -1 {
@@ -735,6 +798,9 @@ impl WhiteboxTool for HillslopesTopaz {
             loop {
                 // push current cell to the link path
                 link.path.push(current);
+                if profile {
+                    link_path_steps += 1;
+                }
 
                 // There are two break conditions:
                 // 1. If we reach a cell that is already part of a link (link_id_grid[current] != -1)
@@ -744,10 +810,65 @@ impl WhiteboxTool for HillslopesTopaz {
                 if link_id_grid[current] != -1 {
                     // validate it is a junction
                     if chnjnt[current] < 2.0 {
-                        return Err(Error::new(
-                            ErrorKind::InvalidInput,
-                            "Current cell is not recognized as a junction",
-                        ));
+                        let chnjnt_val = chnjnt[current];
+                        let stream_val = streams.get_value(current.0, current.1);
+                        if stream_val > 0.0 && stream_val != streams_nodata {
+                            let mut inflow_count = 0;
+                            for i in 0..8 {
+                                let row_n = current.0 + dy[i];
+                                let col_n = current.1 + dx[i];
+                                if row_n < 0
+                                    || row_n >= rows
+                                    || col_n < 0
+                                    || col_n >= columns
+                                {
+                                    continue;
+                                }
+                                if streams.get_value(row_n, col_n) <= 0.0
+                                    || streams.get_value(row_n, col_n) == streams_nodata
+                                {
+                                    continue;
+                                }
+                                let dir_val = d8_pntr.get_value(row_n, col_n) as usize;
+                                let c = pntr_matches[dir_val];
+                                if row_n + dy[c] == current.0 && col_n + dx[c] == current.1 {
+                                    inflow_count += 1;
+                                }
+                            }
+
+                            if inflow_count >= 2 {
+                                if verbose {
+                                    println!(
+                                        "WARNING: Junction inferred at row={}, col={} \
+                                        (chnjnt={}, inflow_count={}).",
+                                        current.0, current.1, chnjnt_val, inflow_count
+                                    );
+                                }
+                            } else {
+                                return Err(Error::new(
+                                    ErrorKind::InvalidInput,
+                                    format!(
+                                        "Current cell is not recognized as a junction \
+                                        (row={}, col={}, chnjnt={}, stream_val={}, inflow_count={}, chnjnt_nodata={}).",
+                                        current.0,
+                                        current.1,
+                                        chnjnt_val,
+                                        stream_val,
+                                        inflow_count,
+                                        chnjnt_nodata
+                                    ),
+                                ));
+                            }
+                        } else {
+                            return Err(Error::new(
+                                ErrorKind::InvalidInput,
+                                format!(
+                                    "Current cell is not recognized as a junction \
+                                    (row={}, col={}, chnjnt={}, stream_val={}, chnjnt_nodata={}).",
+                                    current.0, current.1, chnjnt_val, stream_val, chnjnt_nodata
+                                ),
+                            ));
+                        }
                     }
                     link.ds = current;
                     links.push(link);
@@ -813,6 +934,13 @@ impl WhiteboxTool for HillslopesTopaz {
                 "Phase 1: Identified {} links in {:.2?}.",
                 links.len(),
                 elapsed
+            );
+        }
+        if profile {
+            let elapsed = start_link_walk.elapsed();
+            println!(
+                "Profile: Link walk {:.2?} (link_path_steps={}, links={}).",
+                elapsed, link_path_steps, links.len()
             );
         }
 
@@ -1069,11 +1197,43 @@ impl WhiteboxTool for HillslopesTopaz {
 
         // Phase 5: flood fill hillslope values
         let start5 = Instant::now();
+        let mut flood_seed_cells = 0usize;
+        let mut flood_flow_steps = 0usize;
+        let mut flood_assignments = 0usize;
 
         let mut subwta_counts = HashMap::new();
         if verbose {
             println!("Flood filling hillslope values.");
         }
+
+        let columns_i32 = columns as i32;
+        let columns_usize = columns as usize;
+        let num_cells = (rows * columns) as usize;
+        let mut next_idx = vec![-1i32; num_cells];
+        let mut next_dir = vec![8u8; num_cells];
+        for row in 0..rows {
+            for col in 0..columns {
+                if watershed[(row, col)] != 1.0 {
+                    continue;
+                }
+                let dir_val = d8_pntr.get_value(row, col) as usize;
+                let c = pntr_matches[dir_val];
+                let idx = (row as usize) * columns_usize + col as usize;
+                next_dir[idx] = c as u8;
+
+                let row_n = row + dy[c];
+                let col_n = col + dx[c];
+                if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
+                    continue;
+                }
+                if watershed[(row_n, col_n)] != 1.0 {
+                    continue;
+                }
+                let n_idx = (row_n as usize) * columns_usize + col_n as usize;
+                next_idx[idx] = n_idx as i32;
+            }
+        }
+
         for row in 0..rows {
             for col in 0..columns {
                 // check if not in watershed
@@ -1086,88 +1246,67 @@ impl WhiteboxTool for HillslopesTopaz {
                     continue;
                 }
 
-                // flood fill from this cell
-                let mut current = (row, col);
+                if profile {
+                    flood_seed_cells += 1;
+                }
+
+                let mut current_idx = (row as i32) * columns_i32 + col as i32;
                 let mut found_topaz_id = 0.0;
+
                 while found_topaz_id == 0.0 {
-                    let dir_val = d8_pntr.get_value(current.0, current.1);
-                    let dir = dir_val as usize;
-                    let c = pntr_matches[dir];
-                    let row_n = current.0 + dy[c];
-                    let col_n = current.1 + dx[c];
-
-                    // Check bounds
-                    if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
-                        break; // Out of bounds
+                    if profile {
+                        flood_flow_steps += 1;
                     }
 
-                    // Check if next cell is in watershed
-                    if watershed[(row_n, col_n)] != 1.0 {
-                        break; // left the watershed
+                    let next = next_idx[current_idx as usize];
+                    if next < 0 {
+                        break;
                     }
+                    let row_n = next / columns_i32;
+                    let col_n = next % columns_i32;
+                    let row_n_isize = row_n as isize;
+                    let col_n_isize = col_n as isize;
 
-                    // Check for hillslope cell (ID-3)
-                    if subwta[(row_n, col_n)] != low_value {
-                        if subwta[(row_n, col_n)] <= 0.0 {
+                    if subwta[(row_n_isize, col_n_isize)] != low_value {
+                        let label = subwta[(row_n_isize, col_n_isize)];
+                        if label <= 0.0 {
                             return Err(Error::new(
                                 ErrorKind::InvalidInput,
                                 format!(
                                     "Invalid hillslope ID {} at ({}, {})",
-                                    subwta[(row_n, col_n)],
-                                    row_n,
-                                    col_n
+                                    label, row_n_isize, col_n_isize
                                 ),
                             ));
                         }
 
-                        // found a hillslope cell
-                        if subwta[(row_n, col_n)] % 10.0 <= 3.0 {
-                            found_topaz_id = subwta[(row_n, col_n)];
-
-                        // we know this is a channel cell is it a headwater pour point
-                        } else if chnjnt[(row_n, col_n)] == 0.0 {
-                            found_topaz_id = subwta[(row_n, col_n)] - 3.0;
-
-                        // we know this is a channel cell that isn't a headwater pour point
+                        if label % 10.0 <= 3.0 {
+                            found_topaz_id = label;
+                        } else if chnjnt[(row_n_isize, col_n_isize)] == 0.0 {
+                            found_topaz_id = label - 3.0;
                         } else {
-                            let topaz_id = subwta[(row_n, col_n)];
+                            let c = next_dir[current_idx as usize] as usize;
+                            let cn = next_dir[next as usize] as usize;
 
-                            let dir_val = d8_pntr.get_value(row_n, col_n);
-                            let dir = dir_val as usize;
-                            let cn = pntr_matches[dir];
-
-                            // direction of flow into channel
                             let vx = dx[c] as f64;
                             let vy = dy[c] as f64;
-
-                            // direction of flow down channel
                             let ux = dx[cn] as f64;
                             let uy = dy[cn] as f64;
 
-                            // Calculate cross product to determine side of flow
                             let cross = ux * vy - uy * vx;
-
                             if cross > 0.0 {
-                                // test cell is on the “left” side of the flow
-                                // ends with 2
-                                found_topaz_id = topaz_id - 2.0;
+                                found_topaz_id = label - 2.0;
                             } else if cross < 0.0 {
-                                // test cell is on the “right” side of the flow
-                                // ends with 3
-                                found_topaz_id = topaz_id - 1.0;
+                                found_topaz_id = label - 1.0;
                             } else {
-                                // the hillslope drains in the same direction as the channel cell.
-                                // The cross product is ambiguous and can't be used to determine the side of the flow.
-                                // So we need to look at the flow direciton of the upstream channel to determine the side of the hillslope
                                 for i in 0..8 {
-                                    let row_nn = row_n + dy[i];
-                                    let col_nn = col_n + dx[i];
+                                    let row_nn = row_n_isize + dy[i];
+                                    let col_nn = col_n_isize + dx[i];
                                     if row_nn < 0
                                         || row_nn >= rows
                                         || col_nn < 0
                                         || col_nn >= columns
                                     {
-                                        continue; // out of bounds
+                                        continue;
                                     }
                                     let dir_val = d8_pntr.get_value(row_nn, col_nn);
                                     let dir = dir_val as usize;
@@ -1176,23 +1315,17 @@ impl WhiteboxTool for HillslopesTopaz {
                                     let up_chn_candidate_row = row_nn + dy[c_up];
                                     let up_chn_candidate_col = col_nn + dx[c_up];
 
-                                    if up_chn_candidate_row == row_n
-                                        && up_chn_candidate_col == col_n
+                                    if up_chn_candidate_row == row_n_isize
+                                        && up_chn_candidate_col == col_n_isize
                                         && chnjnt.get_value(row_nn, col_nn) > 0.0
                                     {
-                                        // direction of the flow down channel from the upstream channel cell
                                         let ux = dx[c_up] as f64;
                                         let uy = dy[c_up] as f64;
-
-                                        // Calculate cross product to determine side of flow
                                         let cross = ux * vy - uy * vx;
-
                                         if cross > 0.0 {
-                                            // test cell is on the “left” side of the flow
-                                            found_topaz_id = topaz_id - 2.0;
+                                            found_topaz_id = label - 2.0;
                                         } else if cross < 0.0 {
-                                            // test cell is on the “right” side of the flow
-                                            found_topaz_id = topaz_id - 1.0;
+                                            found_topaz_id = label - 1.0;
                                         }
                                         break;
                                     }
@@ -1200,24 +1333,36 @@ impl WhiteboxTool for HillslopesTopaz {
                             }
                         }
                     }
-                    current = (row_n, col_n);
+
+                    current_idx = next;
                 }
 
-                // If we reached a hillslope cell, walk back down and assign found_topaz_id value
                 if found_topaz_id != 0.0 {
-                    let mut backtrack = (row, col);
-                    while backtrack != current {
-                        if subwta[(backtrack.0, backtrack.1)] == low_value {
-                            subwta[(backtrack.0, backtrack.1)] = found_topaz_id;
+                    let mut backtrack_row = row;
+                    let mut backtrack_col = col;
+                    let mut backtrack_idx =
+                        (backtrack_row as i32) * columns_i32 + backtrack_col as i32;
+                    while backtrack_idx != current_idx {
+                        if subwta[(backtrack_row, backtrack_col)] == low_value {
+                            subwta[(backtrack_row, backtrack_col)] = found_topaz_id;
+                            if profile {
+                                flood_assignments += 1;
+                            }
                             subwta_counts
                                 .entry(found_topaz_id as i32)
                                 .and_modify(|e| *e += 1)
                                 .or_insert(1);
                         }
-                        let dir_val = d8_pntr.get_value(backtrack.0, backtrack.1);
-                        let dir = dir_val as usize;
-                        let c = pntr_matches[dir];
-                        backtrack = (backtrack.0 + dy[c], backtrack.1 + dx[c]);
+
+                        let next = next_idx[backtrack_idx as usize];
+                        if next < 0 {
+                            break;
+                        }
+                        let row_n = next / columns_i32;
+                        let col_n = next % columns_i32;
+                        backtrack_row = row_n as isize;
+                        backtrack_col = col_n as isize;
+                        backtrack_idx = next;
                     }
                 }
             }
@@ -1226,6 +1371,13 @@ impl WhiteboxTool for HillslopesTopaz {
         if verbose {
             let elapsed = start5.elapsed();
             println!("Phase 5: Flood filled hillslope values in {:.2?}.", elapsed);
+        }
+        if profile {
+            let elapsed = start5.elapsed();
+            println!(
+                "Profile: Flood fill {:.2?} (seeds={}, flow_steps={}, assignments={}).",
+                elapsed, flood_seed_cells, flood_flow_steps, flood_assignments
+            );
         }
 
         // Phase 6: Calculate up area for each link

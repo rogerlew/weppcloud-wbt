@@ -1,6 +1,6 @@
 {
-  "verbose_mode": true,
-  "working_directory": "/workdir/weppcloud-wbt/test_fixtures/minimal_1pixel_stream/",
+  "verbose_mode": false,
+  "working_directory": "/wc1/culverts/9bb6b47b-2256-4e14-a9c2-929b54c61568/runs/33/dem/wbt/",
   "compress_rasters": false,
   "max_procs": -1
 }

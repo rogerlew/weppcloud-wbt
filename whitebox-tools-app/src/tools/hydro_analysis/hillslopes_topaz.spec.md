@@ -31,6 +31,7 @@ A link table (`netw.tsv`) describing every channel link segment is also produced
 | `--chnjnt` | raster (u8) | 0 = headwater, 1 = mid‑link, 2 = junction (≥3 ⇒ error). |
 | `--order` | raster (u8) | Stream order (copied to link table;  |
 | `--subwta` | output raster (f32) | Resulting TOPAZ IDs (nodata initialized to a very negative float). |
+| `--profile` | bool | Emit extra timing and counter diagnostics to stdout. |
 
 All rasters **must share identical rows, columns, grid origin, cell size, and nodata**; the tool aborts if any mismatch is detected.
 
