@@ -92,7 +92,6 @@ class WhiteboxTools(object):
 
         self.__compress_rasters = False
         self.__max_procs = -1
-        self.__env =  os.environ.copy()
 
         if raise_on_error is None:
             self.set_raise_on_error(False)
@@ -123,17 +122,21 @@ class WhiteboxTools(object):
         """
         Sets the flag used by WhiteboxTools to determine whether to raise an error.
         """
-        if running_windows:
-            Warning("env is not passed to Popen on Windows in `run_tool`.  Someone needs to test this to make sure it works.")
-
-        self.__env['RUST_BACKTRACE'] = str(int(val))
-        self.__raise_on_error = val
+        self.__raise_on_error = bool(val)
 
     def get_raise_on_error(self):
         """
         Returns the flag used by WhiteboxTools to determine whether to raise an error.
         """
         return self.__raise_on_error
+
+    def _build_process_env(self):
+        """
+        Build subprocess environment for WhiteboxTools invocations.
+        """
+        env = os.environ.copy()
+        env['RUST_BACKTRACE'] = str(int(self.__raise_on_error))
+        return env
     
     def set_whitebox_dir(self, path_str):
         ''' 
@@ -374,12 +377,13 @@ class WhiteboxTools(object):
                 proc = Popen(args2, shell=False, stdout=PIPE,
                             stderr=STDOUT, bufsize=1, universal_newlines=True,
                             encoding="utf-8", errors="replace",
-                            startupinfo=si)
+                            startupinfo=si,
+                            env=self._build_process_env())
             else:
                 proc = Popen(args2, shell=False, stdout=PIPE,
                             stderr=STDOUT, bufsize=1, universal_newlines=True,
                             encoding="utf-8", errors="replace",
-                            env=self.__env)
+                            env=self._build_process_env())
 
             while proc is not None:
                 line = proc.stdout.readline()
