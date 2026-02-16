@@ -5854,6 +5854,12 @@ Okay, that's it for now.
         output -- Output raster file. 
         esri_pntr -- D8 pointer uses the ESRI style scheme. 
         callback -- Custom function for handling tool text outputs.
+
+        Notes:
+
+        The tool writes one raster per nesting order (e.g. `<output>_1.tif`,
+        `<output>_2.tif`, ...), and a hierarchy sidecar
+        `<output_stem>_hierarchy.csv`.
         """
         args = []
         args.append("--d8_pntr='{}'".format(d8_pntr))

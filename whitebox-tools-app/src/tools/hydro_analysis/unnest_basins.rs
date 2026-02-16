@@ -9,11 +9,286 @@ License: MIT
 use crate::tools::*;
 use std::env;
 use std::f64;
-use std::io::{Error, ErrorKind};
+use std::fs::File;
+use std::io::{BufWriter, Error, ErrorKind, Write};
 use std::path;
 use whitebox_common::structures::Array2D;
 use whitebox_raster::*;
 use whitebox_vector::*;
+
+const LOW_OUTLET_ID: i32 = i32::MIN;
+const NODATA_OUTLET_ID: i32 = -1;
+
+fn calculate_nesting_order(
+    flow_dir: &Array2D<i8>,
+    outlet_points: &Array2D<isize>,
+    outlet_rows: &[isize],
+    outlet_columns: &[isize],
+    dx: &[isize; 8],
+    dy: &[isize; 8],
+) -> (Vec<usize>, usize) {
+    let mut nesting_order = vec![0usize; outlet_rows.len()];
+    let mut max_nesting_order = 1usize;
+    let mut flag: bool;
+    let mut cur_order: usize;
+    let (mut x, mut y): (isize, isize);
+    let mut dir: i8;
+    let mut outlet: usize;
+    let num_outlets = outlet_rows.len() - 1;
+
+    for record_num in 0..num_outlets {
+        outlet = record_num + 1;
+        cur_order = 1;
+        if nesting_order[outlet] < cur_order {
+            nesting_order[outlet] = cur_order;
+            flag = false;
+            y = outlet_rows[outlet];
+            x = outlet_columns[outlet];
+            while !flag {
+                dir = flow_dir.get_value(y, x);
+                if dir >= 0 {
+                    x += dx[dir as usize];
+                    y += dy[dir as usize];
+                    if outlet_points.get_value(y, x) > 0 {
+                        outlet = outlet_points.get_value(y, x) as usize;
+                        cur_order += 1;
+                        if nesting_order[outlet] < cur_order {
+                            nesting_order[outlet] = cur_order;
+                            if cur_order > max_nesting_order {
+                                max_nesting_order = cur_order;
+                            }
+                        } else {
+                            flag = true;
+                        }
+                    }
+                } else {
+                    flag = true;
+                }
+            }
+        }
+    }
+
+    (nesting_order, max_nesting_order)
+}
+
+fn calculate_parent_outlet(
+    flow_dir: &Array2D<i8>,
+    outlet_points: &Array2D<isize>,
+    outlet_rows: &[isize],
+    outlet_columns: &[isize],
+    dx: &[isize; 8],
+    dy: &[isize; 8],
+) -> Vec<usize> {
+    let mut parent_outlet = vec![0usize; outlet_rows.len()];
+    let mut flag: bool;
+    let mut dir: i8;
+    let (mut x, mut y): (isize, isize);
+    let num_outlets = outlet_rows.len() - 1;
+
+    for outlet in 1..num_outlets + 1 {
+        flag = false;
+        y = outlet_rows[outlet];
+        x = outlet_columns[outlet];
+        while !flag {
+            dir = flow_dir.get_value(y, x);
+            if dir >= 0 {
+                x += dx[dir as usize];
+                y += dy[dir as usize];
+                let downstream_outlet = outlet_points.get_value(y, x);
+                if downstream_outlet > 0 {
+                    let downstream_outlet = downstream_outlet as usize;
+                    if downstream_outlet != outlet {
+                        parent_outlet[outlet] = downstream_outlet;
+                    }
+                    flag = true;
+                }
+            } else {
+                flag = true;
+            }
+        }
+    }
+
+    parent_outlet
+}
+
+fn calculate_child_outlets(parent_outlet: &[usize]) -> Vec<Vec<usize>> {
+    let mut child_outlets = vec![Vec::<usize>::new(); parent_outlet.len()];
+    let num_outlets = parent_outlet.len() - 1;
+
+    for outlet in 1..num_outlets + 1 {
+        if parent_outlet[outlet] > 0 {
+            child_outlets[parent_outlet[outlet]].push(outlet);
+        }
+    }
+    for outlet in 1..num_outlets + 1 {
+        child_outlets[outlet].sort_unstable();
+    }
+
+    child_outlets
+}
+
+fn calculate_hierarchy_levels(parent_outlet: &[usize]) -> Vec<usize> {
+    // Hierarchy level: 0 for root outlets (no downstream outlet), increasing upstream.
+    let mut hierarchy_level = vec![0usize; parent_outlet.len()];
+    let mut unresolved = vec![true; parent_outlet.len()];
+    unresolved[0] = false;
+    let num_outlets = parent_outlet.len() - 1;
+
+    for outlet in 1..num_outlets + 1 {
+        let mut chain = Vec::<usize>::new();
+        let mut current = outlet;
+        while current > 0 && unresolved[current] {
+            chain.push(current);
+            current = parent_outlet[current];
+        }
+
+        let mut level = if current > 0 {
+            hierarchy_level[current] + 1
+        } else {
+            0
+        };
+        while let Some(node) = chain.pop() {
+            hierarchy_level[node] = level;
+            unresolved[node] = false;
+            level += 1;
+        }
+    }
+
+    hierarchy_level
+}
+
+fn write_hierarchy_sidecar(
+    output_file: &str,
+    parent_outlet: &[usize],
+    child_outlets: &[Vec<usize>],
+    nesting_order: &[usize],
+    hierarchy_level: &[usize],
+    outlet_rows: &[isize],
+    outlet_columns: &[isize],
+) -> Result<(), Error> {
+    let output_path = path::Path::new(output_file);
+    let output_stem = output_path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "Output file name is invalid."))?;
+    let hierarchy_file = output_path.with_file_name(format!("{}_hierarchy.csv", output_stem));
+    let hierarchy_f = File::create(&hierarchy_file)?;
+    let mut hierarchy_writer = BufWriter::new(hierarchy_f);
+    writeln!(
+        hierarchy_writer,
+        "outlet_id,parent_outlet_id,child_count,child_ids,nesting_order,hierarchy_level,is_root,row,column"
+    )?;
+    for outlet in 1..parent_outlet.len() {
+        let child_ids = child_outlets[outlet]
+            .iter()
+            .map(|child_id| child_id.to_string())
+            .collect::<Vec<String>>()
+            .join(";");
+        writeln!(
+            hierarchy_writer,
+            "{},{},{},\"{}\",{},{},{},{},{}",
+            outlet,
+            parent_outlet[outlet],
+            child_outlets[outlet].len(),
+            child_ids,
+            nesting_order[outlet],
+            hierarchy_level[outlet],
+            parent_outlet[outlet] == 0,
+            outlet_rows[outlet],
+            outlet_columns[outlet]
+        )?;
+    }
+    hierarchy_writer.flush()?;
+
+    Ok(())
+}
+
+fn delineate_to_seeded_outlets(
+    mut seeded_outlets: Array2D<i32>,
+    flow_dir: &Array2D<i8>,
+    dx: &[isize; 8],
+    dy: &[isize; 8],
+) -> Array2D<i32> {
+    let rows = flow_dir.rows;
+    let columns = flow_dir.columns;
+    let mut flag: bool;
+    let (mut x, mut y): (isize, isize);
+    let mut dir: i8;
+    let mut outlet_id: i32;
+    let mut z: i32;
+
+    for row in 0..rows {
+        for col in 0..columns {
+            if flow_dir.get_value(row, col) == -2 {
+                seeded_outlets.set_value(row, col, NODATA_OUTLET_ID);
+            }
+            if seeded_outlets.get_value(row, col) == LOW_OUTLET_ID {
+                flag = false;
+                x = col;
+                y = row;
+                outlet_id = NODATA_OUTLET_ID;
+                while !flag {
+                    dir = flow_dir.get_value(y, x);
+                    if dir >= 0 {
+                        x += dx[dir as usize];
+                        y += dy[dir as usize];
+                        z = seeded_outlets.get_value(y, x);
+                        if z != LOW_OUTLET_ID {
+                            outlet_id = z;
+                            flag = true;
+                        }
+                    } else {
+                        flag = true;
+                    }
+                }
+
+                flag = false;
+                x = col;
+                y = row;
+                seeded_outlets.set_value(y, x, outlet_id);
+                while !flag {
+                    dir = flow_dir.get_value(y, x);
+                    if dir >= 0 {
+                        x += dx[dir as usize];
+                        y += dy[dir as usize];
+                        if seeded_outlets.get_value(y, x) != LOW_OUTLET_ID {
+                            flag = true;
+                        }
+                    } else {
+                        flag = true;
+                    }
+                    seeded_outlets.set_value(y, x, outlet_id);
+                }
+            }
+        }
+    }
+
+    seeded_outlets
+}
+
+fn build_order_ancestor_lookup(
+    parent_outlet: &[usize],
+    nesting_order: &[usize],
+    max_nesting_order: usize,
+) -> Vec<Vec<usize>> {
+    let num_outlets = parent_outlet.len() - 1;
+    let mut order_lookup = vec![vec![0usize; num_outlets + 1]; max_nesting_order + 1];
+
+    for order in 1..max_nesting_order + 1 {
+        for outlet in 1..num_outlets + 1 {
+            let mut current = outlet;
+            while current > 0 {
+                if nesting_order[current] == order {
+                    order_lookup[order][outlet] = current;
+                    break;
+                }
+                current = parent_outlet[current];
+            }
+        }
+    }
+
+    order_lookup
+}
 
 /// In some applications it is necessary to relate a measured variable for a group of
 /// hydrometric stations (e.g. characteristics of flow timing and duration or water
@@ -30,8 +305,9 @@ use whitebox_vector::*;
 /// (flow direction) raster, a pour point raster, and the name of the output rasters.
 /// Multiple numbered outputs will be created, one for each nesting level. Pour point,
 /// or target, cells are denoted in the input pour-point image as any non-zero,
-/// non-NoData value. The flow pointer raster should be generated using the D8
-/// algorithm.
+/// non-NoData value. A hierarchy sidecar CSV is also written to
+/// `<output_stem>_hierarchy.csv`, containing outlet parent/child relationships and
+/// nesting metadata. The flow pointer raster should be generated using the D8 algorithm.
 pub struct UnnestBasins {
     name: String,
     description: String,
@@ -324,52 +600,63 @@ impl WhiteboxTool for UnnestBasins {
             }
         }
 
-        // calculate the nesting order for each outlet point
-        let mut flag: bool;
-        let mut cur_order: usize;
-        let (mut x, mut y): (isize, isize);
-        let mut dir: i8;
-        let mut max_nesting_order = 1;
-        for record_num in 0..pourpts.num_records {
-            outlet = record_num + 1;
-            cur_order = 1;
-            if nesting_order[outlet] < cur_order {
-                nesting_order[outlet] = cur_order;
-                flag = false;
-                y = outlet_rows[outlet];
-                x = outlet_columns[outlet];
-                while !flag {
-                    // find its downslope neighbour
-                    dir = flow_dir.get_value(y, x);
-                    if dir >= 0 {
-                        // move x and y accordingly
-                        x += dx[dir as usize];
-                        y += dy[dir as usize];
-                        if outlet_points.get_value(y, x) > 0 {
-                            outlet = outlet_points.get_value(y, x) as usize;
-                            cur_order += 1;
-                            if nesting_order[outlet] < cur_order {
-                                nesting_order[outlet] = cur_order;
-                                if cur_order > max_nesting_order {
-                                    max_nesting_order = cur_order;
-                                }
-                            } else {
-                                flag = true;
-                            }
-                        }
-                    } else {
-                        flag = true;
-                    }
-                }
-            }
-            if verbose {
-                progress = (100.0_f64 * outlet as f64 / pourpts.num_records as f64) as usize;
-                if progress != old_progress {
-                    println!("Calculating outlet nesting order: {}%", progress);
-                    old_progress = progress;
-                }
-            }
+        let (nesting_order_calc, max_nesting_order) = calculate_nesting_order(
+            &flow_dir,
+            &outlet_points,
+            &outlet_rows,
+            &outlet_columns,
+            &dx,
+            &dy,
+        );
+        nesting_order = nesting_order_calc;
+        if verbose {
+            println!("Calculating outlet nesting order: 100%");
         }
+
+        let parent_outlet = calculate_parent_outlet(
+            &flow_dir,
+            &outlet_points,
+            &outlet_rows,
+            &outlet_columns,
+            &dx,
+            &dy,
+        );
+        let child_outlets = calculate_child_outlets(&parent_outlet);
+        let hierarchy_level = calculate_hierarchy_levels(&parent_outlet);
+
+        write_hierarchy_sidecar(
+            &output_file,
+            &parent_outlet,
+            &child_outlets,
+            &nesting_order,
+            &hierarchy_level,
+            &outlet_rows,
+            &outlet_columns,
+        )?;
+        if verbose {
+            let output_path = path::Path::new(&output_file);
+            let output_stem = output_path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .ok_or_else(|| {
+                    Error::new(ErrorKind::InvalidInput, "Output file name is invalid.")
+                })?;
+            let hierarchy_file =
+                output_path.with_file_name(format!("{}_hierarchy.csv", output_stem));
+            println!("Hierarchy sidecar written: {}", hierarchy_file.display());
+        }
+
+        // `outlet_points` can be freed before large-cell assignment to reduce peak memory.
+        drop(outlet_points);
+
+        let mut all_outlet_seeds: Array2D<i32> =
+            Array2D::new(rows, columns, LOW_OUTLET_ID, LOW_OUTLET_ID)?;
+        for outlet in 1..pourpts.num_records + 1 {
+            all_outlet_seeds.set_value(outlet_rows[outlet], outlet_columns[outlet], outlet as i32);
+        }
+        let base_assignment = delineate_to_seeded_outlets(all_outlet_seeds, &flow_dir, &dx, &dy);
+        let order_lookup =
+            build_order_ancestor_lookup(&parent_outlet, &nesting_order, max_nesting_order);
 
         for order in 1..max_nesting_order + 1 {
             let start2 = Instant::now();
@@ -383,67 +670,17 @@ impl WhiteboxTool for UnnestBasins {
             output.configs.data_type = DataType::I16;
             output.configs.photometric_interp = PhotometricInterpretation::Categorical;
             output.configs.palette = "qual.pal".to_string();
-            let low_value = f64::MIN;
-            output.reinitialize_values(low_value);
-
-            for outlet in 1..pourpts.num_records + 1 {
-                if nesting_order[outlet] == order {
-                    y = outlet_rows[outlet];
-                    x = outlet_columns[outlet];
-                    output.set_value(y, x, outlet as f64);
-                }
-            }
-
-            let mut outlet_id: f64;
+            output.reinitialize_values(nodata);
             for row in 0..rows {
                 for col in 0..columns {
                     if flow_dir.get_value(row, col) == -2 {
-                        output.set_value(row, col, nodata);
+                        continue;
                     }
-                    if output.get_value(row, col) == low_value {
-                        flag = false;
-                        x = col;
-                        y = row;
-                        outlet_id = nodata;
-                        while !flag {
-                            // find its downslope neighbour
-                            dir = flow_dir.get_value(y, x);
-                            if dir >= 0 {
-                                // move x and y accordingly
-                                x += dx[dir as usize];
-                                y += dy[dir as usize];
-
-                                // if the new cell already has a value in the output, use that as the outletID
-                                z = output.get_value(y, x);
-                                if z != low_value {
-                                    outlet_id = z;
-                                    flag = true;
-                                }
-                            } else {
-                                flag = true;
-                            }
-                        }
-
-                        flag = false;
-                        x = col;
-                        y = row;
-                        output.set_value(y, x, outlet_id);
-                        while !flag {
-                            // find its downslope neighbour
-                            dir = flow_dir.get_value(y, x);
-                            if dir >= 0 {
-                                // move x and y accordingly
-                                x += dx[dir as usize];
-                                y += dy[dir as usize];
-
-                                // if the new cell already has a value in the output, use that as the outletID
-                                if output.get_value(y, x) != low_value {
-                                    flag = true;
-                                }
-                            } else {
-                                flag = true;
-                            }
-                            output.set_value(y, x, outlet_id);
+                    let base_outlet_id = base_assignment.get_value(row, col);
+                    if base_outlet_id > 0 {
+                        let mapped_outlet_id = order_lookup[order][base_outlet_id as usize];
+                        if mapped_outlet_id > 0 {
+                            output.set_value(row, col, mapped_outlet_id as f64);
                         }
                     }
                 }
@@ -491,5 +728,247 @@ impl WhiteboxTool for UnnestBasins {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn make_seed_array(
+        rows: isize,
+        columns: isize,
+        outlet_rows: &[isize],
+        outlet_columns: &[isize],
+        allowed_orders: &[usize],
+        nesting_order: &[usize],
+    ) -> Array2D<i32> {
+        let mut seeds = Array2D::new(rows, columns, LOW_OUTLET_ID, LOW_OUTLET_ID).unwrap();
+        for outlet in 1..outlet_rows.len() {
+            if allowed_orders.contains(&nesting_order[outlet]) {
+                seeds.set_value(outlet_rows[outlet], outlet_columns[outlet], outlet as i32);
+            }
+        }
+        seeds
+    }
+
+    fn map_base_assignment_to_order(
+        base_assignment: &Array2D<i32>,
+        order_lookup: &[Vec<usize>],
+        order: usize,
+    ) -> Array2D<i32> {
+        let mut mapped = Array2D::new(
+            base_assignment.rows,
+            base_assignment.columns,
+            NODATA_OUTLET_ID,
+            NODATA_OUTLET_ID,
+        )
+        .unwrap();
+        for row in 0..base_assignment.rows {
+            for col in 0..base_assignment.columns {
+                let base_id = base_assignment.get_value(row, col);
+                if base_id > 0 {
+                    let order_id = order_lookup[order][base_id as usize];
+                    if order_id > 0 {
+                        mapped.set_value(row, col, order_id as i32);
+                    }
+                }
+            }
+        }
+        mapped
+    }
+
+    fn assert_arrays_equal(a: &Array2D<i32>, b: &Array2D<i32>) {
+        assert_eq!(a.rows, b.rows);
+        assert_eq!(a.columns, b.columns);
+        for row in 0..a.rows {
+            for col in 0..a.columns {
+                assert_eq!(
+                    a.get_value(row, col),
+                    b.get_value(row, col),
+                    "Mismatch at row {}, col {}",
+                    row,
+                    col
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn optimized_mapping_matches_legacy_tracing_for_linear_network() {
+        let rows = 1isize;
+        let columns = 7isize;
+        let dx = [1, 1, 1, 0, -1, -1, -1, 0];
+        let dy = [-1, 0, 1, 1, 1, 0, -1, -1];
+
+        let mut flow_dir = Array2D::new(rows, columns, -2i8, -2i8).unwrap();
+        for col in 0..6 {
+            flow_dir.set_value(0, col, 1i8); // flow east
+        }
+        flow_dir.set_value(0, 6, -1i8); // sink
+
+        let mut outlet_points = Array2D::new(rows, columns, 0isize, 0isize).unwrap();
+        outlet_points.set_value(0, 1, 1);
+        outlet_points.set_value(0, 3, 2);
+        outlet_points.set_value(0, 5, 3);
+        let outlet_rows = vec![0isize, 0, 0, 0];
+        let outlet_columns = vec![0isize, 1, 3, 5];
+
+        let (nesting_order, max_order) = calculate_nesting_order(
+            &flow_dir,
+            &outlet_points,
+            &outlet_rows,
+            &outlet_columns,
+            &dx,
+            &dy,
+        );
+        let parent_outlet = calculate_parent_outlet(
+            &flow_dir,
+            &outlet_points,
+            &outlet_rows,
+            &outlet_columns,
+            &dx,
+            &dy,
+        );
+        let order_lookup = build_order_ancestor_lookup(&parent_outlet, &nesting_order, max_order);
+
+        let all_seeds = make_seed_array(
+            rows,
+            columns,
+            &outlet_rows,
+            &outlet_columns,
+            &[1usize, 2usize, 3usize],
+            &nesting_order,
+        );
+        let base_assignment = delineate_to_seeded_outlets(all_seeds, &flow_dir, &dx, &dy);
+
+        for order in 1..max_order + 1 {
+            let order_seeds = make_seed_array(
+                rows,
+                columns,
+                &outlet_rows,
+                &outlet_columns,
+                &[order],
+                &nesting_order,
+            );
+            let legacy = delineate_to_seeded_outlets(order_seeds, &flow_dir, &dx, &dy);
+            let optimized = map_base_assignment_to_order(&base_assignment, &order_lookup, order);
+            assert_arrays_equal(&legacy, &optimized);
+        }
+    }
+
+    #[test]
+    fn optimized_mapping_matches_legacy_tracing_for_branched_network() {
+        let rows = 3isize;
+        let columns = 5isize;
+        let dx = [1, 1, 1, 0, -1, -1, -1, 0];
+        let dy = [-1, 0, 1, 1, 1, 0, -1, -1];
+
+        let mut flow_dir = Array2D::new(rows, columns, -2i8, -2i8).unwrap();
+        // main stem
+        flow_dir.set_value(1, 0, 1i8);
+        flow_dir.set_value(1, 1, 1i8);
+        flow_dir.set_value(1, 2, 1i8);
+        flow_dir.set_value(1, 3, 1i8);
+        flow_dir.set_value(1, 4, -1i8);
+        // north branch feeding row 1
+        flow_dir.set_value(0, 0, 1i8);
+        flow_dir.set_value(0, 1, 3i8);
+        flow_dir.set_value(0, 2, 3i8);
+        flow_dir.set_value(0, 3, 3i8);
+        // south branch feeding row 1
+        flow_dir.set_value(2, 0, 1i8);
+        flow_dir.set_value(2, 1, 1i8);
+        flow_dir.set_value(2, 2, 7i8);
+        flow_dir.set_value(2, 3, 7i8);
+        flow_dir.set_value(2, 4, 7i8);
+
+        let mut outlet_points = Array2D::new(rows, columns, 0isize, 0isize).unwrap();
+        outlet_points.set_value(1, 1, 1);
+        outlet_points.set_value(1, 3, 2);
+        let outlet_rows = vec![0isize, 1, 1];
+        let outlet_columns = vec![0isize, 1, 3];
+
+        let (nesting_order, max_order) = calculate_nesting_order(
+            &flow_dir,
+            &outlet_points,
+            &outlet_rows,
+            &outlet_columns,
+            &dx,
+            &dy,
+        );
+        let parent_outlet = calculate_parent_outlet(
+            &flow_dir,
+            &outlet_points,
+            &outlet_rows,
+            &outlet_columns,
+            &dx,
+            &dy,
+        );
+        let order_lookup = build_order_ancestor_lookup(&parent_outlet, &nesting_order, max_order);
+
+        let all_seeds = make_seed_array(
+            rows,
+            columns,
+            &outlet_rows,
+            &outlet_columns,
+            &[1usize, 2usize],
+            &nesting_order,
+        );
+        let base_assignment = delineate_to_seeded_outlets(all_seeds, &flow_dir, &dx, &dy);
+
+        for order in 1..max_order + 1 {
+            let order_seeds = make_seed_array(
+                rows,
+                columns,
+                &outlet_rows,
+                &outlet_columns,
+                &[order],
+                &nesting_order,
+            );
+            let legacy = delineate_to_seeded_outlets(order_seeds, &flow_dir, &dx, &dy);
+            let optimized = map_base_assignment_to_order(&base_assignment, &order_lookup, order);
+            assert_arrays_equal(&legacy, &optimized);
+        }
+    }
+
+    #[test]
+    fn hierarchy_sidecar_contains_expected_header_and_rows() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let output_file = format!("/tmp/unnest_basins_test_{}.tif", unique);
+        let sidecar_file = format!("/tmp/unnest_basins_test_{}_hierarchy.csv", unique);
+
+        let parent_outlet = vec![0usize, 2, 3, 0];
+        let child_outlets = calculate_child_outlets(&parent_outlet);
+        let nesting_order = vec![0usize, 1, 2, 3];
+        let hierarchy_level = calculate_hierarchy_levels(&parent_outlet);
+        let outlet_rows = vec![0isize, 10, 20, 30];
+        let outlet_columns = vec![0isize, 11, 21, 31];
+
+        write_hierarchy_sidecar(
+            &output_file,
+            &parent_outlet,
+            &child_outlets,
+            &nesting_order,
+            &hierarchy_level,
+            &outlet_rows,
+            &outlet_columns,
+        )
+        .unwrap();
+
+        let text = fs::read_to_string(&sidecar_file).unwrap();
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(
+            lines[0],
+            "outlet_id,parent_outlet_id,child_count,child_ids,nesting_order,hierarchy_level,is_root,row,column"
+        );
+        assert_eq!(lines.len(), 4); // header + 3 outlets
+
+        let _ = fs::remove_file(&sidecar_file);
     }
 }

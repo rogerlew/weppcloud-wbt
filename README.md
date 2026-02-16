@@ -22,7 +22,10 @@ This fork diverges from the upstream WhiteboxTools distribution in the following
 - `FVSlope` (hydro_analysis/fvslope.rs)
   - Computes slope in the D8 flow direction (with ESRI pointer support, z-factor, and unit controls) to mirror TOPAZ-style flow-vector slopes used by WEPP channel hydraulics.
 - `Watershed` tool update (hydro_analysis/watershed.rs)
-  - Accepts GeoJSON pour-point inputs (Point/MultiPoint) in addition to shapefiles and rasters, pulling in the `geojson` crate and documenting the extended behaviour.
+  - Accepts GeoJSON pour-point inputs (Point/MultiPoint) in addition to shapefiles and rasters, pulling in the `geojson` crate and documenting the extended behavior.
+- `UnnestBasins` tool update (hydro_analysis/unnest_basins.rs)
+  - Writes a `<output_stem>_hierarchy.csv` sidecar with parent/child outlet relationships, nesting order, hierarchy level, and outlet grid coordinates.
+  - Replaces per-order full-grid flowpath retracing with a one-pass outlet assignment plus per-order ancestor remapping; includes regression tests for mapping parity.
 - CLI/runtime updates
   - Command-line entry point now propagates errors (`main.rs` returns `Result`), enabling backtraces from scripted environments.
   - Python wrapper enhancements provide optional `raise_on_error` semantics, custom exceptions, environment propagation, and richer error reporting for all tools.
