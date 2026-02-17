@@ -73,8 +73,7 @@ impl PruneStrahlerStreamOrder {
         parameters.push(ToolParameter {
             name: "Should the output be a binary stream raster?".to_owned(),
             flags: vec!["--binary_output".to_owned()],
-            description: "Convert the pruned stream orders to a binary stream mask."
-                .to_owned(),
+            description: "Convert the pruned stream orders to a binary stream mask.".to_owned(),
             parameter_type: ParameterType::Boolean,
             default_value: Some("false".to_owned()),
             optional: true,

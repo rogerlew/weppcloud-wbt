@@ -768,7 +768,9 @@ impl WhiteboxTool for HillslopesTopaz {
             let elapsed = start_headwaters.elapsed();
             println!(
                 "Profile: Headwater scan {:.2?} (stream_candidates={}, headwaters={}).",
-                elapsed, stream_candidates, headwaters.len()
+                elapsed,
+                stream_candidates,
+                headwaters.len()
             );
         }
 
@@ -817,11 +819,7 @@ impl WhiteboxTool for HillslopesTopaz {
                             for i in 0..8 {
                                 let row_n = current.0 + dy[i];
                                 let col_n = current.1 + dx[i];
-                                if row_n < 0
-                                    || row_n >= rows
-                                    || col_n < 0
-                                    || col_n >= columns
-                                {
+                                if row_n < 0 || row_n >= rows || col_n < 0 || col_n >= columns {
                                     continue;
                                 }
                                 if streams.get_value(row_n, col_n) <= 0.0
@@ -940,7 +938,9 @@ impl WhiteboxTool for HillslopesTopaz {
             let elapsed = start_link_walk.elapsed();
             println!(
                 "Profile: Link walk {:.2?} (link_path_steps={}, links={}).",
-                elapsed, link_path_steps, links.len()
+                elapsed,
+                link_path_steps,
+                links.len()
             );
         }
 
@@ -991,7 +991,11 @@ impl WhiteboxTool for HillslopesTopaz {
                         "WARNING: Non-headwater link {} at row={}, col={} has only {} inflow(s) \
                         but chnjnt={:.0}. This indicates a stream enters the junction from \
                         outside the watershed or a headwater is missing in the streams raster.",
-                        i, us.0, us.1, inflows.len(), chnjnt_val
+                        i,
+                        us.0,
+                        us.1,
+                        inflows.len(),
+                        chnjnt_val
                     );
                 }
             }
