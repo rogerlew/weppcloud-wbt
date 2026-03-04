@@ -5676,6 +5676,61 @@ Okay, that's it for now.
         args.append("--height={}".format(height))
         return self.run_tool('raise_walls', args, callback)  # returns 1 if error
 
+    def raise_roads(
+        self,
+        dem,
+        roads,
+        output,
+        strategy="profile_relative",
+        road_width=5.0,
+        width_field=None,
+        height=5.0,
+        margin=2.0,
+        search_radius=None,
+        taper="cosine",
+        crown_width=4.0,
+        shoulder_width=1.0,
+        shoulder_slope=0.08,
+        backslope_angle=30.0,
+        callback=None,
+    ):
+        """Raises roads in a DEM using constant, profile-relative, or cross-section strategies.
+
+        Keyword arguments:
+
+        dem -- Input raster DEM file.
+        roads -- Input roads vector lines file (.shp, .geojson, or .json).
+        output -- Output raster file.
+        strategy -- Raise strategy; one of 'constant', 'profile_relative', or 'cross_section'.
+        road_width -- Fallback road width in map units.
+        width_field -- Optional feature attribute field containing road widths.
+        height -- Constant raise height and cross-section crest height.
+        margin -- Profile-relative margin above local maximum terrain.
+        search_radius -- Optional profile-relative local terrain search radius in map units.
+        taper -- Edge taper mode; one of 'cosine', 'linear', or 'none'.
+        crown_width -- Cross-section crown width in map units.
+        shoulder_width -- Cross-section shoulder width in map units.
+        shoulder_slope -- Cross-section shoulder slope (rise/run).
+        backslope_angle -- Cross-section backslope angle in degrees.
+        callback -- Custom function for handling tool text outputs.
+        """
+        args = []
+        args.append("--dem='{}'".format(dem))
+        args.append("--roads='{}'".format(roads))
+        args.append("--output='{}'".format(output))
+        args.append("--strategy='{}'".format(strategy))
+        if road_width is not None: args.append("--road_width='{}'".format(road_width))
+        if width_field is not None: args.append("--width_field='{}'".format(width_field))
+        if height is not None: args.append("--height='{}'".format(height))
+        if margin is not None: args.append("--margin='{}'".format(margin))
+        if search_radius is not None: args.append("--search_radius='{}'".format(search_radius))
+        if taper is not None: args.append("--taper='{}'".format(taper))
+        if crown_width is not None: args.append("--crown_width='{}'".format(crown_width))
+        if shoulder_width is not None: args.append("--shoulder_width='{}'".format(shoulder_width))
+        if shoulder_slope is not None: args.append("--shoulder_slope='{}'".format(shoulder_slope))
+        if backslope_angle is not None: args.append("--backslope_angle='{}'".format(backslope_angle))
+        return self.run_tool('raise_roads', args, callback)  # returns 1 if error
+
     def rho8_flow_accumulation(self, i, output, out_type="specific contributing area", log=False, clip=False, pntr=False, esri_pntr=False, callback=None):
         """Calculates Fairfield and Leymarie (1991) flow accumulation.
 

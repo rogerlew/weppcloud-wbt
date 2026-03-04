@@ -198,6 +198,7 @@ impl ToolManager {
         tool_names.push("MaxUpslopeFlowpathLength".to_string());
         tool_names.push("MDInfFlowAccumulation".to_string());
         tool_names.push("NumInflowingNeighbours".to_string());
+        tool_names.push("RaiseRoads".to_string());
         tool_names.push("RaiseWalls".to_string());
         tool_names.push("Rho8Pointer".to_string());
         tool_names.push("Sink".to_string());
@@ -748,6 +749,7 @@ impl ToolManager {
             "numinflowingneighbours" => {
                 Some(Box::new(hydro_analysis::NumInflowingNeighbours::new()))
             }
+            "raiseroads" => Some(Box::new(hydro_analysis::RaiseRoads::new())),
             "raisewalls" => Some(Box::new(hydro_analysis::RaiseWalls::new())),
             "rho8pointer" => Some(Box::new(hydro_analysis::Rho8Pointer::new())),
             "sink" => Some(Box::new(hydro_analysis::Sink::new())),

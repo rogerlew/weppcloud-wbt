@@ -23,6 +23,10 @@ This fork diverges from the upstream WhiteboxTools distribution in the following
   - Computes slope in the D8 flow direction (with ESRI pointer support, z-factor, and unit controls) to mirror TOPAZ-style flow-vector slopes used by WEPP channel hydraulics.
 - `Watershed` tool update (hydro_analysis/watershed.rs)
   - Accepts GeoJSON pour-point inputs (Point/MultiPoint) in addition to shapefiles and rasters, pulling in the `geojson` crate and documenting the extended behavior.
+- `RaiseRoads` (hydro_analysis/raise_roads.rs)
+  - Raises road embankments in DEMs with `constant`, `profile_relative`, and `cross_section` strategies, while enforcing a no-lowering guarantee (`output >= input` on valid cells).
+  - Includes width/parameter fallback hierarchy, GeoJSON attribute overrides for cross-section parameters, and conservative unpaved-road fallback behavior.
+  - Adds CRS-aware road ingestion, including source EPSG inference and automatic reprojection to DEM CRS when needed; exposed through Python bindings (`whitebox_tools.py` and `WBT/whitebox_tools.py`).
 - `UnnestBasins` tool update (hydro_analysis/unnest_basins.rs)
   - Writes a `<output_stem>_hierarchy.csv` sidecar with parent/child outlet relationships, nesting order, hierarchy level, and outlet grid coordinates.
   - Replaces per-order full-grid flowpath retracing with a one-pass outlet assignment plus per-order ancestor remapping; includes regression tests for mapping parity.

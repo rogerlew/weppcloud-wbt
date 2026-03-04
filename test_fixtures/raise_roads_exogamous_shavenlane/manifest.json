@@ -1,0 +1,45 @@
+{
+  "bounds": {
+    "clip_in_dem_crs": [
+      463165.9440671843,
+      5022687.305374113,
+      464420.3738752677,
+      5023923.05498887
+    ],
+    "roads_in_dem_crs": [
+      463265.9440671843,
+      5022787.305374113,
+      464320.3738752677,
+      5023823.05498887
+    ],
+    "roads_source": [
+      -123.46900508208003,
+      45.35768888897478,
+      -123.4556169526621,
+      45.36695785087531
+    ]
+  },
+  "created_utc": "2026-03-04T20:05:47.947623+00:00",
+  "crs": {
+    "dem_epsg": 32610,
+    "reprojection_expected": true,
+    "roads_epsg": 4326
+  },
+  "name": "raise_roads_exogamous_shavenlane",
+  "outputs": {
+    "dem_clip": {
+      "path": "dem_clip.tif",
+      "sha256": "2963d8d31bbc36e01810a6e25ef4e144f16ba786c30ddb2e1659a48753a78dae"
+    },
+    "roads_geojson": {
+      "path": "roads.geojson",
+      "sha256": "2946039c23730ff64e327564200462f06ce477d499ae2da7ade193a3897aefb6"
+    }
+  },
+  "source": {
+    "dem": "/wc1/runs/ex/exogamous-nimbleness/dem/dem.tif",
+    "dem_sha256": "f9864df7e1f562628e9971a9217deca4ba97ae058e0071265d05b29524cee3c7",
+    "roads": "/wc1/runs/sh/shaven-lane/roads/UM1_roads_info.geojson",
+    "roads_sha256": "2946039c23730ff64e327564200462f06ce477d499ae2da7ade193a3897aefb6"
+  }
+}
