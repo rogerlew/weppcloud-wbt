@@ -4236,6 +4236,68 @@ Okay, that's it for now.
         args.append("--slope_exponent={}".format(slope_exponent))
         return self.run_tool('sediment_transport_index', args, callback)  # returns 1 if error
 
+    def rusle_ls_factor(
+        self,
+        dem,
+        output,
+        l_output="",
+        s_output="",
+        sca_output="",
+        effective_slope_length_output="",
+        sca="",
+        slope_deg="",
+        channel_mask="",
+        blocking_mask="",
+        routing="dinf",
+        max_slope_length_m=304.8,
+        m_regime="moderate",
+        callback=None,
+    ):
+        """Computes RUSLE LS using Desmet-Govers L and McCool/RUSLE S equations.
+
+        Keyword arguments:
+
+        dem -- Input raster DEM file.
+        output -- Output LS raster file.
+        l_output -- Optional output L raster file.
+        s_output -- Optional output S raster file.
+        sca_output -- Optional output SCA raster file.
+        effective_slope_length_output -- Optional output effective slope length raster file.
+        sca -- Optional input specific catchment area raster (m^2/m).
+        slope_deg -- Optional input slope raster in degrees.
+        channel_mask -- Optional channel stop-mask raster; values > 0 are stop cells.
+        blocking_mask -- Optional blocking stop-mask raster; values > 0 are stop cells.
+        routing -- Routing mode; one of 'dinf', 'fd8', 'd8'. Default is 'dinf'.
+        max_slope_length_m -- Maximum effective slope length in meters; default is 304.8.
+        m_regime -- m regime; one of 'slight', 'moderate', 'high_rill'. Default is 'moderate'.
+        callback -- Custom function for handling tool text outputs.
+        """
+        args = []
+        args.append("--dem='{}'".format(dem))
+        args.append("--output='{}'".format(output))
+        if l_output:
+            args.append("--l_output='{}'".format(l_output))
+        if s_output:
+            args.append("--s_output='{}'".format(s_output))
+        if sca_output:
+            args.append("--sca_output='{}'".format(sca_output))
+        if effective_slope_length_output:
+            args.append("--effective_slope_length_output='{}'".format(effective_slope_length_output))
+        if sca:
+            args.append("--sca='{}'".format(sca))
+        if slope_deg:
+            args.append("--slope_deg='{}'".format(slope_deg))
+        if channel_mask:
+            args.append("--channel_mask='{}'".format(channel_mask))
+        if blocking_mask:
+            args.append("--blocking_mask='{}'".format(blocking_mask))
+        if routing:
+            args.append("--routing={}".format(routing))
+        args.append("--max_slope_length_m={}".format(max_slope_length_m))
+        if m_regime:
+            args.append("--m_regime={}".format(m_regime))
+        return self.run_tool('rusle_ls_factor', args, callback)  # returns 1 if error
+
     def shadow_animation(self, i, output, palette="atlas", max_dist="", date="21/06/2021", interval=15, location="43.5448/-80.2482/-4", height=600, delay=250, label="", callback=None):
         """This tool creates an animated GIF of shadows based on an input DEM.
 

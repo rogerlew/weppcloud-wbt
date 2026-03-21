@@ -6,7 +6,7 @@
 - Keep instructions concise; put task-specific detail in `prompts/*.md` exec plans.
 
 ## Active ExecPlan
-- `prompts/RAISE_ROADS_EXECPLAN.md` (active)
+- `none` (most recently completed: `prompts/RAISE_ROADS_EXECPLAN.md`)
 
 ## Required Workflow for Active ExecPlan Work
 1. Read this `AGENTS.md` first.
