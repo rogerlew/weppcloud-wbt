@@ -23,6 +23,52 @@ fn temp_threshold_table_path(stem: &str) -> PathBuf {
     std::env::temp_dir().join(format!("ifolp_{}_{}_{}.csv", stem, process::id(), nanos))
 }
 
+fn temp_threshold_code_raster_path(stem: &str) -> PathBuf {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock should be after unix epoch")
+        .as_nanos();
+    std::env::temp_dir().join(format!("ifolp_{}_{}_{}.tif", stem, process::id(), nanos))
+}
+
+fn cleanup_whitebox_raster_artifacts(path: &PathBuf) {
+    let _ = fs::remove_file(path);
+    let _ = fs::remove_file(PathBuf::from(format!("{}.aux.xml", path.to_string_lossy())));
+}
+
+fn first_active_cell(d8: &Raster, upstream_area: &Raster) -> Option<(isize, isize)> {
+    let d8_nodata = d8.configs.nodata;
+    let area_nodata = upstream_area.configs.nodata;
+    for row in 0..d8.configs.rows as isize {
+        for col in 0..d8.configs.columns as isize {
+            if d8[(row, col)] != d8_nodata && upstream_area[(row, col)] != area_nodata {
+                return Some((row, col));
+            }
+        }
+    }
+    None
+}
+
+fn write_threshold_code_raster_with_active_nodata(
+    d8_path: &PathBuf,
+    upstream_area_path: &PathBuf,
+    output_path: &PathBuf,
+) {
+    let d8 = Raster::new(&d8_path.to_string_lossy(), "r").expect("d8 fixture should open");
+    let upstream_area = Raster::new(&upstream_area_path.to_string_lossy(), "r")
+        .expect("upstream-area fixture should open");
+    let (active_row, active_col) =
+        first_active_cell(&d8, &upstream_area).expect("fixture should include active cells");
+
+    let mut threshold_codes = Raster::initialize_using_file(&output_path.to_string_lossy(), &d8);
+    threshold_codes.reinitialize_values(1.0);
+    threshold_codes.configs.nodata = -9999.0;
+    threshold_codes.set_value(active_row, active_col, threshold_codes.configs.nodata);
+    threshold_codes
+        .write()
+        .expect("temporary threshold-code raster should write");
+}
+
 fn synthetic_raster_with_geometry(
     rows: usize,
     columns: usize,
@@ -265,6 +311,86 @@ fn iterative_first_order_link_prune_prepare_phase_inputs_retains_zero_pointer_ce
         active_zero_pointer_cells, zero_pointer_cells,
         "zero-coded pointer cells should remain in the valid active-domain mask footprint"
     );
+}
+
+#[test]
+fn iterative_first_order_link_prune_prepare_phase_inputs_rejects_unmapped_threshold_code() {
+    let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .canonicalize()
+        .expect("repo root should resolve");
+    let d8_path = repo_root.join("test_fixtures/blackwood_60_5/flovec.tif");
+    let upstream_area_path = repo_root.join("test_fixtures/blackwood_60_5/floaccum.tif");
+    let output_path = std::env::temp_dir().join("ifolp_prepare_phase_inputs_unmapped_code.tif");
+    let threshold_table_path = temp_threshold_table_path("threshold_code_unmapped");
+    fs::write(&threshold_table_path, "code,csa_ha,mscl_m\n999,60,5\n").expect("table should write");
+
+    let args = vec![
+        format!("--d8_pntr={}", d8_path.display()),
+        format!("--upstream_area={}", upstream_area_path.display()),
+        format!("--output={}", output_path.display()),
+        "--csa=60.0".to_string(),
+        "--mscl=5.0".to_string(),
+        format!("--threshold_code_raster={}", d8_path.display()),
+        format!("--threshold_table={}", threshold_table_path.display()),
+    ];
+
+    let parsed = parse_arguments(&args, "").expect("parse should succeed");
+    let err = match prepare_phase_inputs(&parsed) {
+        Ok(_) => panic!("unmapped threshold code in active domain should fail"),
+        Err(err) => err,
+    };
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err
+        .to_string()
+        .contains("No threshold table entry for code"));
+
+    fs::remove_file(&threshold_table_path).expect("temporary table should be removable");
+}
+
+#[test]
+fn iterative_first_order_link_prune_prepare_phase_inputs_rejects_threshold_code_nodata_at_active_cell(
+) {
+    let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .canonicalize()
+        .expect("repo root should resolve");
+    let d8_path = repo_root.join("test_fixtures/blackwood_60_5/flovec.tif");
+    let upstream_area_path = repo_root.join("test_fixtures/blackwood_60_5/floaccum.tif");
+    let output_path =
+        std::env::temp_dir().join("ifolp_prepare_phase_inputs_threshold_nodata_active.tif");
+    let threshold_table_path = temp_threshold_table_path("threshold_code_nodata_active");
+    let threshold_code_path = temp_threshold_code_raster_path("threshold_codes_active_nodata");
+
+    write_threshold_code_raster_with_active_nodata(
+        &d8_path,
+        &upstream_area_path,
+        &threshold_code_path,
+    );
+    fs::write(&threshold_table_path, "code,csa_ha,mscl_m\n1,60,5\n").expect("table should write");
+
+    let args = vec![
+        format!("--d8_pntr={}", d8_path.display()),
+        format!("--upstream_area={}", upstream_area_path.display()),
+        format!("--output={}", output_path.display()),
+        "--csa=60.0".to_string(),
+        "--mscl=5.0".to_string(),
+        format!("--threshold_code_raster={}", threshold_code_path.display()),
+        format!("--threshold_table={}", threshold_table_path.display()),
+    ];
+
+    let parsed = parse_arguments(&args, "").expect("parse should succeed");
+    let err = match prepare_phase_inputs(&parsed) {
+        Ok(_) => panic!("threshold-code nodata at active cells should fail"),
+        Err(err) => err,
+    };
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err
+        .to_string()
+        .contains("Threshold code missing at active cell"));
+
+    fs::remove_file(&threshold_table_path).expect("temporary table should be removable");
+    cleanup_whitebox_raster_artifacts(&threshold_code_path);
 }
 
 #[test]
