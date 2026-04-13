@@ -25,6 +25,38 @@ Required for every work-package handoff:
 3. No regression in prior package tests.
 4. `cargo check -p whitebox_tools` passes.
 
+## Source and Test File Organization Strategy (Maintainability)
+
+Goal:
+- Keep IFOLP implementation readable and reviewable as scope grows from WP-01 through WP-08.
+
+Source organization rules:
+1. Keep the command entry file lightweight:
+- `whitebox-tools-app/src/tools/stream_network_analysis/iterative_first_order_link_prune.rs`
+- Responsibilities: tool metadata, parameter definitions, top-level orchestration, and calls into focused helpers.
+2. Move complexity into concern-specific companion modules once logic grows:
+- parser/contract handling,
+- topology primitives,
+- phase A qualification,
+- phase B pruning,
+- shared error/report utilities.
+3. Prefer single-responsibility modules over large mixed files; avoid embedding full phase logic and parser internals in one monolithic file.
+
+Test organization rules:
+1. Keep parser/contract tests in companion test modules (pattern established in WP-01):
+- `whitebox-tools-app/src/tools/stream_network_analysis/iterative_first_order_link_prune_parser_tests.rs`
+2. Add phase-focused test modules as implementation expands:
+- `*_phase_a_tests.rs`,
+- `*_phase_b_tests.rs`,
+- `*_determinism_tests.rs`,
+- `*_error_contract_tests.rs` (names may vary, intent must remain split by concern).
+3. Keep each test module scoped to one behavior family (parser, topology, phase transitions, error paths, parity adapters).
+
+Monolith prevention gate (apply each WP review):
+1. If a source or test file becomes difficult to review due mixed concerns, split before WP closeout.
+2. Require code review sign-off that file structure still reflects clear concern boundaries.
+3. Record structural split decisions in WP tracker/execution notes when performed.
+
 ## Work-Package Sequence
 
 ## WP-00: Baseline and Parity Harness Design
@@ -88,6 +120,7 @@ Implementation tasks:
 - `whitebox-tools-app/src/tools/mod.rs`
 3. Implement argument parsing and metadata/help output.
 4. Add placeholders for phase A/B execution and error paths.
+5. Establish companion parser test module (non-monolithic pattern).
 
 Code review phase:
 - Verify interface exactly matches spec contract and naming.
@@ -108,6 +141,7 @@ Implementation tasks:
 2. Implement topology classification states and receiver detection.
 3. Implement first-order-link discovery with deterministic encounter ordering.
 4. Implement candidate validity checks for intra-pass stale-candidate skip.
+5. Extract topology helpers from entry file into dedicated companion module(s) if entry file begins mixing parser + topology concerns.
 
 Code review phase:
 - Validate determinism rules and ordering logic against spec.
@@ -326,8 +360,8 @@ Status values:
 | WP | Title | Status | Owner | Depends On | Code Review | Test Gate | Parity Gate | Perf Gate | Started | Target Finish | Completed | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | WP-00 | Baseline and Parity Harness Design | done | Codex | none | done | done | done | n/a | 2026-04-13 | 2026-04-13 | 2026-04-13 | Artifacts: `docs/iterative-first-order-link-prune/wp-00/*`; harness: `tools/ifolp_wp00_{prepare_fixtures.py,run_topaz_oracle.sh,compare_outputs.py}`; determinism canonical hash: `9a171ade68bfc94b31b28285bf2393ea30b3b631ac54d1f83c6f606c1d40237e`. |
-| WP-01 | Tool Scaffolding and Registration | backlog | TBD | WP-00 | pending | pending | n/a | n/a |  |  |  | Active ExecPlan: `/workdir/wepppy/docs/work-packages/20260412_ifolp_wp01_tool_scaffolding/prompts/active/ifolp_wp01_tool_scaffolding_execplan.md` |
-| WP-02 | Core Data Model + Deterministic Topology Kernel | backlog | TBD | WP-01 | pending | pending | n/a | n/a |  |  |  |  |
+| WP-01 | Tool Scaffolding and Registration | done | Codex | WP-00 | done | done | n/a | n/a | 2026-04-13 | 2026-04-13 | 2026-04-13 | Tool + registry wiring added (`iterative_first_order_link_prune.rs`, `stream_network_analysis/mod.rs`, `tools/mod.rs`); parser contract covered for defaults/required/optional forms, missing-value guards, quote preservation, bool forms, threshold-pair enforcement, signed numeric parity, placeholder path, and registration discoverability via `cargo test -p whitebox_tools iterative_first_order_link_prune` (`13 passed`); parser tests split to companion module `iterative_first_order_link_prune_parser_tests.rs` to keep tool source non-monolithic. |
+| WP-02 | Core Data Model + Deterministic Topology Kernel | backlog | TBD | WP-01 | pending | pending | n/a | n/a |  |  |  | Active ExecPlan: `/workdir/wepppy/docs/work-packages/20260412_ifolp_wp02_topology_kernel/prompts/active/ifolp_wp02_topology_kernel_execplan.md` |
 | WP-03 | Phase A Source-Area Qualification | backlog | TBD | WP-02 | pending | pending | n/a | n/a |  |  |  |  |
 | WP-04 | Phase B First-Order-Link Pruning (Parity Path) | backlog | TBD | WP-03 | pending | pending | n/a | n/a |  |  |  |  |
 | WP-05 | TopAZ Parity Validation Package | backlog | TBD | WP-04 | pending | pending | pending | n/a |  |  |  |  |

@@ -427,6 +427,7 @@ impl ToolManager {
         tool_names.push("FindMainStem".to_string());
         tool_names.push("HackStreamOrder".to_string());
         tool_names.push("HortonStreamOrder".to_string());
+        tool_names.push("IterativeFirstOrderLinkPrune".to_string());
         tool_names.push("LengthOfUpstreamChannels".to_string());
         tool_names.push("LongProfile".to_string());
         tool_names.push("LongProfileFromPoints".to_string());
@@ -1063,6 +1064,9 @@ impl ToolManager {
             "hortonstreamorder" => {
                 Some(Box::new(stream_network_analysis::HortonStreamOrder::new()))
             }
+            "iterativefirstorderlinkprune" => Some(Box::new(
+                stream_network_analysis::IterativeFirstOrderLinkPrune::new(),
+            )),
             "lengthofupstreamchannels" => Some(Box::new(
                 stream_network_analysis::LengthOfUpstreamChannels::new(),
             )),
@@ -1879,4 +1883,30 @@ enum AttributeType {
     Text,
     Boolean,
     Date,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tool_manager_resolves_iterative_first_order_link_prune_registration() {
+        let manager = ToolManager::new("", &false).expect("tool manager should initialize");
+        let tool = manager
+            .get_tool("iterative_first_order_link_prune")
+            .expect("IterativeFirstOrderLinkPrune should be registered");
+        assert_eq!(tool.get_tool_name(), "IterativeFirstOrderLinkPrune");
+    }
+
+    #[test]
+    fn tool_manager_lists_iterative_first_order_link_prune_name() {
+        let manager = ToolManager::new("", &false).expect("tool manager should initialize");
+        assert!(
+            manager
+                .tool_names
+                .iter()
+                .any(|name| name == "IterativeFirstOrderLinkPrune"),
+            "IterativeFirstOrderLinkPrune missing from tool_names discoverability list"
+        );
+    }
 }
