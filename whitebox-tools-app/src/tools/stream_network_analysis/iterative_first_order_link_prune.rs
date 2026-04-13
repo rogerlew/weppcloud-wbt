@@ -169,7 +169,7 @@ impl IterativeFirstOrderLinkPrune {
         parameters.push(ToolParameter {
             name: "Floating Comparison Tolerance".to_owned(),
             flags: vec!["--epsilon".to_owned()],
-            description: "Floating tolerance for strict-improvement comparisons.".to_owned(),
+            description: "Floating tolerance for Phase A CSA boundary checks and Phase B strict comparisons (shortest-link selection and prune predicate).".to_owned(),
             parameter_type: ParameterType::Float,
             default_value: Some(DEFAULT_EPSILON.to_string()),
             optional: true,

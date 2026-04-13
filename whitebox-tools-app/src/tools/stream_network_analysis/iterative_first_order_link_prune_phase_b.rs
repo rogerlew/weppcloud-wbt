@@ -58,6 +58,12 @@ pub(crate) fn run_phase_b_pruning(inputs: &PhaseBInputs) -> Result<PhaseBResult,
             inputs.cell_size_x,
             inputs.cell_size_y,
         )?;
+        if links.is_empty() && stream_mask.iter().any(|active| *active) {
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "Cycle detected during first-order-link pruning: active network has no discoverable HEAD/TERMINAL_HEAD sources.",
+            ));
+        }
         let receiver_groups = group_links_by_receiver_discovery_order(&links);
         let mut degeneration_flag = false;
         let mut pass_trace = PhaseBPassTrace {

@@ -295,3 +295,23 @@ fn iterative_first_order_link_prune_phase_b_prunes_only_one_candidate_per_receiv
     assert!(!result.stream_mask[index(rows, columns, 0, 1)]);
     assert!(result.stream_mask[index(rows, columns, 1, 0)]);
 }
+
+#[test]
+fn iterative_first_order_link_prune_phase_b_rejects_source_less_cycle_network() {
+    let rows = 2;
+    let columns = 2;
+    let mut pointers = vec![2u8; (rows * columns) as usize];
+    pointers[index(rows, columns, 0, 0)] = 2; // (0,0) E -> (0,1)
+    pointers[index(rows, columns, 0, 1)] = 8; // (0,1) S -> (1,1)
+    pointers[index(rows, columns, 1, 1)] = 32; // (1,1) W -> (1,0)
+    pointers[index(rows, columns, 1, 0)] = 128; // (1,0) N -> (0,0)
+
+    let stream_mask = vec![true; pointers.len()];
+    let local_mscl_m = vec![0.0; pointers.len()];
+    let inputs = phase_b_inputs(rows, columns, pointers, stream_mask, local_mscl_m, false);
+
+    let err = run_phase_b_pruning(&inputs).expect_err("source-less cycle should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("Cycle detected"));
+    assert!(err.to_string().contains("HEAD/TERMINAL_HEAD"));
+}

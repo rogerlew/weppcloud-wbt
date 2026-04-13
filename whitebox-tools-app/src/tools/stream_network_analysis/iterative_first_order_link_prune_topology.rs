@@ -177,14 +177,32 @@ impl TopologyKernel {
     }
 
     pub(crate) fn compute_inflow_counts(&self, stream_mask: &[bool]) -> Result<Vec<u8>, Error> {
+        let num_threads = resolve_num_threads(self.rows as usize);
+        self.compute_inflow_counts_with_threads(stream_mask, num_threads, 1024)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn compute_inflow_counts_with_forced_threads_for_tests(
+        &self,
+        stream_mask: &[bool],
+        forced_threads: usize,
+    ) -> Result<Vec<u8>, Error> {
+        self.compute_inflow_counts_with_threads(stream_mask, forced_threads.max(1), 0)
+    }
+
+    fn compute_inflow_counts_with_threads(
+        &self,
+        stream_mask: &[bool],
+        num_threads: usize,
+        parallel_min_rows: usize,
+    ) -> Result<Vec<u8>, Error> {
         self.validate_stream_mask(stream_mask)?;
 
         let mut inflow_counts = vec![0u8; stream_mask.len()];
         let rows = self.rows as usize;
         let columns = self.columns as usize;
-        let num_threads = resolve_num_threads(rows);
 
-        if num_threads <= 1 || rows < 1024 {
+        if num_threads <= 1 || rows < parallel_min_rows {
             for row in 0..self.rows {
                 for col in 0..self.columns {
                     let cell = GridCell::new(row, col);

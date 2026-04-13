@@ -36,22 +36,6 @@ fn synthetic_kernel_with_terminal_head() -> (TopologyKernel, Vec<bool>) {
     )
 }
 
-fn effective_thread_count(row_count: usize) -> usize {
-    if row_count == 0 {
-        return 1;
-    }
-
-    let mut num_procs = num_cpus::get() as isize;
-    if let Ok(configs) = whitebox_common::configs::get_configs() {
-        let max_procs = configs.max_procs;
-        if max_procs > 0 && max_procs < num_procs {
-            num_procs = max_procs;
-        }
-    }
-
-    num_procs.max(1).min(row_count as isize) as usize
-}
-
 #[test]
 fn iterative_first_order_link_prune_topology_decodes_whitebox_and_esri_pointers() {
     let whitebox_kernel = TopologyKernel::new(3, 3, vec![2u8; 9], D8PointerScheme::Whitebox)
@@ -373,10 +357,6 @@ fn iterative_first_order_link_prune_topology_terminal_head_uses_half_cell_length
 fn iterative_first_order_link_prune_topology_parallel_inflow_counts_match_manual_reference() {
     let rows = 1024;
     let columns = 8;
-    if effective_thread_count(rows as usize) <= 1 {
-        // Serial-only hosts/configurations cannot exercise the threaded path.
-        return;
-    }
 
     let mut pointers = vec![2u8; (rows * columns) as usize];
     for row in 0..rows {
@@ -387,7 +367,9 @@ fn iterative_first_order_link_prune_topology_parallel_inflow_counts_match_manual
     let kernel = TopologyKernel::new(rows, columns, pointers, D8PointerScheme::Whitebox).unwrap();
     let stream_mask = vec![true; (rows * columns) as usize];
 
-    let computed = kernel.compute_inflow_counts(&stream_mask).unwrap();
+    let computed = kernel
+        .compute_inflow_counts_with_forced_threads_for_tests(&stream_mask, 2)
+        .unwrap();
     let mut manual = vec![0u8; computed.len()];
     for row in 0..rows {
         for col in 0..columns {

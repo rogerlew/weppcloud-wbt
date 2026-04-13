@@ -10706,7 +10706,7 @@ Okay, that's it for now.
         threshold_code_raster -- Optional integer code raster for spatial threshold lookup.
         threshold_table -- Optional threshold table mapping code -> (csa_ha, mscl_m).
         esri_pntr -- Pointer raster uses ESRI D8 encoding.
-        epsilon -- Optional floating tolerance for strict-improvement comparisons.
+        epsilon -- Optional floating tolerance for Phase A CSA boundary checks and Phase B strict comparisons.
         fail_if_only_channel_pruned -- Optional boolean override for only-channel prune guard behavior.
         callback -- Custom function for handling tool text outputs.
         """
@@ -10716,6 +10716,8 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         args.append("--csa='{}'".format(csa))
         args.append("--mscl='{}'".format(mscl))
+        if (threshold_code_raster is None) != (threshold_table is None):
+            raise ValueError("threshold_code_raster and threshold_table must be provided together")
         if threshold_code_raster is not None: args.append("--threshold_code_raster='{}'".format(threshold_code_raster))
         if threshold_table is not None: args.append("--threshold_table='{}'".format(threshold_table))
         if esri_pntr: args.append("--esri_pntr")
