@@ -361,3 +361,13 @@ fn iterative_first_order_link_prune_topology_inflow_count_rejects_mask_geometry_
         .expect_err("mismatched stream mask should fail");
     assert_eq!(err.kind(), ErrorKind::InvalidInput);
 }
+
+#[test]
+fn iterative_first_order_link_prune_topology_rejects_non_finite_cell_size() {
+    let (kernel, stream_mask) = synthetic_kernel_with_terminal_head();
+    let err = kernel
+        .discover_first_order_links_row_major(&stream_mask, f64::NAN, 1.0)
+        .expect_err("non-finite cell sizes should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("positive and finite"));
+}

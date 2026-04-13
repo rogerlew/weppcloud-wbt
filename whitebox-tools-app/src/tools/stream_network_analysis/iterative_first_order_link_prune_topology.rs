@@ -492,11 +492,15 @@ pub(crate) fn select_shortest_link_strict_epsilon<'a>(
 }
 
 fn validate_cell_sizes(cell_size_x: f64, cell_size_y: f64) -> Result<(), Error> {
-    if cell_size_x <= 0.0 || cell_size_y <= 0.0 {
+    if !cell_size_x.is_finite()
+        || !cell_size_y.is_finite()
+        || cell_size_x <= 0.0
+        || cell_size_y <= 0.0
+    {
         return Err(Error::new(
             ErrorKind::InvalidInput,
             format!(
-                "Cell sizes must be positive for IFOLP topology traversal (x={}, y={})",
+                "Cell sizes must be positive and finite for IFOLP topology traversal (x={}, y={})",
                 cell_size_x, cell_size_y
             ),
         ));

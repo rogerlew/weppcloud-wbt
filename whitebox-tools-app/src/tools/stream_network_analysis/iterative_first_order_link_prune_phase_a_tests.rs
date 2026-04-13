@@ -187,3 +187,13 @@ fn iterative_first_order_link_prune_phase_a_traversal_cadence_is_deterministic()
         ]
     );
 }
+
+#[test]
+fn iterative_first_order_link_prune_phase_a_rejects_non_finite_epsilon() {
+    let mut inputs = phase_a_inputs(1, 1, vec![2u8], vec![1.0], vec![1.0], 1.0);
+    inputs.epsilon = f64::NAN;
+
+    let err = run_phase_a_qualification(&inputs).expect_err("phase A should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("non-negative and finite"));
+}

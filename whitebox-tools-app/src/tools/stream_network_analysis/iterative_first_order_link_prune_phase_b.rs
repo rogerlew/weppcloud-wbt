@@ -155,20 +155,24 @@ fn validate_inputs(inputs: &PhaseBInputs) -> Result<(), Error> {
             ),
         ));
     }
-    if inputs.epsilon < 0.0 {
+    if !inputs.epsilon.is_finite() || inputs.epsilon < 0.0 {
         return Err(Error::new(
             ErrorKind::InvalidInput,
             format!(
-                "Phase B epsilon must be non-negative, got {}",
+                "Phase B epsilon must be non-negative and finite, got {}",
                 inputs.epsilon
             ),
         ));
     }
-    if inputs.cell_size_x <= 0.0 || inputs.cell_size_y <= 0.0 {
+    if !inputs.cell_size_x.is_finite()
+        || !inputs.cell_size_y.is_finite()
+        || inputs.cell_size_x <= 0.0
+        || inputs.cell_size_y <= 0.0
+    {
         return Err(Error::new(
             ErrorKind::InvalidInput,
             format!(
-                "Phase B requires positive cell sizes (x={}, y={})",
+                "Phase B requires positive finite cell sizes (x={}, y={})",
                 inputs.cell_size_x, inputs.cell_size_y
             ),
         ));

@@ -1,6 +1,9 @@
 use super::*;
 use serde_json::Value;
+use std::fs;
 use std::path::PathBuf;
+use std::process;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 fn base_args() -> Vec<String> {
     vec![
@@ -10,6 +13,19 @@ fn base_args() -> Vec<String> {
         "--csa=10.0".to_string(),
         "--mscl=100.0".to_string(),
     ]
+}
+
+fn temp_threshold_table_path(stem: &str) -> PathBuf {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock should be after unix epoch")
+        .as_nanos();
+    std::env::temp_dir().join(format!(
+        "ifolp_{}_{}_{}.csv",
+        stem,
+        process::id(),
+        nanos
+    ))
 }
 
 #[test]
@@ -98,6 +114,30 @@ fn iterative_first_order_link_prune_parser_rejects_negative_epsilon() {
     let err = parse_arguments(&args, "").expect_err("negative epsilon should fail");
     assert_eq!(err.kind(), ErrorKind::InvalidInput);
     assert!(err.to_string().contains("--epsilon"));
+}
+
+#[test]
+fn iterative_first_order_link_prune_parser_rejects_non_finite_numeric_values() {
+    let mut nan_epsilon = base_args();
+    nan_epsilon.push("--epsilon=NaN".to_string());
+    let err = parse_arguments(&nan_epsilon, "").expect_err("non-finite epsilon should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("--epsilon"));
+    assert!(err.to_string().contains("finite"));
+
+    let mut inf_csa = base_args();
+    inf_csa[3] = "--csa=inf".to_string();
+    let err = parse_arguments(&inf_csa, "").expect_err("non-finite csa should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("--csa"));
+    assert!(err.to_string().contains("finite"));
+
+    let mut nan_mscl = base_args();
+    nan_mscl[4] = "--mscl=NaN".to_string();
+    let err = parse_arguments(&nan_mscl, "").expect_err("non-finite mscl should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("--mscl"));
+    assert!(err.to_string().contains("finite"));
 }
 
 #[test]
@@ -252,4 +292,33 @@ fn iterative_first_order_link_prune_csa_conversion_rounds_to_nearest_cell() {
 fn iterative_first_order_link_prune_csa_conversion_clamps_to_minimum_one_cell() {
     let cells = csa_hectares_to_cells(0.0, 900.0).expect("conversion should succeed");
     assert_eq!(cells, 1.0);
+}
+
+#[test]
+fn iterative_first_order_link_prune_threshold_table_rejects_duplicate_codes() {
+    let table_path = temp_threshold_table_path("threshold_duplicate");
+    fs::write(&table_path, "1,10,100\n1,20,200\n").expect("table should write");
+
+    let err = parse_threshold_table(&table_path.to_string_lossy())
+        .expect_err("duplicate threshold codes should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("Duplicate threshold table code 1"));
+
+    fs::remove_file(&table_path).expect("temporary table should be removable");
+}
+
+#[test]
+fn iterative_first_order_link_prune_threshold_table_rejects_non_finite_values() {
+    let table_path = temp_threshold_table_path("threshold_non_finite");
+    fs::write(&table_path, "code,csa_ha,mscl_m\n1,NaN,100\n").expect("table should write");
+
+    let err = parse_threshold_table(&table_path.to_string_lossy())
+        .expect_err("non-finite threshold row should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(
+        err.to_string()
+            .contains("must use finite csa_ha and mscl_m values")
+    );
+
+    fs::remove_file(&table_path).expect("temporary table should be removable");
 }

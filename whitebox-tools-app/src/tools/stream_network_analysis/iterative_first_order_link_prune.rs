@@ -317,12 +317,19 @@ fn parse_numeric_argument(
 }
 
 fn parse_f64(text: &str, flag: &str) -> Result<f64, Error> {
-    text.parse::<f64>().map_err(|_| {
+    let value = text.parse::<f64>().map_err(|_| {
         Error::new(
             ErrorKind::InvalidInput,
             format!("Error parsing {} as f64: {}", flag, text),
         )
-    })
+    })?;
+    if !value.is_finite() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!("{} must be finite, got {}", flag, text),
+        ));
+    }
+    Ok(value)
 }
 
 fn resolve_path(file_name: &str, working_directory: &str) -> String {
@@ -578,13 +585,30 @@ fn parse_threshold_table(table_path: &str) -> Result<HashMap<i64, ThresholdTable
             ));
         }
 
-        table.insert(
-            parsed_code.unwrap(),
-            ThresholdTableEntry {
-                csa_ha: parsed_csa.unwrap(),
-                mscl_m: parsed_mscl.unwrap(),
-            },
-        );
+        let code = parsed_code.unwrap();
+        let csa_ha = parsed_csa.unwrap();
+        let mscl_m = parsed_mscl.unwrap();
+        if !csa_ha.is_finite() || !mscl_m.is_finite() {
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "Threshold table line {} must use finite csa_ha and mscl_m values",
+                    line_idx + 1
+                ),
+            ));
+        }
+        if table.contains_key(&code) {
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "Duplicate threshold table code {} at line {}",
+                    code,
+                    line_idx + 1
+                ),
+            ));
+        }
+
+        table.insert(code, ThresholdTableEntry { csa_ha, mscl_m });
     }
 
     if table.is_empty() {

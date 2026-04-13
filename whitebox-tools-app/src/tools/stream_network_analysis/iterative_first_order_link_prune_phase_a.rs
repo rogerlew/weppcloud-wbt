@@ -106,11 +106,11 @@ fn validate_inputs(inputs: &PhaseAInputs) -> Result<(), Error> {
             ),
         ));
     }
-    if inputs.epsilon < 0.0 {
+    if !inputs.epsilon.is_finite() || inputs.epsilon < 0.0 {
         return Err(Error::new(
             ErrorKind::InvalidInput,
             format!(
-                "Phase A epsilon must be non-negative, got {}",
+                "Phase A epsilon must be non-negative and finite, got {}",
                 inputs.epsilon
             ),
         ));

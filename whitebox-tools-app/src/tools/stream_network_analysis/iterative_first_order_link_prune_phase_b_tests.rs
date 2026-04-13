@@ -211,6 +211,26 @@ fn iterative_first_order_link_prune_phase_b_fails_when_no_channels_exist_on_entr
 }
 
 #[test]
+fn iterative_first_order_link_prune_phase_b_rejects_non_finite_epsilon() {
+    let mut inputs = phase_b_inputs(1, 1, vec![2u8], vec![true], vec![1.0], false);
+    inputs.epsilon = f64::NAN;
+
+    let err = run_phase_b_pruning(&inputs).expect_err("phase B should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("non-negative and finite"));
+}
+
+#[test]
+fn iterative_first_order_link_prune_phase_b_rejects_non_finite_cell_size() {
+    let mut inputs = phase_b_inputs(1, 1, vec![2u8], vec![true], vec![1.0], false);
+    inputs.cell_size_x = f64::INFINITY;
+
+    let err = run_phase_b_pruning(&inputs).expect_err("phase B should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("positive finite cell sizes"));
+}
+
+#[test]
 fn iterative_first_order_link_prune_phase_b_mscl_threshold_is_not_scaled_by_cell_size() {
     let rows = 1;
     let columns = 2;
