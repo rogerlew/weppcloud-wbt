@@ -72,6 +72,17 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Exit non-zero if any fixture is not exact-binary equal.",
     )
+    parser.add_argument(
+        "--comparison-domain",
+        choices=["basin_mask", "full_extent"],
+        default="basin_mask",
+        help=(
+            "Domain used for parity comparison. "
+            "'basin_mask' requires staged input_basin_mask in fixture manifest and "
+            "compares only where basin_mask > 0. "
+            "'full_extent' compares across the entire raster extent."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -104,6 +115,16 @@ def stream_mask(data: np.ndarray, nodata: float | None) -> np.ndarray:
         else:
             mask &= data != nodata
     return mask & (data > 0)
+
+
+def valid_mask(data: np.ndarray, nodata: float | None) -> np.ndarray:
+    mask = np.isfinite(data)
+    if nodata is not None:
+        if np.isnan(nodata):
+            mask &= ~np.isnan(data)
+        else:
+            mask &= data != nodata
+    return mask
 
 
 def connected_components_count(mask: np.ndarray) -> int:
@@ -214,6 +235,7 @@ def compare_fixture(
     run_root: Path,
     oracle_root: Path,
     candidate_root: Path,
+    comparison_domain: str,
 ) -> dict[str, Any]:
     fixture_id = fixture["fixture_id"]
     pointer_encoding = fixture.get("pointer_encoding", "whitebox").lower()
@@ -228,14 +250,31 @@ def compare_fixture(
     d8_path = run_root / fixture["staged"]["input_d8_pntr"]
     oracle_path = oracle_root / fixture_id / "stream.tif"
     candidate_path = candidate_root / fixture_id / "stream.tif"
+    basin_mask_rel_path = fixture["staged"].get("input_basin_mask")
+    basin_mask_path = (
+        (run_root / basin_mask_rel_path) if basin_mask_rel_path is not None else None
+    )
 
-    for required in (d8_path, oracle_path, candidate_path):
+    required_paths = [d8_path, oracle_path, candidate_path]
+    if comparison_domain == "basin_mask":
+        if basin_mask_path is None:
+            raise SystemExit(
+                "Fixture manifest is missing staged.input_basin_mask required for "
+                f"basin_mask comparison domain ({fixture_id})."
+            )
+        required_paths.append(basin_mask_path)
+    for required in required_paths:
         if not required.exists():
             raise SystemExit(f"Missing required raster for fixture {fixture_id}: {required}")
 
     d8_data, _, d8_profile = load_raster(d8_path)
     oracle_data, oracle_nodata, oracle_profile = load_raster(oracle_path)
     candidate_data, candidate_nodata, candidate_profile = load_raster(candidate_path)
+    basin_data: np.ndarray | None = None
+    basin_nodata: float | None = None
+    basin_profile: dict[str, Any] | None = None
+    if basin_mask_path is not None:
+        basin_data, basin_nodata, basin_profile = load_raster(basin_mask_path)
 
     if (
         oracle_profile["width"] != candidate_profile["width"]
@@ -250,12 +289,34 @@ def compare_fixture(
         or d8_profile["height"] != oracle_profile["height"]
     ):
         raise SystemExit(f"D8 geometry mismatch for fixture {fixture_id}")
+    if comparison_domain == "basin_mask":
+        assert basin_profile is not None
+        if (
+            basin_profile["width"] != oracle_profile["width"]
+            or basin_profile["height"] != oracle_profile["height"]
+            or basin_profile["transform"] != oracle_profile["transform"]
+            or basin_profile["crs"] != oracle_profile["crs"]
+        ):
+            raise SystemExit(f"Basin-mask geometry mismatch for fixture {fixture_id}")
 
-    oracle_mask = stream_mask(oracle_data, oracle_nodata)
-    candidate_mask = stream_mask(candidate_data, candidate_nodata)
+    if comparison_domain == "basin_mask":
+        assert basin_data is not None
+        basin_domain_mask = valid_mask(basin_data, basin_nodata) & (basin_data > 0)
+        if not np.any(basin_domain_mask):
+            raise SystemExit(
+                f"Basin-mask domain is empty for fixture {fixture_id}: {basin_mask_path}"
+            )
+    else:
+        basin_domain_mask = np.ones(oracle_data.shape, dtype=bool)
+
+    oracle_mask = stream_mask(oracle_data, oracle_nodata) & basin_domain_mask
+    candidate_mask = stream_mask(candidate_data, candidate_nodata) & basin_domain_mask
+
+    false_positives = int(np.count_nonzero(candidate_mask & ~oracle_mask))
+    false_negatives = int(np.count_nonzero(oracle_mask & ~candidate_mask))
 
     exact_binary_equal = bool(np.array_equal(candidate_mask, oracle_mask))
-    differing_cell_count = int(np.count_nonzero(candidate_mask != oracle_mask))
+    differing_cell_count = false_positives + false_negatives
 
     oracle_stream_count = int(np.count_nonzero(oracle_mask))
     candidate_stream_count = int(np.count_nonzero(candidate_mask))
@@ -277,13 +338,22 @@ def compare_fixture(
     return {
         "fixture_id": fixture_id,
         "thresholds": fixture["thresholds"],
+        "comparison_domain": {
+            "mode": comparison_domain,
+            "domain_cell_count": int(np.count_nonzero(basin_domain_mask)),
+        },
         "checksums": {
             "candidate_stream_sha256": sha256_file(candidate_path),
             "oracle_stream_sha256": sha256_file(oracle_path),
+            "basin_mask_sha256": (
+                sha256_file(basin_mask_path) if basin_mask_path is not None else None
+            ),
         },
         "metrics": {
             "exact_binary_equal": exact_binary_equal,
             "differing_cell_count": differing_cell_count,
+            "false_positives": false_positives,
+            "false_negatives": false_negatives,
             "stream_cell_count": {
                 "candidate": candidate_stream_count,
                 "oracle": oracle_stream_count,
@@ -309,7 +379,7 @@ def compare_fixture(
     }
 
 
-def build_canonical_report(fixtures: list[dict[str, Any]]) -> dict[str, Any]:
+def build_canonical_report(fixtures: list[dict[str, Any]], comparison_domain: str) -> dict[str, Any]:
     canonical_fixtures = []
     for fixture in fixtures:
         metrics = fixture["metrics"]
@@ -317,6 +387,8 @@ def build_canonical_report(fixtures: list[dict[str, Any]]) -> dict[str, Any]:
             {
                 "fixture_id": fixture["fixture_id"],
                 "exact_binary_equal": metrics["exact_binary_equal"],
+                "false_positive_count": metrics["false_positives"],
+                "false_negative_count": metrics["false_negatives"],
                 "stream_cell_count_delta": metrics["stream_cell_count"]["delta"],
                 "connected_component_count_delta": metrics["connected_components"]["delta"],
                 "junction_count_delta": metrics["junction_count"]["delta"],
@@ -326,7 +398,8 @@ def build_canonical_report(fixtures: list[dict[str, Any]]) -> dict[str, Any]:
 
     exact_count = sum(1 for item in canonical_fixtures if item["exact_binary_equal"])
     return {
-        "schema_version": "ifolp_wp00_parity_report_canonical/v1",
+        "schema_version": "ifolp_wp00_parity_report_canonical/v2",
+        "comparison_domain": comparison_domain,
         "fixtures": canonical_fixtures,
         "summary": {
             "fixture_count": len(canonical_fixtures),
@@ -355,7 +428,13 @@ def main() -> None:
 
     run_root = Path(manifest["run_root"]).resolve()
     fixture_reports = [
-        compare_fixture(fixture, run_root=run_root, oracle_root=oracle_root, candidate_root=candidate_root)
+        compare_fixture(
+            fixture,
+            run_root=run_root,
+            oracle_root=oracle_root,
+            candidate_root=candidate_root,
+            comparison_domain=args.comparison_domain,
+        )
         for fixture in fixtures
     ]
 
@@ -367,7 +446,8 @@ def main() -> None:
     ]
 
     report = {
-        "schema_version": "ifolp_wp00_parity_report/v1",
+        "schema_version": "ifolp_wp00_parity_report/v2",
+        "comparison_domain": args.comparison_domain,
         "fixture_manifest": str(manifest_path),
         "run_root": str(run_root),
         "oracle_root": str(oracle_root),
@@ -384,7 +464,9 @@ def main() -> None:
     output_json.parent.mkdir(parents=True, exist_ok=True)
     output_json.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
 
-    canonical_report = build_canonical_report(fixture_reports)
+    canonical_report = build_canonical_report(
+        fixture_reports, comparison_domain=args.comparison_domain
+    )
     if canonical_json is not None:
         canonical_json.parent.mkdir(parents=True, exist_ok=True)
         canonical_json.write_text(json.dumps(canonical_report, indent=2, sort_keys=True) + "\n")

@@ -28,11 +28,34 @@ Out of scope:
 - Flow-direction generation.
 - Watershed boundary extraction.
 
+## Oracle Parity Contract
+
+This section defines what must be captured when IFOLP behavior is validated against an oracle dataset.
+
+### Fixture threshold provenance
+
+Each fixture must declare threshold provenance for `(csa_ha, mscl_m)` in one of two classes:
+1. authoritative: threshold values are traceable to an explicit run artifact (for example, run log or control file entry),
+2. inferred: threshold values were inferred (for example, filename convention).
+
+Root-cause closure for parity mismatches requires authoritative provenance. Inferred provenance is diagnostic-only and cannot close high/medium attribution risk.
+
+### Oracle runtime manifest
+
+Parity campaigns must include an oracle runtime manifest that captures:
+1. oracle mode (`native_runtime` or `snapshot_copy`),
+2. executable identity (`sha256`, version string, and source revision when available),
+3. preprocessing contract (inputs, transforms, and ordering),
+4. pointer encoding contract (including conversion rules if used),
+5. NoData/indeterminate handling assumptions.
+
+When `snapshot_copy` is used, parity conclusions are limited to raster-equivalence against that snapshot and do not, by itself, prove native-runtime parity.
+
 ## Inputs
 
 Required:
 - `--d8_pntr`: D8 flow-direction raster.
-- `--upstream_area`: upstream area raster in number of cells.
+- `--upstream_area`: upstream area raster in number of contributing cells.
 - `--output`: output binary stream raster (`1=stream`, `0=background`).
 - `--csa`: default critical source area (hectares).
 - `--mscl`: default minimum source channel length (meters).
@@ -56,8 +79,13 @@ Each stream cell resolves to local `(csa_cells, mscl_m)`:
 
 ### Unit conversion
 
-- Convert `csa_ha` to cell-count threshold using cell area.
-- Use map-unit step lengths for link distance.
+- Upstream-area comparisons are performed in cell-count space.
+- Cell area in hectares is:
+  `cell_area_ha = (cell_size_m * cell_size_m) / 10000`.
+- Convert `csa_ha` to integer cell threshold as nearest-integer cell count, then clamp to at least one cell:
+  `csa_cells = max(1, nearest_integer(csa_ha / cell_area_ha))`.
+- Link length in map units is:
+  `length_m = length_cells * cell_size_m`.
 
 ## Internal Topology Classes
 
@@ -85,7 +113,7 @@ Implementation may use any representation, but behavior must preserve these role
 5. Receiver handling during this walk:
 - if receiver is a junction and inflows collapse to one, demote to non-junction class;
 - if receiver is a terminal-with-one-inflow equivalent, recheck local `csa_cells` and either remove it or keep it as terminal source-equivalent.
-6. Reclassify topology after qualification changes stabilize.
+6. Phase A is a single row-major qualification pass with inline topology mutation; do not run an extra global full-grid qualification rescan before Phase B.
 
 ## Phase B: First-order-link pruning
 
@@ -104,12 +132,14 @@ Link payload semantics:
 
 - normal head starts: sum full step lengths.
 - terminal-head starts: apply parity half-cell initial length behavior.
+- downstream receiver-cell step is not added in normal receiver-preserving links.
 
 ### Receiver-wise candidate selection
 
 1. Scan source starts in row-major order.
 2. Build links and receiver associations in that same encounter order.
-3. For each receiver group, select shortest incoming link using:
+3. Receiver groups are ordered by first receiver encounter in that scan.
+4. For each receiver group, select shortest incoming link using:
 - strict-improvement test with epsilon (`new_len < best_len - epsilon`),
 - first encountered link wins ties (no secondary tuple sort).
 
@@ -128,7 +158,9 @@ Deletion is immediate (not batched):
 2. Re-evaluate receiver inflow condition immediately.
 3. If receiver degenerates from junction-role to mid/terminal-role, set `degeneration_flag = true`.
 4. Candidate links are generated once per pass from pass-start topology; do not rebuild full candidate sets after each deletion.
-5. Before pruning a candidate later in the same pass, verify it is still valid/alive in current raster state; skip stale candidates.
+5. Candidate validity is strict:
+- allow self-receiver terminal pruning when receiver/source are the same cell,
+- otherwise selected candidates must still begin at a live source; invalid states are explicit failures, not silent fallback behavior.
 
 Pass cadence (parity-critical):
 1. Run one full receiver pass.
@@ -142,6 +174,16 @@ To preserve parity-consistent reproducibility:
 2. Receiver evaluation follows discovery/assignment order induced by source scan.
 3. Shortest-link ties resolve by first encounter under strict epsilon-improvement.
 4. Use fixed default epsilon.
+
+## Numeric Decision Contract
+
+1. Default epsilon for strict comparisons is `1e-5`.
+2. Phase A source-area qualification is threshold comparison in cell-count space (`area_cells >= csa_cells` qualifies).
+3. Phase B prune predicate is strict with epsilon in map units:
+   prune when `link_length_m < mscl_m - epsilon`.
+4. Near-tie shortest-link competition uses strict-improvement only:
+   replace current best only when `candidate_length_m < best_length_m - epsilon`.
+5. Do not add implicit rounding beyond the explicit `csa_ha -> csa_cells` conversion rule.
 
 ## Error Contract
 
@@ -177,6 +219,24 @@ Must-pass:
 8. ESRI pointer mode parity.
 9. Deterministic tie behavior by encounter order.
 
+## Acceptance Metrics Contract
+
+Normative parity acceptance:
+1. exact binary stream-mask equality on accepted fixtures,
+2. deterministic canonical report stability across reruns.
+
+Diagnostic metrics (triage/localization, not standalone acceptance):
+1. stream-cell count delta,
+2. connected-component delta,
+3. junction-count delta,
+4. outlet-reachability match,
+5. FP/FN topology-context decomposition.
+
+When normative acceptance is not met, record:
+1. first-divergence localization (first mismatching cell in row-major order plus FP/FN classification),
+2. phase-level localization evidence (candidate pass counts and available oracle-phase evidence),
+3. sensitivity sweep outcomes for `csa`, `mscl`, and `epsilon` around decision boundaries.
+
 ## Behavioral Pseudocode
 
 ```text
@@ -194,8 +254,8 @@ repeat:
     if lmin is none:
       continue
 
-    if not candidate_is_still_alive(mask, lmin):
-      continue
+    if not candidate_is_still_valid(mask, lmin):
+      fail
 
     mscl = receiver_local_mscl(receiver)
     if lmin.length_m < mscl - eps:

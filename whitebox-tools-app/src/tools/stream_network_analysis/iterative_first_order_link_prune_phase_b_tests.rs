@@ -35,6 +35,29 @@ fn phase_b_inputs(
     }
 }
 
+fn phase_b_inputs_with_cell_size(
+    rows: isize,
+    columns: isize,
+    pointers: Vec<u8>,
+    initial_stream_mask: Vec<bool>,
+    local_mscl_m: Vec<f64>,
+    fail_if_only_channel_pruned: bool,
+    cell_size_x: f64,
+    cell_size_y: f64,
+) -> PhaseBInputs {
+    let mut inputs = phase_b_inputs(
+        rows,
+        columns,
+        pointers,
+        initial_stream_mask,
+        local_mscl_m,
+        fail_if_only_channel_pruned,
+    );
+    inputs.cell_size_x = cell_size_x;
+    inputs.cell_size_y = cell_size_y;
+    inputs
+}
+
 fn chained_tributary_inputs(outlet_mscl: f64) -> PhaseBInputs {
     let rows = 3;
     let columns = 3;
@@ -185,4 +208,28 @@ fn iterative_first_order_link_prune_phase_b_fails_when_no_channels_exist_on_entr
     assert!(err
         .to_string()
         .contains("No channels remain at first-order-link pruning stage"));
+}
+
+#[test]
+fn iterative_first_order_link_prune_phase_b_mscl_threshold_is_not_scaled_by_cell_size() {
+    let rows = 1;
+    let columns = 2;
+    let pointers = vec![2u8, 2u8];
+    let stream_mask = vec![true, true];
+    let local_mscl_m = vec![0.0, 2.0];
+    let inputs = phase_b_inputs_with_cell_size(
+        rows,
+        columns,
+        pointers,
+        stream_mask,
+        local_mscl_m,
+        false,
+        10.0,
+        10.0,
+    );
+
+    let result = run_phase_b_pruning(&inputs).expect("phase B should succeed");
+    assert_eq!(result.pass_traces.len(), 1);
+    assert!(result.pass_traces[0].pruned_sources.is_empty());
+    assert_eq!(result.stream_mask, vec![true, true]);
 }

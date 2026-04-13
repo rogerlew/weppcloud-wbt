@@ -30,6 +30,7 @@ class FixtureSpec:
     d8_pntr: str
     upstream_area: str
     oracle_stream: str
+    basin_mask: str
     csa_ha: float
     mscl_m: float
     pointer_encoding: str
@@ -44,6 +45,7 @@ FIXTURE_SPECS = [
         d8_pntr="flovec.tif",
         upstream_area="floaccum.tif",
         oracle_stream="netw0.tif",
+        basin_mask="bound.tif",
         csa_ha=10.0,
         mscl_m=100.0,
         pointer_encoding="whitebox",
@@ -59,6 +61,7 @@ FIXTURE_SPECS = [
         d8_pntr="flovec.tif",
         upstream_area="floaccum.tif",
         oracle_stream="netw0.tif",
+        basin_mask="bound.tif",
         csa_ha=60.0,
         mscl_m=5.0,
         pointer_encoding="whitebox",
@@ -74,6 +77,7 @@ FIXTURE_SPECS = [
         d8_pntr="flovec.tif",
         upstream_area="floaccum.tif",
         oracle_stream="netw0.tif",
+        basin_mask="bound.tif",
         csa_ha=30.0,
         mscl_m=2.0,
         pointer_encoding="whitebox",
@@ -174,8 +178,9 @@ def main() -> None:
         d8_src = source_root / spec.d8_pntr
         area_src = source_root / spec.upstream_area
         oracle_src = source_root / spec.oracle_stream
+        basin_src = source_root / spec.basin_mask
 
-        for required in (d8_src, area_src, oracle_src):
+        for required in (d8_src, area_src, oracle_src, basin_src):
             if not required.exists():
                 raise SystemExit(f"Required fixture input missing: {required}")
 
@@ -183,15 +188,19 @@ def main() -> None:
         inputs_root = fixture_root / "inputs"
         d8_dst = inputs_root / "d8_pntr.tif"
         area_dst = inputs_root / "upstream_area.tif"
+        basin_dst = inputs_root / "basin_mask.tif"
 
         copy_file(d8_src, d8_dst)
         copy_file(area_src, area_dst)
+        copy_file(basin_src, basin_dst)
 
         d8_src_sha = sha256_file(d8_src)
         area_src_sha = sha256_file(area_src)
         oracle_src_sha = sha256_file(oracle_src)
+        basin_src_sha = sha256_file(basin_src)
         d8_dst_sha = sha256_file(d8_dst)
         area_dst_sha = sha256_file(area_dst)
+        basin_dst_sha = sha256_file(basin_dst)
 
         if d8_src_sha != d8_dst_sha:
             raise SystemExit(f"Checksum mismatch after staging pointer raster for {spec.fixture_id}")
@@ -199,16 +208,21 @@ def main() -> None:
             raise SystemExit(
                 f"Checksum mismatch after staging upstream-area raster for {spec.fixture_id}"
             )
+        if basin_src_sha != basin_dst_sha:
+            raise SystemExit(f"Checksum mismatch after staging basin mask for {spec.fixture_id}")
 
         d8_info = raster_info(d8_dst)
         area_info = raster_info(area_dst)
         oracle_info = raster_info(oracle_src)
+        basin_info = raster_info(basin_dst)
 
         if (
             d8_info["width"] != area_info["width"]
             or d8_info["height"] != area_info["height"]
             or d8_info["width"] != oracle_info["width"]
             or d8_info["height"] != oracle_info["height"]
+            or d8_info["width"] != basin_info["width"]
+            or d8_info["height"] != basin_info["height"]
         ):
             raise SystemExit(f"Geometry mismatch among fixture rasters for {spec.fixture_id}")
 
@@ -227,23 +241,28 @@ def main() -> None:
                     "d8_pntr": str(d8_src),
                     "upstream_area": str(area_src),
                     "oracle_stream": str(oracle_src),
+                    "basin_mask": str(basin_src),
                 },
                 "staged": {
                     "input_d8_pntr": str(d8_dst.relative_to(run_root)),
                     "input_upstream_area": str(area_dst.relative_to(run_root)),
+                    "input_basin_mask": str(basin_dst.relative_to(run_root)),
                     "oracle_stream_expected": f"oracle/{spec.fixture_id}/stream.tif",
                 },
                 "checksums": {
                     "source_d8_pntr_sha256": d8_src_sha,
                     "source_upstream_area_sha256": area_src_sha,
                     "source_oracle_stream_sha256": oracle_src_sha,
+                    "source_basin_mask_sha256": basin_src_sha,
                     "staged_d8_pntr_sha256": d8_dst_sha,
                     "staged_upstream_area_sha256": area_dst_sha,
+                    "staged_basin_mask_sha256": basin_dst_sha,
                 },
                 "raster_info": {
                     "d8_pntr": d8_info,
                     "upstream_area": area_info,
                     "oracle_stream": oracle_info,
+                    "basin_mask": basin_info,
                 },
             }
         )
@@ -251,10 +270,14 @@ def main() -> None:
     fixture_records.sort(key=lambda item: item["fixture_id"])
 
     manifest = {
-        "schema_version": "ifolp_wp00_fixture_manifest/v1",
+        "schema_version": "ifolp_wp00_fixture_manifest/v2",
         "prepared_by": "tools/ifolp_wp00_prepare_fixtures.py",
         "prepared_at_utc": datetime.now(timezone.utc).isoformat(),
         "run_root": str(run_root),
+        "comparison_domain": {
+            "default_mode": "basin_mask",
+            "source": "fixtures/<id>/inputs/basin_mask.tif (staged from bound.tif)",
+        },
         "fixture_count": len(fixture_records),
         "fixtures": fixture_records,
     }

@@ -177,7 +177,7 @@ fn iterative_first_order_link_prune_phase_a_traversal_cadence_is_deterministic()
     ))
     .expect("phase A should succeed");
 
-    assert_eq!(result.pass_traces.len(), 2);
+    assert_eq!(result.pass_traces.len(), 1);
     assert_eq!(
         result.pass_traces[0].scanned_sources,
         vec![
@@ -185,9 +185,5 @@ fn iterative_first_order_link_prune_phase_a_traversal_cadence_is_deterministic()
             GridCell::new(0, 2),
             GridCell::new(2, 1)
         ]
-    );
-    assert_eq!(
-        result.pass_traces[1].scanned_sources,
-        vec![GridCell::new(2, 1)]
     );
 }

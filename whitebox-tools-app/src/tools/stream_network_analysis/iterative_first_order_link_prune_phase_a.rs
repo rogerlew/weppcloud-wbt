@@ -47,55 +47,45 @@ pub(crate) fn run_phase_a_qualification(inputs: &PhaseAInputs) -> Result<PhaseAR
         ));
     }
 
-    let mut pass_traces = Vec::new();
-    loop {
-        let mut changed_this_pass = false;
-        let mut trace = PhaseAPassTrace {
-            scanned_sources: Vec::new(),
-        };
-
-        for row in 0..inputs.rows {
-            for col in 0..inputs.columns {
-                let source = GridCell::new(row, col);
-                let source_idx = index_of(inputs.rows, inputs.columns, source)?;
-                if !stream_mask[source_idx] {
-                    continue;
-                }
-
-                let source_class = live_topology_class(&kernel, &stream_mask, source)?;
-                if !matches!(
-                    source_class,
-                    TopologyClass::Head | TopologyClass::TerminalHead
-                ) {
-                    continue;
-                }
-
-                trace.scanned_sources.push(source);
-                if qualify_source_walk(
-                    &kernel,
-                    &mut stream_mask,
-                    source,
-                    &inputs.upstream_area_cells,
-                    &inputs.local_csa_cells,
-                    inputs.rows,
-                    inputs.columns,
-                    inputs.epsilon,
-                )? {
-                    changed_this_pass = true;
-                }
+    let mut trace = PhaseAPassTrace {
+        scanned_sources: Vec::new(),
+    };
+    for row in 0..inputs.rows {
+        for col in 0..inputs.columns {
+            let source = GridCell::new(row, col);
+            let source_idx = index_of(inputs.rows, inputs.columns, source)?;
+            if !stream_mask[source_idx] {
+                continue;
             }
-        }
 
-        pass_traces.push(trace);
-        if !stream_mask.iter().any(|active| *active) {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "No channels remain after source-area qualification.",
-            ));
+            let source_class = live_topology_class(&kernel, &stream_mask, source)?;
+            if !matches!(
+                source_class,
+                TopologyClass::Head | TopologyClass::TerminalHead
+            ) {
+                continue;
+            }
+
+            trace.scanned_sources.push(source);
+            let _ = qualify_source_walk(
+                &kernel,
+                &mut stream_mask,
+                source,
+                &inputs.upstream_area_cells,
+                &inputs.local_csa_cells,
+                inputs.rows,
+                inputs.columns,
+                inputs.epsilon,
+            )?;
         }
-        if !changed_this_pass {
-            break;
-        }
+    }
+    let pass_traces = vec![trace];
+
+    if !stream_mask.iter().any(|active| *active) {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "No channels remain after source-area qualification.",
+        ));
     }
 
     let topology = kernel.classify_topology(&stream_mask)?;

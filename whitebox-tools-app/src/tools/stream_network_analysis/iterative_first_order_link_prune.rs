@@ -516,7 +516,8 @@ fn csa_hectares_to_cells(csa_ha: f64, cell_area_m2: f64) -> Result<f64, Error> {
             ),
         ));
     }
-    Ok((csa_ha * HECTARE_TO_SQUARE_METERS / cell_area_m2).max(0.0))
+    let csa_cells = (csa_ha * HECTARE_TO_SQUARE_METERS / cell_area_m2).round();
+    Ok(csa_cells.max(1.0))
 }
 
 fn parse_threshold_table(table_path: &str) -> Result<HashMap<i64, ThresholdTableEntry>, Error> {
@@ -658,6 +659,10 @@ fn prepare_phase_inputs(args: &ParsedArgs) -> Result<PreparedPhaseInputs, Error>
                         row, col, pointer_code
                     ),
                 ));
+            }
+            if pointer_code == 0 {
+                // 0 encodes "no downslope link"; exclude these cells from IFOLP active domain.
+                continue;
             }
             pointers[idx] = pointer_code as u8;
 

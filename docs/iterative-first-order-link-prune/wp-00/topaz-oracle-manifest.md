@@ -22,6 +22,14 @@ Generated capture manifest:
 Capture mode:
 - `snapshot_copy` (copy and checksum-verify pinned oracle rasters)
 
+## Apples-to-apples parity interpretation contract
+
+- Oracle stream rasters are channel-only (`1` on channel cells; `NoData` elsewhere).
+- Candidate IFOLP stream rasters are full-extent binary (`0/1`) in the valid raster domain.
+- Direct full-extent visual comparison can therefore conflate basin behavior with background-stage encoding.
+- Required WP-00/WP-05 parity mode is basin-masked comparison (`bound.tif > 0`, staged as `inputs/basin_mask.tif`).
+- `tools/ifolp_wp00_compare_outputs.py` defaults to `--comparison-domain basin_mask` and should only use `full_extent` for diagnostics.
+
 ## Oracle artifact checksums (SHA-256)
 
 | Fixture ID | Source oracle path | Oracle SHA-256 |

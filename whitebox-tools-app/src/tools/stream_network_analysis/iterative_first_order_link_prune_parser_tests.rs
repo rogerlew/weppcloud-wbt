@@ -1,5 +1,6 @@
 use super::*;
 use serde_json::Value;
+use std::path::PathBuf;
 
 fn base_args() -> Vec<String> {
     vec![
@@ -166,6 +167,45 @@ fn iterative_first_order_link_prune_parser_boolean_flags_default_true_when_bare(
 }
 
 #[test]
+fn iterative_first_order_link_prune_prepare_phase_inputs_excludes_zero_pointer_cells() {
+    let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .canonicalize()
+        .expect("repo root should resolve");
+    let d8_path = repo_root.join("test_fixtures/blackwood_60_5/flovec.tif");
+    let upstream_area_path = repo_root.join("test_fixtures/blackwood_60_5/floaccum.tif");
+    let output_path = std::env::temp_dir().join("ifolp_prepare_phase_inputs_zero_pointer.tif");
+
+    let args = vec![
+        format!("--d8_pntr={}", d8_path.display()),
+        format!("--upstream_area={}", upstream_area_path.display()),
+        format!("--output={}", output_path.display()),
+        "--csa=60.0".to_string(),
+        "--mscl=5.0".to_string(),
+    ];
+
+    let parsed = parse_arguments(&args, "").expect("parse should succeed");
+    let prepared = prepare_phase_inputs(&parsed).expect("input preparation should succeed");
+
+    let zero_pointer_cells = prepared.pointers.iter().filter(|&&value| value == 0).count();
+    let active_zero_pointer_cells = prepared
+        .pointers
+        .iter()
+        .zip(prepared.active_mask.iter())
+        .filter(|(value, is_active)| **value == 0 && **is_active)
+        .count();
+
+    assert!(
+        zero_pointer_cells > 0,
+        "fixture should include zero-coded pointer cells for regression coverage"
+    );
+    assert_eq!(
+        active_zero_pointer_cells, 0,
+        "zero-coded pointer cells must be excluded from active IFOLP domain"
+    );
+}
+
+#[test]
 fn iterative_first_order_link_prune_help_contract_contains_all_flags() {
     let tool = IterativeFirstOrderLinkPrune::new();
     let params_json = tool.get_tool_parameters();
@@ -200,4 +240,16 @@ fn iterative_first_order_link_prune_help_contract_contains_all_flags() {
             required_flag
         );
     }
+}
+
+#[test]
+fn iterative_first_order_link_prune_csa_conversion_rounds_to_nearest_cell() {
+    let cells = csa_hectares_to_cells(60.0, 900.0).expect("conversion should succeed");
+    assert_eq!(cells, 667.0);
+}
+
+#[test]
+fn iterative_first_order_link_prune_csa_conversion_clamps_to_minimum_one_cell() {
+    let cells = csa_hectares_to_cells(0.0, 900.0).expect("conversion should succeed");
+    assert_eq!(cells, 1.0);
 }
