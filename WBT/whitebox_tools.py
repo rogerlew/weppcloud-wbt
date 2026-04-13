@@ -10693,6 +10693,36 @@ Okay, that's it for now.
         if zero_background: args.append("--zero_background")
         return self.run_tool('length_of_upstream_channels', args, callback)  # returns 1 if error
 
+    def iterative_first_order_link_prune(self, d8_pntr, upstream_area, output, csa, mscl, threshold_code_raster=None, threshold_table=None, esri_pntr=False, epsilon=None, fail_if_only_channel_pruned=None, callback=None):
+        """Performs iterative first-order link prune stream-network qualification/pruning.
+
+        Keyword arguments:
+
+        d8_pntr -- Input raster D8 pointer file.
+        upstream_area -- Input upstream area raster file (cells).
+        output -- Output stream raster file (binary stream mask).
+        csa -- Default critical source area threshold in hectares.
+        mscl -- Default minimum source channel length threshold in meters.
+        threshold_code_raster -- Optional integer code raster for spatial threshold lookup.
+        threshold_table -- Optional threshold table mapping code -> (csa_ha, mscl_m).
+        esri_pntr -- Pointer raster uses ESRI D8 encoding.
+        epsilon -- Optional floating tolerance for strict-improvement comparisons.
+        fail_if_only_channel_pruned -- Optional boolean override for only-channel prune guard behavior.
+        callback -- Custom function for handling tool text outputs.
+        """
+        args = []
+        args.append("--d8_pntr='{}'".format(d8_pntr))
+        args.append("--upstream_area='{}'".format(upstream_area))
+        args.append("--output='{}'".format(output))
+        args.append("--csa='{}'".format(csa))
+        args.append("--mscl='{}'".format(mscl))
+        if threshold_code_raster is not None: args.append("--threshold_code_raster='{}'".format(threshold_code_raster))
+        if threshold_table is not None: args.append("--threshold_table='{}'".format(threshold_table))
+        if esri_pntr: args.append("--esri_pntr")
+        if epsilon is not None: args.append("--epsilon='{}'".format(epsilon))
+        if fail_if_only_channel_pruned is not None: args.append("--fail_if_only_channel_pruned={}".format(str(fail_if_only_channel_pruned).lower()))
+        return self.run_tool('iterative_first_order_link_prune', args, callback)  # returns 1 if error
+
     def long_profile(self, d8_pntr, streams, dem, output, esri_pntr=False, callback=None):
         """Plots the stream longitudinal profiles for one or more rivers.
 
