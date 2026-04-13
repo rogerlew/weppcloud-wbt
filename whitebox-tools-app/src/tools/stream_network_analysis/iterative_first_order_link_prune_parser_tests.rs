@@ -20,12 +20,7 @@ fn temp_threshold_table_path(stem: &str) -> PathBuf {
         .duration_since(UNIX_EPOCH)
         .expect("system clock should be after unix epoch")
         .as_nanos();
-    std::env::temp_dir().join(format!(
-        "ifolp_{}_{}_{}.csv",
-        stem,
-        process::id(),
-        nanos
-    ))
+    std::env::temp_dir().join(format!("ifolp_{}_{}_{}.csv", stem, process::id(), nanos))
 }
 
 #[test]
@@ -227,7 +222,11 @@ fn iterative_first_order_link_prune_prepare_phase_inputs_excludes_zero_pointer_c
     let parsed = parse_arguments(&args, "").expect("parse should succeed");
     let prepared = prepare_phase_inputs(&parsed).expect("input preparation should succeed");
 
-    let zero_pointer_cells = prepared.pointers.iter().filter(|&&value| value == 0).count();
+    let zero_pointer_cells = prepared
+        .pointers
+        .iter()
+        .filter(|&&value| value == 0)
+        .count();
     let active_zero_pointer_cells = prepared
         .pointers
         .iter()
@@ -315,10 +314,38 @@ fn iterative_first_order_link_prune_threshold_table_rejects_non_finite_values() 
     let err = parse_threshold_table(&table_path.to_string_lossy())
         .expect_err("non-finite threshold row should fail");
     assert_eq!(err.kind(), ErrorKind::InvalidInput);
-    assert!(
-        err.to_string()
-            .contains("must use finite csa_ha and mscl_m values")
-    );
+    assert!(err
+        .to_string()
+        .contains("must use finite csa_ha and mscl_m values"));
+
+    fs::remove_file(&table_path).expect("temporary table should be removable");
+}
+
+#[test]
+fn iterative_first_order_link_prune_threshold_table_rejects_non_header_parse_error_on_first_line() {
+    let table_path = temp_threshold_table_path("threshold_first_line_parse_error");
+    fs::write(&table_path, "not_a_code,10,100\n2,20,200\n").expect("table should write");
+
+    let err = parse_threshold_table(&table_path.to_string_lossy())
+        .expect_err("non-header first-line parse errors must not be silently skipped");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err
+        .to_string()
+        .contains("Threshold table parse error at line 1"));
+
+    fs::remove_file(&table_path).expect("temporary table should be removable");
+}
+
+#[test]
+fn iterative_first_order_link_prune_threshold_table_accepts_supported_header_aliases() {
+    let table_path = temp_threshold_table_path("threshold_header_aliases");
+    fs::write(&table_path, "threshold_code,csa,mscl\n1,12.5,100\n").expect("table should write");
+
+    let parsed =
+        parse_threshold_table(&table_path.to_string_lossy()).expect("header aliases should parse");
+    let entry = parsed.get(&1).expect("table must contain parsed code row");
+    assert!((entry.csa_ha - 12.5).abs() < f64::EPSILON);
+    assert!((entry.mscl_m - 100.0).abs() < f64::EPSILON);
 
     fs::remove_file(&table_path).expect("temporary table should be removable");
 }

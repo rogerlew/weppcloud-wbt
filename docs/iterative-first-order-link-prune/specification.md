@@ -132,7 +132,7 @@ Link payload semantics:
 
 - normal head starts: sum full step lengths.
 - terminal-head starts: apply parity half-cell initial length behavior.
-- downstream receiver-cell step is not added in normal receiver-preserving links.
+- downstream receiver-cell step is included in normal receiver-preserving link length.
 
 ### Receiver-wise candidate selection
 
@@ -158,9 +158,9 @@ Deletion is immediate (not batched):
 2. Re-evaluate receiver inflow condition immediately.
 3. If receiver degenerates from junction-role to mid/terminal-role, set `degeneration_flag = true`.
 4. Candidate links are generated once per pass from pass-start topology; do not rebuild full candidate sets after each deletion.
-5. Candidate validity is strict:
+5. Candidate validity handling:
 - allow self-receiver terminal pruning when receiver/source are the same cell,
-- otherwise selected candidates must still begin at a live source; invalid states are explicit failures, not silent fallback behavior.
+- selected non-self candidates are revalidated against current in-pass state; stale candidates are skipped for that pass (no fallback candidate from the same receiver group).
 
 Pass cadence (parity-critical):
 1. Run one full receiver pass.
@@ -178,7 +178,7 @@ To preserve parity-consistent reproducibility:
 ## Numeric Decision Contract
 
 1. Default epsilon for strict comparisons is `1e-5`.
-2. Phase A source-area qualification is threshold comparison in cell-count space (`area_cells >= csa_cells` qualifies).
+2. Phase A source-area qualification uses epsilon-tolerant threshold comparison in cell-count space (`area_cells >= csa_cells - epsilon` qualifies).
 3. Phase B prune predicate is strict with epsilon in map units:
    prune when `link_length_m < mscl_m - epsilon`.
 4. Near-tie shortest-link competition uses strict-improvement only:
@@ -255,7 +255,7 @@ repeat:
       continue
 
     if not candidate_is_still_valid(mask, lmin):
-      fail
+      continue
 
     mscl = receiver_local_mscl(receiver)
     if lmin.length_m < mscl - eps:

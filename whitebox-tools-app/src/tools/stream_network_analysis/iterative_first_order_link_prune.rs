@@ -573,7 +573,7 @@ fn parse_threshold_table(table_path: &str) -> Result<HashMap<i64, ThresholdTable
         let parsed_csa = parts[1].parse::<f64>();
         let parsed_mscl = parts[2].parse::<f64>();
         if parsed_code.is_err() || parsed_csa.is_err() || parsed_mscl.is_err() {
-            if line_idx == 0 {
+            if line_idx == 0 && looks_like_threshold_header(&parts) {
                 continue;
             }
             return Err(Error::new(
@@ -619,6 +619,22 @@ fn parse_threshold_table(table_path: &str) -> Result<HashMap<i64, ThresholdTable
     }
 
     Ok(table)
+}
+
+fn looks_like_threshold_header(parts: &[&str]) -> bool {
+    if parts.len() < 3 {
+        return false;
+    }
+
+    let code = parts[0].trim().to_ascii_lowercase();
+    let csa = parts[1].trim().to_ascii_lowercase();
+    let mscl = parts[2].trim().to_ascii_lowercase();
+
+    let code_ok = code == "code" || code == "threshold_code";
+    let csa_ok = csa == "csa_ha" || csa == "csa" || csa == "critical_source_area_ha";
+    let mscl_ok = mscl == "mscl_m" || mscl == "mscl" || mscl == "minimum_source_channel_length_m";
+
+    code_ok && csa_ok && mscl_ok
 }
 
 fn prepare_phase_inputs(args: &ParsedArgs) -> Result<PreparedPhaseInputs, Error> {
