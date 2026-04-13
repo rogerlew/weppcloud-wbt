@@ -10,6 +10,10 @@ use std::env;
 use std::io::{Error, ErrorKind};
 use std::path;
 
+#[allow(dead_code)]
+#[path = "iterative_first_order_link_prune_topology.rs"]
+mod iterative_first_order_link_prune_topology;
+
 const DEFAULT_EPSILON: f64 = 1e-5;
 const DEFAULT_FAIL_IF_ONLY_CHANNEL_PRUNED: bool = true;
 
@@ -382,6 +386,12 @@ fn parse_arguments(args: &[String], working_directory: &str) -> Result<ParsedArg
             "Minimum source channel length not specified (--mscl).",
         )
     })?;
+    if epsilon < 0.0 {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "Floating comparison tolerance must be non-negative (--epsilon).",
+        ));
+    }
     if threshold_code_raster.is_some() != threshold_table.is_some() {
         return Err(Error::new(
             ErrorKind::InvalidInput,
@@ -505,3 +515,7 @@ impl WhiteboxTool for IterativeFirstOrderLinkPrune {
 #[cfg(test)]
 #[path = "iterative_first_order_link_prune_parser_tests.rs"]
 mod iterative_first_order_link_prune_parser_tests;
+
+#[cfg(test)]
+#[path = "iterative_first_order_link_prune_topology_tests.rs"]
+mod iterative_first_order_link_prune_topology_tests;

@@ -71,11 +71,11 @@ fn iterative_first_order_link_prune_parser_accepts_space_separated_signed_numeri
     args[3] = "--csa".to_string();
     args.insert(4, "-1.5".to_string());
     args.push("--epsilon".to_string());
-    args.push("-0.25".to_string());
+    args.push("+0.25".to_string());
 
     let parsed = parse_arguments(&args, "/tmp/wd/").expect("parse should succeed");
     assert_eq!(parsed.csa, -1.5);
-    assert!((parsed.epsilon + 0.25).abs() < f64::EPSILON);
+    assert!((parsed.epsilon - 0.25).abs() < f64::EPSILON);
 }
 
 #[test]
@@ -87,6 +87,16 @@ fn iterative_first_order_link_prune_parser_numeric_value_missing_before_next_fla
         .expect_err("missing numeric value followed by another flag should fail");
     assert_eq!(err.kind(), ErrorKind::InvalidInput);
     assert!(err.to_string().contains("--csa"));
+}
+
+#[test]
+fn iterative_first_order_link_prune_parser_rejects_negative_epsilon() {
+    let mut args = base_args();
+    args.push("--epsilon=-0.00001".to_string());
+
+    let err = parse_arguments(&args, "").expect_err("negative epsilon should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("--epsilon"));
 }
 
 #[test]
