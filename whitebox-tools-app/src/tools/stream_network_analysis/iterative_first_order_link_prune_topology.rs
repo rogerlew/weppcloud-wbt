@@ -1,5 +1,9 @@
 use std::collections::{HashMap, HashSet};
 use std::io::{Error, ErrorKind};
+use std::sync::mpsc;
+use std::thread;
+
+use num_cpus;
 
 const D8_DX: [isize; 8] = [1, 1, 1, 0, -1, -1, -1, 0];
 const D8_DY: [isize; 8] = [-1, 0, 1, 1, 1, 0, -1, -1];
@@ -169,26 +173,85 @@ impl TopologyKernel {
             return Ok(0);
         }
 
-        Ok(self.upstream_stream_neighbors(cell, stream_mask)?.len() as u8)
+        self.count_upstream_stream_neighbors(cell, stream_mask)
     }
 
     pub(crate) fn compute_inflow_counts(&self, stream_mask: &[bool]) -> Result<Vec<u8>, Error> {
         self.validate_stream_mask(stream_mask)?;
 
         let mut inflow_counts = vec![0u8; stream_mask.len()];
-        for row in 0..self.rows {
-            for col in 0..self.columns {
-                let cell = GridCell::new(row, col);
-                if !self.is_stream_cell(stream_mask, cell) {
-                    continue;
-                }
+        let rows = self.rows as usize;
+        let columns = self.columns as usize;
+        let num_threads = resolve_num_threads(rows);
 
-                let idx = self
-                    .index_of(cell)
-                    .expect("in-bounds row/col iteration must resolve index");
-                inflow_counts[idx] = self.inflow_count(cell, stream_mask)?;
+        if num_threads <= 1 || rows < 1024 {
+            for row in 0..self.rows {
+                for col in 0..self.columns {
+                    let cell = GridCell::new(row, col);
+                    if !self.is_stream_cell(stream_mask, cell) {
+                        continue;
+                    }
+
+                    let idx = self
+                        .index_of(cell)
+                        .expect("in-bounds row/col iteration must resolve index");
+                    inflow_counts[idx] = self.count_upstream_stream_neighbors(cell, stream_mask)?;
+                }
             }
+            return Ok(inflow_counts);
         }
+
+        thread::scope(|scope| -> Result<(), Error> {
+            let (tx, rx) = mpsc::channel::<Result<(usize, Vec<u8>), Error>>();
+            for tid in 0..num_threads {
+                let tx_worker = tx.clone();
+                scope.spawn(move || {
+                    for row in (0..rows).filter(|r| r % num_threads == tid) {
+                        let mut row_counts = vec![0u8; columns];
+                        for col in 0..columns {
+                            let cell = GridCell::new(row as isize, col as isize);
+                            if !self.is_stream_cell(stream_mask, cell) {
+                                continue;
+                            }
+                            let inflow =
+                                match self.count_upstream_stream_neighbors(cell, stream_mask) {
+                                    Ok(value) => value,
+                                    Err(err) => {
+                                        let _ = tx_worker.send(Err(err));
+                                        return;
+                                    }
+                                };
+                            row_counts[col] = inflow;
+                        }
+                        if tx_worker.send(Ok((row, row_counts))).is_err() {
+                            return;
+                        }
+                    }
+                });
+            }
+            drop(tx);
+
+            let mut rows_received = 0usize;
+            while rows_received < rows {
+                match rx.recv() {
+                    Ok(Ok((row, row_counts))) => {
+                        let row_start = row * columns;
+                        let row_end = row_start + columns;
+                        inflow_counts[row_start..row_end].copy_from_slice(&row_counts);
+                        rows_received += 1;
+                    }
+                    Ok(Err(err)) => return Err(err),
+                    Err(_) => {
+                        return Err(Error::new(
+                            ErrorKind::Other,
+                            "IFOLP topology inflow-count worker channel closed unexpectedly",
+                        ));
+                    }
+                }
+            }
+
+            Ok(())
+        })?;
 
         Ok(inflow_counts)
     }
@@ -212,9 +275,10 @@ impl TopologyKernel {
                 }
 
                 let inflow_count = inflow_counts[idx];
-                let has_downstream = self
-                    .downstream_stream_neighbor(cell, stream_mask)?
-                    .is_some();
+                let has_downstream = match self.downstream_neighbor(cell)? {
+                    Some(next) => self.is_stream_cell(stream_mask, next),
+                    None => false,
+                };
                 classes[idx] = classify_stream_cell(inflow_count, has_downstream);
             }
         }
@@ -448,6 +512,26 @@ impl TopologyKernel {
         let full_step = step_length_m(cell, next, cell_size_x, cell_size_y)?;
         Ok(0.5 * full_step)
     }
+
+    fn count_upstream_stream_neighbors(
+        &self,
+        cell: GridCell,
+        stream_mask: &[bool],
+    ) -> Result<u8, Error> {
+        let mut inflow_count = 0u8;
+        for n in 0..8 {
+            let neighbor = GridCell::new(cell.row + D8_DY[n], cell.col + D8_DX[n]);
+            if !self.is_stream_cell(stream_mask, neighbor) {
+                continue;
+            }
+            if let Some(downstream) = self.downstream_neighbor(neighbor)? {
+                if downstream == cell {
+                    inflow_count += 1;
+                }
+            }
+        }
+        Ok(inflow_count)
+    }
 }
 
 pub(crate) fn group_links_by_receiver_discovery_order(
@@ -598,4 +682,20 @@ fn decode_pointer_index(
             ),
         )
     })
+}
+
+fn resolve_num_threads(row_count: usize) -> usize {
+    if row_count == 0 {
+        return 1;
+    }
+
+    let mut num_procs = num_cpus::get() as isize;
+    if let Ok(configs) = whitebox_common::configs::get_configs() {
+        let max_procs = configs.max_procs;
+        if max_procs > 0 && max_procs < num_procs {
+            num_procs = max_procs;
+        }
+    }
+
+    num_procs.max(1).min(row_count as isize) as usize
 }

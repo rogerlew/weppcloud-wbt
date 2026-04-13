@@ -5,18 +5,16 @@
         {
             "label": "cargo build",
             "type": "shell",
+            "command": "cargo",
             "args": [
                 "build"
             ],
-            "problemMatcher": [],
-            "group": {
-                "_id": "build",
-                "isDefault": false
-            }
+            "problemMatcher": []
         },
         {
             "label": "cargo run",
             "type": "shell",
+            "command": "cargo",
             "args": [
                 "run"
             ],
@@ -25,14 +23,11 @@
         {
             "label": "cargo test",
             "type": "shell",
+            "command": "cargo",
             "args": [
                 "test"
             ],
-            "problemMatcher": [],
-            "group": {
-                "_id": "test",
-                "isDefault": false
-            }
+            "problemMatcher": []
         }
     ]
 }

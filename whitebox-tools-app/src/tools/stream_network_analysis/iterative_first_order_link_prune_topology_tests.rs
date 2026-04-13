@@ -354,6 +354,48 @@ fn iterative_first_order_link_prune_topology_terminal_head_uses_half_cell_length
 }
 
 #[test]
+fn iterative_first_order_link_prune_topology_parallel_inflow_counts_match_manual_reference() {
+    let rows = 80;
+    let columns = 80;
+    let mut pointers = vec![2u8; (rows * columns) as usize];
+    for row in 0..rows {
+        pointers[index(rows, columns, row, columns - 1)] = 8; // last column drains south
+    }
+    pointers[index(rows, columns, rows - 1, columns - 1)] = 2; // outlet off-grid
+
+    let kernel = TopologyKernel::new(rows, columns, pointers, D8PointerScheme::Whitebox).unwrap();
+    let stream_mask = vec![true; (rows * columns) as usize];
+
+    let computed = kernel.compute_inflow_counts(&stream_mask).unwrap();
+    let mut manual = vec![0u8; computed.len()];
+    for row in 0..rows {
+        for col in 0..columns {
+            let cell = GridCell::new(row, col);
+            let idx = index(rows, columns, row, col);
+            let mut inflow = 0u8;
+            for n in 0..8 {
+                let neighbor = GridCell::new(
+                    row + [-1, 0, 1, 1, 1, 0, -1, -1][n],
+                    col + [1, 1, 1, 0, -1, -1, -1, 0][n],
+                );
+                if !kernel.is_in_bounds(neighbor) {
+                    continue;
+                }
+                if let Some(downstream) = kernel.downstream_neighbor(neighbor).unwrap() {
+                    if downstream == cell {
+                        inflow += 1;
+                    }
+                }
+            }
+            manual[idx] = inflow;
+        }
+    }
+
+    assert_eq!(computed, manual);
+    assert_eq!(computed, kernel.compute_inflow_counts(&stream_mask).unwrap());
+}
+
+#[test]
 fn iterative_first_order_link_prune_topology_inflow_count_rejects_mask_geometry_mismatch() {
     let kernel = TopologyKernel::new(1, 2, vec![2u8, 2u8], D8PointerScheme::Whitebox).unwrap();
     let err = kernel
