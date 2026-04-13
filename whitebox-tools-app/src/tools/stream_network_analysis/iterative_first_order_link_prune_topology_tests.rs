@@ -402,6 +402,57 @@ fn iterative_first_order_link_prune_topology_parallel_inflow_counts_match_manual
 }
 
 #[test]
+fn iterative_first_order_link_prune_topology_default_inflow_counts_honor_max_procs_contract() {
+    let rows = 1024;
+    let columns = 8;
+
+    let mut pointers = vec![2u8; (rows * columns) as usize];
+    for row in 0..rows {
+        pointers[index(rows, columns, row, columns - 1)] = 8; // last column drains south
+    }
+    pointers[index(rows, columns, rows - 1, columns - 1)] = 2; // outlet off-grid
+
+    let kernel = TopologyKernel::new(rows, columns, pointers, D8PointerScheme::Whitebox).unwrap();
+    let stream_mask = vec![true; (rows * columns) as usize];
+
+    let default_counts = kernel.compute_inflow_counts(&stream_mask).unwrap();
+    let max_proc_serial = kernel
+        .compute_inflow_counts_with_max_procs_for_tests(&stream_mask, 1)
+        .unwrap();
+    let max_proc_threaded = kernel
+        .compute_inflow_counts_with_max_procs_for_tests(&stream_mask, 2)
+        .unwrap();
+
+    let mut manual = vec![0u8; default_counts.len()];
+    for row in 0..rows {
+        for col in 0..columns {
+            let cell = GridCell::new(row, col);
+            let idx = index(rows, columns, row, col);
+            let mut inflow = 0u8;
+            for n in 0..8 {
+                let neighbor = GridCell::new(
+                    row + [-1, 0, 1, 1, 1, 0, -1, -1][n],
+                    col + [1, 1, 1, 0, -1, -1, -1, 0][n],
+                );
+                if !kernel.is_in_bounds(neighbor) {
+                    continue;
+                }
+                if let Some(downstream) = kernel.downstream_neighbor(neighbor).unwrap() {
+                    if downstream == cell {
+                        inflow += 1;
+                    }
+                }
+            }
+            manual[idx] = inflow;
+        }
+    }
+
+    assert_eq!(default_counts, manual);
+    assert_eq!(max_proc_serial, manual);
+    assert_eq!(max_proc_threaded, manual);
+}
+
+#[test]
 fn iterative_first_order_link_prune_topology_inflow_count_rejects_mask_geometry_mismatch() {
     let kernel = TopologyKernel::new(1, 2, vec![2u8, 2u8], D8PointerScheme::Whitebox).unwrap();
     let err = kernel

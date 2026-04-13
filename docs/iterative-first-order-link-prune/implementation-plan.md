@@ -304,6 +304,7 @@ Code review phase:
 
 Test phase:
 - `python -m py_compile whitebox_tools.py WBT/whitebox_tools.py`
+- `python -m unittest discover -s tests -p 'test_ifolp_wrapper_smoke.py'`
 - wrapper smoke invocation in packaged build.
 
 Exit criteria:

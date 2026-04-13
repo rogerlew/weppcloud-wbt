@@ -177,7 +177,10 @@ impl TopologyKernel {
     }
 
     pub(crate) fn compute_inflow_counts(&self, stream_mask: &[bool]) -> Result<Vec<u8>, Error> {
-        let num_threads = resolve_num_threads(self.rows as usize);
+        let max_procs = whitebox_common::configs::get_configs()
+            .map(|configs| configs.max_procs)
+            .unwrap_or(-1);
+        let num_threads = resolve_num_threads(self.rows as usize, max_procs);
         self.compute_inflow_counts_with_threads(stream_mask, num_threads, 1024)
     }
 
@@ -188,6 +191,16 @@ impl TopologyKernel {
         forced_threads: usize,
     ) -> Result<Vec<u8>, Error> {
         self.compute_inflow_counts_with_threads(stream_mask, forced_threads.max(1), 0)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn compute_inflow_counts_with_max_procs_for_tests(
+        &self,
+        stream_mask: &[bool],
+        max_procs: isize,
+    ) -> Result<Vec<u8>, Error> {
+        let num_threads = resolve_num_threads(self.rows as usize, max_procs);
+        self.compute_inflow_counts_with_threads(stream_mask, num_threads, 1024)
     }
 
     fn compute_inflow_counts_with_threads(
@@ -759,17 +772,14 @@ fn decode_pointer_index(
     })
 }
 
-fn resolve_num_threads(row_count: usize) -> usize {
+fn resolve_num_threads(row_count: usize, max_procs: isize) -> usize {
     if row_count == 0 {
         return 1;
     }
 
     let mut num_procs = num_cpus::get() as isize;
-    if let Ok(configs) = whitebox_common::configs::get_configs() {
-        let max_procs = configs.max_procs;
-        if max_procs > 0 && max_procs < num_procs {
-            num_procs = max_procs;
-        }
+    if max_procs > 0 && max_procs < num_procs {
+        num_procs = max_procs;
     }
 
     num_procs.max(1).min(row_count as isize) as usize

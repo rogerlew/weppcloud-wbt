@@ -73,10 +73,10 @@ struct PreparedPhaseInputs {
     cell_size_y: f64,
 }
 
-/// Implements IFOLP command contract scaffolding for WP-01.
+/// Implements IFOLP command contract and production Phase A/Phase B behavior.
 ///
-/// Behavior note: the algorithm body is intentionally unimplemented in this package.
-/// Phase logic placeholders return explicit errors and will be implemented in WP-02+.
+/// Behavior note: this tool runs the full iterative qualification/pruning workflow
+/// and enforces the current IFOLP error/validation contract.
 pub struct IterativeFirstOrderLinkPrune {
     name: String,
     description: String,
