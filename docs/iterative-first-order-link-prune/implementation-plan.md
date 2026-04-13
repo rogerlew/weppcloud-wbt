@@ -1,0 +1,336 @@
+# Iterative First-Order Link Prune Implementation Plan (WBT Only)
+
+## Objective
+
+Implement `iterative_first_order_link_prune` in `weppcloud-wbt` per:
+- [specification.md](/workdir/weppcloud-wbt/docs/iterative-first-order-link-prune/specification.md)
+
+This plan is explicitly scoped to `weppcloud-wbt` implementation and validation.
+
+## Scope
+
+In scope:
+- Rust tool implementation, registration, and WBT wrappers in this repo.
+- TopAZ parity testing as a black-box oracle.
+- Determinism, error-contract, and performance optimization (including multithreading).
+
+Out of scope:
+- WEPPpy integration and WEPPpy pipeline refactors.
+
+## Global Quality Gates
+
+Required for every work-package handoff:
+1. Code review completed (findings dispositioned).
+2. Tests for the package scope pass.
+3. No regression in prior package tests.
+4. `cargo check -p whitebox_tools` passes.
+
+## Work-Package Sequence
+
+## WP-00: Baseline and Parity Harness Design
+
+Goal:
+- Establish parity-oracle datasets, comparison method, and success criteria before implementation.
+
+Implementation tasks:
+1. Select representative DEM + flow-direction + threshold fixtures.
+   Required real-world anchor fixture:
+   - `/wc1/runs/cl/clueless-aftertaste/dem/wbt`
+2. Produce reference outputs from TopAZ runs (black-box outputs only).
+3. Define comparison metrics:
+- exact binary raster equality (primary),
+- stream-cell count delta,
+- connected-component count,
+- junction count,
+- outlet reachability.
+4. Build reusable parity harness scripts for repeated execution.
+
+Code review phase:
+- Review harness methodology for clean-room compliance and reproducibility.
+
+Test phase:
+- Run harness against fixed fixtures and verify deterministic re-run behavior.
+
+Exit criteria:
+- Versioned parity fixture catalog + runnable harness command set committed.
+
+WP-00 execution-ready deliverables:
+1. Artifact directory:
+   - `docs/iterative-first-order-link-prune/wp-00/`
+2. Required WP-00 documents:
+   - `docs/iterative-first-order-link-prune/wp-00/fixture-catalog.md`
+   - `docs/iterative-first-order-link-prune/wp-00/topaz-oracle-manifest.md`
+   - `docs/iterative-first-order-link-prune/wp-00/parity-metrics-spec.md`
+   - `docs/iterative-first-order-link-prune/wp-00/determinism-report.md`
+3. Required harness utilities:
+   - `tools/ifolp_wp00_prepare_fixtures.py` (or shell equivalent)
+   - `tools/ifolp_wp00_run_topaz_oracle.sh` (or documented external oracle step)
+   - `tools/ifolp_wp00_compare_outputs.py`
+
+WP-00 E2E completion checklist:
+1. Anchor fixture `/wc1/runs/cl/clueless-aftertaste/dem/wbt` is included in fixture catalog.
+2. All fixture inputs and TopAZ oracle outputs are checksum-pinned.
+3. Harness command set runs end-to-end from a clean working directory.
+4. At least two consecutive reruns produce identical comparison outputs.
+5. Code review findings are dispositioned and documented in WP-00 artifacts.
+6. Test-phase evidence and pass/fail summary are recorded in `determinism-report.md`.
+
+## WP-01: Tool Scaffolding and Registration
+
+Goal:
+- Add tool skeleton with full parameter contract and dispatch wiring.
+
+Implementation tasks:
+1. Create tool file:
+- `whitebox-tools-app/src/tools/stream_network_analysis/iterative_first_order_link_prune.rs`
+2. Register in:
+- `whitebox-tools-app/src/tools/stream_network_analysis/mod.rs`
+- `whitebox-tools-app/src/tools/mod.rs`
+3. Implement argument parsing and metadata/help output.
+4. Add placeholders for phase A/B execution and error paths.
+
+Code review phase:
+- Verify interface exactly matches spec contract and naming.
+
+Test phase:
+- Unit tests for argument parsing, default values, and required-arg failures.
+
+Exit criteria:
+- Tool discoverable and invokable from CLI with expected usage/help output.
+
+## WP-02: Core Data Model + Deterministic Topology Kernel
+
+Goal:
+- Implement deterministic topology primitives used by both phases.
+
+Implementation tasks:
+1. Implement pointer decoding (`whitebox` + `esri`) and neighbor traversals.
+2. Implement topology classification states and receiver detection.
+3. Implement first-order-link discovery with deterministic encounter ordering.
+4. Implement candidate validity checks for intra-pass stale-candidate skip.
+
+Code review phase:
+- Validate determinism rules and ordering logic against spec.
+
+Test phase:
+- Unit tests on synthetic mini-grids for:
+- inflow counts,
+- state classification,
+- link discovery order,
+- tie behavior under epsilon.
+
+Exit criteria:
+- Deterministic kernel stable across repeated runs.
+
+## WP-03: Phase A Source-Area Qualification
+
+Goal:
+- Implement source-area qualification with parity-critical traversal semantics.
+
+Implementation tasks:
+1. Provisional mask from minimum active CSA threshold.
+2. Single row-major source scan with inline mutation.
+3. Receiver handling for junction collapse and terminal-with-one-inflow recheck.
+4. Topology reclassification after stabilization.
+
+Code review phase:
+- Focused parity review of traversal/update cadence and state transitions.
+
+Test phase:
+- Fixture tests targeting:
+- source rejection/promotion,
+- junction collapse behavior,
+- terminal one-inflow branch behavior,
+- no-channel failure conditions.
+
+Exit criteria:
+- Phase A outputs match expected behavior on designed fixtures.
+
+## WP-04: Phase B First-Order-Link Pruning (Parity Path)
+
+Goal:
+- Implement full pruning pass semantics per spec.
+
+Implementation tasks:
+1. Receiver-group shortest-link selection (strict epsilon improvement).
+2. Immediate prune mutation with receiver-preserving normal case.
+3. Self-receiver terminal special case.
+4. Degeneration-flag-driven repass cadence.
+5. Parity guard for single-link prune failure condition.
+
+Code review phase:
+- Deep review of pass cadence, guard semantics, and deletion boundaries.
+
+Test phase:
+- Fixture tests for:
+- adjacent/chained tributary pruning,
+- single-incoming-link receiver prune,
+- receiver preservation,
+- parity guard trigger,
+- termination behavior (repass only on degeneration).
+
+Exit criteria:
+- Phase B behavior stable and deterministic on targeted fixtures.
+
+## WP-05: TopAZ Parity Validation Package
+
+Goal:
+- Prove parity against TopAZ oracle outputs for approved fixture suite.
+
+Implementation tasks:
+1. Run WBT tool on parity fixtures.
+   Required fixture inclusion:
+   - `/wc1/runs/cl/clueless-aftertaste/dem/wbt`
+2. Compare outputs using WP-00 harness.
+3. Record mismatches with categorized root causes.
+4. Iterate fixes until parity acceptance criteria are met.
+
+Code review phase:
+- Independent parity review of mismatch handling and final claims.
+
+Test phase:
+- Full parity suite run in CI-friendly mode.
+
+Exit criteria:
+- Parity report committed with pass/fail matrix and signed-off verdict.
+
+## WP-06: Error Contract + Robustness Hardening
+
+Goal:
+- Lock explicit failure behavior and defensive guarantees.
+
+Implementation tasks:
+1. Implement explicit errors for all spec-defined failure states:
+- geometry mismatch,
+- invalid pointer values,
+- missing threshold code mappings,
+- cycle detection,
+- no-network conditions,
+- parity guard violations.
+2. Add property tests / fuzz-like randomized small-grid tests for panic safety.
+3. Ensure no broad silent recovery paths.
+
+Code review phase:
+- Robustness/security-style review for hidden failure masking.
+
+Test phase:
+- Negative-case test suite with message/contract checks.
+
+Exit criteria:
+- Failure behavior is explicit, deterministic, and tested.
+
+## WP-07: Optimization Pass (Multithreading + Performance)
+
+Goal:
+- Optimize runtime/memory while preserving parity and determinism.
+
+Implementation tasks:
+1. Profile baseline hot paths on representative large fixtures.
+   Required benchmark fixture inclusion:
+   - `/wc1/runs/cl/clueless-aftertaste/dem/wbt`
+2. Parallelize safe regions first (candidate examples):
+- inflow counting,
+- provisional mask construction,
+- independent per-row/per-tile scans where ordering is not parity-critical.
+3. Preserve serial execution in parity-critical ordered stages unless a provably equivalent ordered parallel strategy is implemented.
+4. Add optional threading controls (env/parameter if needed), defaulting to safe deterministic behavior.
+5. Additional optimizations:
+- allocation reuse,
+- cache-friendly data layout,
+- reduced temporary structures,
+- branch pruning of stale candidates.
+
+Code review phase:
+- Performance review + determinism audit (single-thread vs multi-thread equivalence).
+
+Test phase:
+1. Correctness:
+- full functional and parity suites under 1-thread and N-thread modes.
+2. Performance:
+- benchmark report vs baseline (runtime, memory, CPU utilization).
+
+Exit criteria:
+- Documented speedup on target fixtures with no correctness/parity regressions.
+
+## WP-08: WBT Wrapper Exposure + Release Readiness
+
+Goal:
+- Expose tool via Python wrappers in `weppcloud-wbt` and finalize release artifacts.
+
+Implementation tasks:
+1. Add wrapper method to:
+- `whitebox_tools.py`
+- `WBT/whitebox_tools.py`
+2. Ensure help docs and argument docs are consistent with tool contract.
+3. Add smoke tests for wrapper invocation.
+4. Prepare release notes (WBT scope only).
+
+Code review phase:
+- API/usability review of wrapper signatures and docs.
+
+Test phase:
+- `python -m py_compile whitebox_tools.py WBT/whitebox_tools.py`
+- wrapper smoke invocation in packaged build.
+
+Exit criteria:
+- Tool is callable via CLI and both Python wrappers in packaged artifacts.
+
+## Critical Items Beyond Core Implementation
+
+1. Clean-room compliance:
+- Use TopAZ only as behavior oracle, not as source template.
+- Preserve independent naming/structure in Rust implementation.
+
+2. Reproducibility and fixtures:
+- Pin fixture inputs and expected outputs with checksums.
+- Include deterministic run metadata (tool version, thread setting, epsilon).
+
+3. CI strategy:
+- Split fast unit gates and slower parity/perf gates.
+- Ensure parity suite runs at least on pre-release branch policy.
+
+4. Observability:
+- Add optional verbose diagnostics for pass counts, deletions, degeneration events, and timing.
+
+5. Backward compatibility in WBT repo:
+- Keep `RemoveShortStreams` available until explicitly deprecated in a separate work item.
+
+## Suggested Execution Order and Parallelism
+
+Primary order:
+1. WP-00 -> WP-01 -> WP-02 -> WP-03 -> WP-04 -> WP-05 -> WP-06 -> WP-07 -> WP-08
+
+Parallel opportunities:
+- Wrapper work (WP-08 prep) can start after WP-01 contract is stable.
+- Robustness test scaffolding (WP-06 prep) can start during WP-03/04.
+- Benchmark harness setup can begin before WP-07.
+
+## Definition of Done
+
+Implementation is complete when:
+1. Tool and wrappers are implemented and registered.
+2. Parity suite passes accepted TopAZ-oracle fixtures.
+3. Error-contract negative tests pass.
+4. Optimization pass shows measured benefit with deterministic parity preserved.
+5. Code review and test gates completed for every work-package.
+
+## Work-Package Orchestration Table
+
+Status values:
+- `backlog`
+- `in_progress`
+- `review`
+- `blocked`
+- `done`
+
+| WP | Title | Status | Owner | Depends On | Code Review | Test Gate | Parity Gate | Perf Gate | Started | Target Finish | Completed | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| WP-00 | Baseline and Parity Harness Design | done | Codex | none | done | done | done | n/a | 2026-04-13 | 2026-04-13 | 2026-04-13 | Artifacts: `docs/iterative-first-order-link-prune/wp-00/*`; harness: `tools/ifolp_wp00_{prepare_fixtures.py,run_topaz_oracle.sh,compare_outputs.py}`; determinism canonical hash: `9a171ade68bfc94b31b28285bf2393ea30b3b631ac54d1f83c6f606c1d40237e`. |
+| WP-01 | Tool Scaffolding and Registration | backlog | TBD | WP-00 | pending | pending | n/a | n/a |  |  |  | Active ExecPlan: `/workdir/wepppy/docs/work-packages/20260412_ifolp_wp01_tool_scaffolding/prompts/active/ifolp_wp01_tool_scaffolding_execplan.md` |
+| WP-02 | Core Data Model + Deterministic Topology Kernel | backlog | TBD | WP-01 | pending | pending | n/a | n/a |  |  |  |  |
+| WP-03 | Phase A Source-Area Qualification | backlog | TBD | WP-02 | pending | pending | n/a | n/a |  |  |  |  |
+| WP-04 | Phase B First-Order-Link Pruning (Parity Path) | backlog | TBD | WP-03 | pending | pending | n/a | n/a |  |  |  |  |
+| WP-05 | TopAZ Parity Validation Package | backlog | TBD | WP-04 | pending | pending | pending | n/a |  |  |  |  |
+| WP-06 | Error Contract + Robustness Hardening | backlog | TBD | WP-04 | pending | pending | n/a | n/a |  |  |  |  |
+| WP-07 | Optimization Pass (Multithreading + Performance) | backlog | TBD | WP-05, WP-06 | pending | pending | pending | pending |  |  |  |  |
+| WP-08 | WBT Wrapper Exposure + Release Readiness | backlog | TBD | WP-05, WP-06 | pending | pending | n/a | n/a |  |  |  |  |
