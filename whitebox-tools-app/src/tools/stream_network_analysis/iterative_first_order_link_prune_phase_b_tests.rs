@@ -1,5 +1,10 @@
-use super::iterative_first_order_link_prune_phase_b::{run_phase_b_pruning, PhaseBInputs};
-use super::iterative_first_order_link_prune_topology::{D8PointerScheme, GridCell, TopologyClass};
+use super::iterative_first_order_link_prune_phase_b::{
+    process_receiver_groups_for_single_pass, run_phase_b_pruning, PhaseBInputs,
+};
+use super::iterative_first_order_link_prune_topology::{
+    D8PointerScheme, FirstOrderLink, GridCell, ReceiverCandidateGroup, TopologyClass,
+    TopologyKernel,
+};
 use std::io::ErrorKind;
 
 fn index(rows: isize, columns: isize, row: isize, col: isize) -> usize {
@@ -294,6 +299,94 @@ fn iterative_first_order_link_prune_phase_b_prunes_only_one_candidate_per_receiv
     assert!(result.stream_mask[index(rows, columns, 0, 0)]);
     assert!(!result.stream_mask[index(rows, columns, 0, 1)]);
     assert!(result.stream_mask[index(rows, columns, 1, 0)]);
+}
+
+#[test]
+fn iterative_first_order_link_prune_phase_b_skips_stale_later_group_without_fallback() {
+    let rows = 1;
+    let columns = 5;
+    let pointers = vec![2u8; (rows * columns) as usize];
+    let kernel = TopologyKernel::new(rows, columns, pointers, D8PointerScheme::Whitebox).unwrap();
+
+    let mut stream_mask = vec![true; (rows * columns) as usize];
+    let mut local_mscl_m = vec![0.0; (rows * columns) as usize];
+    local_mscl_m[index(rows, columns, 0, 2)] = 10.0;
+    local_mscl_m[index(rows, columns, 0, 4)] = 10.0;
+
+    let receiver_groups = vec![
+        ReceiverCandidateGroup {
+            receiver: GridCell::new(0, 2),
+            candidates: vec![FirstOrderLink {
+                source: GridCell::new(0, 0),
+                receiver: GridCell::new(0, 2),
+                path: vec![
+                    GridCell::new(0, 0),
+                    GridCell::new(0, 1),
+                    GridCell::new(0, 2),
+                ],
+                length_m: 2.0,
+                encounter_order: 0,
+            }],
+        },
+        ReceiverCandidateGroup {
+            receiver: GridCell::new(0, 4),
+            candidates: vec![
+                FirstOrderLink {
+                    source: GridCell::new(0, 1),
+                    receiver: GridCell::new(0, 4),
+                    path: vec![
+                        GridCell::new(0, 1),
+                        GridCell::new(0, 2),
+                        GridCell::new(0, 3),
+                        GridCell::new(0, 4),
+                    ],
+                    length_m: 2.0,
+                    encounter_order: 1,
+                },
+                FirstOrderLink {
+                    source: GridCell::new(0, 3),
+                    receiver: GridCell::new(0, 4),
+                    path: vec![GridCell::new(0, 3), GridCell::new(0, 4)],
+                    length_m: 3.0,
+                    encounter_order: 2,
+                },
+            ],
+        },
+    ];
+
+    let pass_trace = process_receiver_groups_for_single_pass(
+        &kernel,
+        &mut stream_mask,
+        &receiver_groups,
+        3,
+        &local_mscl_m,
+        1e-5,
+        false,
+        rows,
+        columns,
+    )
+    .expect("single-pass receiver processing should succeed");
+
+    assert_eq!(
+        pass_trace.receiver_order,
+        vec![GridCell::new(0, 2), GridCell::new(0, 4)]
+    );
+    assert_eq!(pass_trace.pruned_sources, vec![GridCell::new(0, 0)]);
+    assert!(!pass_trace.degeneration_flag);
+
+    // First group pruning removes cells (0,0) and (0,1), making the later group's selected
+    // candidate stale. Phase B must skip that receiver group without falling back to the next
+    // candidate in the same group.
+    assert_eq!(
+        stream_mask,
+        vec![
+            false, // pruned source of first receiver group
+            false, // pruned interior cell of first receiver group
+            true,  // preserved receiver of first group
+            true,  // would be pruned by fallback candidate if fallback occurred
+            true
+        ]
+    );
 }
 
 #[test]

@@ -402,6 +402,24 @@ fn iterative_first_order_link_prune_topology_parallel_inflow_counts_match_manual
 }
 
 #[test]
+fn iterative_first_order_link_prune_topology_parallel_inflow_counts_propagate_worker_pointer_errors(
+) {
+    let rows = 1024;
+    let columns = 2;
+    let mut pointers = vec![2u8; (rows * columns) as usize];
+    pointers[index(rows, columns, 512, 0)] = 0; // invalid D8 code in active domain
+
+    let kernel = TopologyKernel::new(rows, columns, pointers, D8PointerScheme::Whitebox).unwrap();
+    let stream_mask = vec![true; (rows * columns) as usize];
+
+    let err = kernel
+        .compute_inflow_counts_with_forced_threads_for_tests(&stream_mask, 2)
+        .expect_err("threaded worker path should propagate invalid pointer errors");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("Invalid D8 pointer value 0"));
+}
+
+#[test]
 fn iterative_first_order_link_prune_topology_default_inflow_counts_honor_max_procs_contract() {
     let rows = 1024;
     let columns = 8;

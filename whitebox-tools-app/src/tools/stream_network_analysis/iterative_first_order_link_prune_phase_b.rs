@@ -1,6 +1,6 @@
 use super::iterative_first_order_link_prune_topology::{
     group_links_by_receiver_discovery_order, select_shortest_link_strict_epsilon, D8PointerScheme,
-    FirstOrderLink, GridCell, TopologyClass, TopologyKernel,
+    FirstOrderLink, GridCell, ReceiverCandidateGroup, TopologyClass, TopologyKernel,
 };
 use std::io::{Error, ErrorKind};
 
@@ -75,75 +75,18 @@ pub(crate) fn run_phase_b_pruning(inputs: &PhaseBInputs) -> Result<PhaseBResult,
             ));
         }
         let receiver_groups = group_links_by_receiver_discovery_order(&links);
-        let mut degeneration_flag = false;
-        let mut pass_trace = PhaseBPassTrace {
-            discovered_link_count: links.len(),
-            receiver_order: Vec::new(),
-            pruned_sources: Vec::new(),
-            degeneration_flag: false,
-        };
-
-        for group in receiver_groups {
-            pass_trace.receiver_order.push(group.receiver);
-            let receiver_candidate_count = group.candidates.len();
-            let selected =
-                match select_shortest_link_strict_epsilon(&group.candidates, inputs.epsilon) {
-                    Some(candidate) => candidate,
-                    None => continue,
-                };
-
-            if !kernel.candidate_is_still_alive(&stream_mask, selected)? {
-                continue;
-            }
-
-            let receiver_idx = index_of(inputs.rows, inputs.columns, group.receiver)?;
-            if !stream_mask[receiver_idx] {
-                continue;
-            }
-
-            let local_mscl = inputs.local_mscl_m[receiver_idx];
-            if selected.length_m < local_mscl - inputs.epsilon {
-                if inputs.fail_if_only_channel_pruned
-                    && links.len() == 1
-                    && receiver_candidate_count == 1
-                {
-                    return Err(Error::new(
-                        ErrorKind::InvalidInput,
-                        format!(
-                            "Only-channel prune guard violated at receiver ({}, {}).",
-                            group.receiver.row, group.receiver.col
-                        ),
-                    ));
-                }
-
-                let pre_inflow = if stream_mask[receiver_idx] {
-                    kernel.inflow_count(group.receiver, &stream_mask)? as usize
-                } else {
-                    0
-                };
-
-                prune_link_immediately(&mut stream_mask, selected, inputs.rows, inputs.columns)?;
-                pass_trace.pruned_sources.push(selected.source);
-
-                if !stream_mask.iter().any(|active| *active) {
-                    return Err(Error::new(
-                        ErrorKind::InvalidInput,
-                        "No channels remain during first-order-link pruning.",
-                    ));
-                }
-
-                let post_inflow = if stream_mask[receiver_idx] {
-                    kernel.inflow_count(group.receiver, &stream_mask)? as usize
-                } else {
-                    0
-                };
-                if pre_inflow >= 2 && post_inflow <= 1 {
-                    degeneration_flag = true;
-                }
-            }
-        }
-
-        pass_trace.degeneration_flag = degeneration_flag;
+        let pass_trace = process_receiver_groups_for_single_pass(
+            &kernel,
+            &mut stream_mask,
+            &receiver_groups,
+            links.len(),
+            &inputs.local_mscl_m,
+            inputs.epsilon,
+            inputs.fail_if_only_channel_pruned,
+            inputs.rows,
+            inputs.columns,
+        )?;
+        let degeneration_flag = pass_trace.degeneration_flag;
         pass_traces.push(pass_trace);
 
         if degeneration_flag {
@@ -250,6 +193,88 @@ fn prune_link_immediately(
         stream_mask[idx] = false;
     }
     Ok(())
+}
+
+pub(crate) fn process_receiver_groups_for_single_pass(
+    kernel: &TopologyKernel,
+    stream_mask: &mut [bool],
+    receiver_groups: &[ReceiverCandidateGroup],
+    discovered_link_count: usize,
+    local_mscl_m: &[f64],
+    epsilon: f64,
+    fail_if_only_channel_pruned: bool,
+    rows: isize,
+    columns: isize,
+) -> Result<PhaseBPassTrace, Error> {
+    let mut degeneration_flag = false;
+    let mut pass_trace = PhaseBPassTrace {
+        discovered_link_count,
+        receiver_order: Vec::new(),
+        pruned_sources: Vec::new(),
+        degeneration_flag: false,
+    };
+
+    for group in receiver_groups {
+        pass_trace.receiver_order.push(group.receiver);
+        let receiver_candidate_count = group.candidates.len();
+        let selected = match select_shortest_link_strict_epsilon(&group.candidates, epsilon) {
+            Some(candidate) => candidate,
+            None => continue,
+        };
+
+        if !kernel.candidate_is_still_alive(stream_mask, selected)? {
+            continue;
+        }
+
+        let receiver_idx = index_of(rows, columns, group.receiver)?;
+        if !stream_mask[receiver_idx] {
+            continue;
+        }
+
+        let local_mscl = local_mscl_m[receiver_idx];
+        if selected.length_m < local_mscl - epsilon {
+            if fail_if_only_channel_pruned
+                && discovered_link_count == 1
+                && receiver_candidate_count == 1
+            {
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "Only-channel prune guard violated at receiver ({}, {}).",
+                        group.receiver.row, group.receiver.col
+                    ),
+                ));
+            }
+
+            let pre_inflow = if stream_mask[receiver_idx] {
+                kernel.inflow_count(group.receiver, stream_mask)? as usize
+            } else {
+                0
+            };
+
+            prune_link_immediately(stream_mask, selected, rows, columns)?;
+            pass_trace.pruned_sources.push(selected.source);
+
+            if !stream_mask.iter().any(|active| *active) {
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    "No channels remain during first-order-link pruning.",
+                ));
+            }
+
+            let post_inflow = if stream_mask[receiver_idx] {
+                kernel.inflow_count(group.receiver, stream_mask)? as usize
+            } else {
+                0
+            };
+            if pre_inflow >= 2 && post_inflow <= 1 {
+                degeneration_flag = true;
+            }
+        }
+    }
+
+    pass_trace.degeneration_flag = degeneration_flag;
+    Ok(pass_trace)
 }
 
 fn index_of(rows: isize, columns: isize, cell: GridCell) -> Result<usize, Error> {
