@@ -11,15 +11,23 @@ use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Error, ErrorKind};
 use std::path;
-use whitebox_raster::Raster;
+use std::time::Instant;
+use whitebox_raster::{PhotometricInterpretation, Raster};
 
 #[path = "iterative_first_order_link_prune_phase_a.rs"]
 mod iterative_first_order_link_prune_phase_a;
+#[path = "iterative_first_order_link_prune_phase_b.rs"]
+mod iterative_first_order_link_prune_phase_b;
 #[allow(dead_code)]
 #[path = "iterative_first_order_link_prune_topology.rs"]
 mod iterative_first_order_link_prune_topology;
 
-use self::iterative_first_order_link_prune_phase_a::{run_phase_a_qualification, PhaseAInputs};
+use self::iterative_first_order_link_prune_phase_a::{
+    run_phase_a_qualification, PhaseAInputs, PhaseAResult,
+};
+use self::iterative_first_order_link_prune_phase_b::{
+    run_phase_b_pruning, PhaseBInputs, PhaseBResult,
+};
 use self::iterative_first_order_link_prune_topology::D8PointerScheme;
 
 const DEFAULT_EPSILON: f64 = 1e-5;
@@ -29,7 +37,7 @@ const HECTARE_TO_SQUARE_METERS: f64 = 10_000.0;
 #[derive(Debug, Clone, Copy)]
 struct ThresholdTableEntry {
     csa_ha: f64,
-    _mscl_m: f64,
+    mscl_m: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -44,6 +52,22 @@ struct ParsedArgs {
     esri_pntr: bool,
     epsilon: f64,
     fail_if_only_channel_pruned: bool,
+}
+
+#[derive(Clone)]
+struct PreparedPhaseInputs {
+    d8: Raster,
+    rows: isize,
+    columns: isize,
+    pointers: Vec<u8>,
+    pointer_scheme: D8PointerScheme,
+    upstream_area_cells: Vec<f64>,
+    active_mask: Vec<bool>,
+    local_csa_cells: Vec<f64>,
+    local_mscl_m: Vec<f64>,
+    min_active_csa_cells: f64,
+    cell_size_x: f64,
+    cell_size_y: f64,
 }
 
 /// Implements IFOLP command contract scaffolding for WP-01.
@@ -557,7 +581,7 @@ fn parse_threshold_table(table_path: &str) -> Result<HashMap<i64, ThresholdTable
             parsed_code.unwrap(),
             ThresholdTableEntry {
                 csa_ha: parsed_csa.unwrap(),
-                _mscl_m: parsed_mscl.unwrap(),
+                mscl_m: parsed_mscl.unwrap(),
             },
         );
     }
@@ -572,7 +596,7 @@ fn parse_threshold_table(table_path: &str) -> Result<HashMap<i64, ThresholdTable
     Ok(table)
 }
 
-fn run_phase_a(args: &ParsedArgs, verbose: bool) -> Result<(), Error> {
+fn prepare_phase_inputs(args: &ParsedArgs) -> Result<PreparedPhaseInputs, Error> {
     let d8 = Raster::new(&args.d8_pntr, "r")?;
     let upstream_area = Raster::new(&args.upstream_area, "r")?;
     validate_matching_geometry(&d8, &upstream_area, "--upstream_area")?;
@@ -599,12 +623,21 @@ fn run_phase_a(args: &ParsedArgs, verbose: bool) -> Result<(), Error> {
     let threshold_code_nodata = threshold_code_raster.as_ref().map(|r| r.configs.nodata);
     let cell_area_m2 =
         upstream_area.configs.resolution_x.abs() * upstream_area.configs.resolution_y.abs();
+    let cell_size_x = upstream_area.configs.resolution_x.abs();
+    let cell_size_y = upstream_area.configs.resolution_y.abs();
     let default_csa_cells = csa_hectares_to_cells(args.csa, cell_area_m2)?;
+    if !args.mscl.is_finite() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!("MSCL threshold must be finite, got {}", args.mscl),
+        ));
+    }
 
     let mut pointers = vec![0u8; expected_len];
     let mut upstream_area_cells = vec![0.0f64; expected_len];
     let mut active_mask = vec![false; expected_len];
     let mut local_csa_cells = vec![default_csa_cells; expected_len];
+    let mut local_mscl_m = vec![args.mscl; expected_len];
     let mut min_active_csa_cells = f64::INFINITY;
 
     for row in 0..rows {
@@ -652,7 +685,18 @@ fn run_phase_a(args: &ParsedArgs, verbose: bool) -> Result<(), Error> {
                         ),
                     )
                 })?;
-                csa_hectares_to_cells(entry.csa_ha, cell_area_m2)?
+                let csa_cells = csa_hectares_to_cells(entry.csa_ha, cell_area_m2)?;
+                if !entry.mscl_m.is_finite() {
+                    return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "Threshold table MSCL value must be finite for code {} at ({}, {})",
+                            code, row, col
+                        ),
+                    ));
+                }
+                local_mscl_m[idx] = entry.mscl_m;
+                csa_cells
             } else {
                 default_csa_cells
             };
@@ -675,7 +719,8 @@ fn run_phase_a(args: &ParsedArgs, verbose: bool) -> Result<(), Error> {
         D8PointerScheme::Whitebox
     };
 
-    let phase_a = run_phase_a_qualification(&PhaseAInputs {
+    Ok(PreparedPhaseInputs {
+        d8,
         rows,
         columns,
         pointers,
@@ -683,8 +728,28 @@ fn run_phase_a(args: &ParsedArgs, verbose: bool) -> Result<(), Error> {
         upstream_area_cells,
         active_mask,
         local_csa_cells,
+        local_mscl_m,
         min_active_csa_cells,
-        epsilon: args.epsilon,
+        cell_size_x,
+        cell_size_y,
+    })
+}
+
+fn run_phase_a(
+    prepared: &PreparedPhaseInputs,
+    epsilon: f64,
+    verbose: bool,
+) -> Result<PhaseAResult, Error> {
+    let phase_a = run_phase_a_qualification(&PhaseAInputs {
+        rows: prepared.rows,
+        columns: prepared.columns,
+        pointers: prepared.pointers.clone(),
+        pointer_scheme: prepared.pointer_scheme,
+        upstream_area_cells: prepared.upstream_area_cells.clone(),
+        active_mask: prepared.active_mask.clone(),
+        local_csa_cells: prepared.local_csa_cells.clone(),
+        min_active_csa_cells: prepared.min_active_csa_cells,
+        epsilon,
     })?;
 
     if verbose {
@@ -696,14 +761,105 @@ fn run_phase_a(args: &ParsedArgs, verbose: bool) -> Result<(), Error> {
         );
     }
 
-    Ok(())
+    Ok(phase_a)
 }
 
-fn run_phase_b_placeholder(_args: &ParsedArgs) -> Result<(), Error> {
-    Err(Error::new(
-        ErrorKind::Unsupported,
-        "Phase B first-order-link pruning is not implemented yet (WP-04 scope).",
-    ))
+fn run_phase_b(
+    prepared: &PreparedPhaseInputs,
+    phase_a: &PhaseAResult,
+    args: &ParsedArgs,
+    verbose: bool,
+) -> Result<PhaseBResult, Error> {
+    let phase_b = run_phase_b_pruning(&PhaseBInputs {
+        rows: prepared.rows,
+        columns: prepared.columns,
+        pointers: prepared.pointers.clone(),
+        pointer_scheme: prepared.pointer_scheme,
+        initial_stream_mask: phase_a.stream_mask.clone(),
+        local_mscl_m: prepared.local_mscl_m.clone(),
+        epsilon: args.epsilon,
+        fail_if_only_channel_pruned: args.fail_if_only_channel_pruned,
+        cell_size_x: prepared.cell_size_x,
+        cell_size_y: prepared.cell_size_y,
+    })?;
+
+    if verbose {
+        let stream_count = phase_b.stream_mask.iter().filter(|cell| **cell).count();
+        println!(
+            "IFOLP WP-04 Phase B complete: {} stream cells remain after {} pass(es).",
+            stream_count,
+            phase_b.pass_traces.len()
+        );
+    }
+
+    Ok(phase_b)
+}
+
+fn write_stream_mask_output(
+    args: &ParsedArgs,
+    prepared: &PreparedPhaseInputs,
+    phase_a: &PhaseAResult,
+    phase_b: &PhaseBResult,
+    elapsed_time: &str,
+    verbose: bool,
+) -> Result<(), Error> {
+    let expected_len = (prepared.rows * prepared.columns) as usize;
+    if phase_b.stream_mask.len() != expected_len {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "Phase B output length mismatch (expected {}, got {})",
+                expected_len,
+                phase_b.stream_mask.len()
+            ),
+        ));
+    }
+
+    let mut output = Raster::initialize_using_file(&args.output, &prepared.d8);
+    let nodata = output.configs.nodata;
+    output.configs.palette = "qual.plt".to_string();
+    output.configs.photometric_interp = PhotometricInterpretation::Categorical;
+
+    for row in 0..prepared.rows {
+        let mut data = vec![nodata; prepared.columns as usize];
+        for col in 0..prepared.columns {
+            let idx = (row * prepared.columns + col) as usize;
+            if !prepared.active_mask[idx] {
+                data[col as usize] = nodata;
+            } else if phase_b.stream_mask[idx] {
+                data[col as usize] = 1.0;
+            } else {
+                data[col as usize] = 0.0;
+            }
+        }
+        output.set_row_data(row, data);
+    }
+
+    output.add_metadata_entry(format!(
+        "Created by whitebox_tools' {} tool",
+        IterativeFirstOrderLinkPrune::new().get_tool_name()
+    ));
+    output.add_metadata_entry(format!("Input d8 pointer file: {}", args.d8_pntr));
+    output.add_metadata_entry(format!("Input upstream area file: {}", args.upstream_area));
+    output.add_metadata_entry(format!("CSA threshold (ha): {}", args.csa));
+    output.add_metadata_entry(format!("MSCL threshold (m): {}", args.mscl));
+    output.add_metadata_entry(format!("Epsilon: {}", args.epsilon));
+    output.add_metadata_entry(format!(
+        "Fail if only channel pruned: {}",
+        args.fail_if_only_channel_pruned
+    ));
+    output.add_metadata_entry(format!("Phase A passes: {}", phase_a.pass_traces.len()));
+    output.add_metadata_entry(format!("Phase B passes: {}", phase_b.pass_traces.len()));
+    output.add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed_time));
+
+    if verbose {
+        println!("Saving data...");
+    }
+    output.write()?;
+    if verbose {
+        println!("Output file written");
+    }
+    Ok(())
 }
 
 impl WhiteboxTool for IterativeFirstOrderLinkPrune {
@@ -782,8 +938,27 @@ impl WhiteboxTool for IterativeFirstOrderLinkPrune {
             );
         }
 
-        run_phase_a(&parsed, verbose)?;
-        run_phase_b_placeholder(&parsed)?;
+        let start = Instant::now();
+        let prepared = prepare_phase_inputs(&parsed)?;
+        let phase_a = run_phase_a(&prepared, parsed.epsilon, verbose)?;
+        let phase_b = run_phase_b(&prepared, &phase_a, &parsed, verbose)?;
+        let elapsed_time = get_formatted_elapsed_time(start);
+
+        write_stream_mask_output(
+            &parsed,
+            &prepared,
+            &phase_a,
+            &phase_b,
+            &elapsed_time,
+            verbose,
+        )?;
+
+        if verbose {
+            println!(
+                "{}",
+                &format!("Elapsed Time (excluding I/O): {}", elapsed_time)
+            );
+        }
         Ok(())
     }
 }
@@ -799,3 +974,7 @@ mod iterative_first_order_link_prune_topology_tests;
 #[cfg(test)]
 #[path = "iterative_first_order_link_prune_phase_a_tests.rs"]
 mod iterative_first_order_link_prune_phase_a_tests;
+
+#[cfg(test)]
+#[path = "iterative_first_order_link_prune_phase_b_tests.rs"]
+mod iterative_first_order_link_prune_phase_b_tests;
