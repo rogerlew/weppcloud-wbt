@@ -33,6 +33,9 @@ use self::iterative_first_order_link_prune_topology::D8PointerScheme;
 const DEFAULT_EPSILON: f64 = 1e-5;
 const DEFAULT_FAIL_IF_ONLY_CHANNEL_PRUNED: bool = true;
 const HECTARE_TO_SQUARE_METERS: f64 = 10_000.0;
+const GEOMETRY_REL_TOLERANCE: f64 = 1e-9;
+const GEOMETRY_MIN_ABS_TOLERANCE: f64 = 1e-9;
+const GEOMETRY_CELL_SCALE_TOLERANCE_FACTOR: f64 = 1e-6;
 
 #[derive(Debug, Clone, Copy)]
 struct ThresholdTableEntry {
@@ -479,7 +482,62 @@ fn validate_matching_geometry(reference: &Raster, other: &Raster, name: &str) ->
             ),
         ));
     }
+    let cell_scale = reference
+        .configs
+        .resolution_x
+        .abs()
+        .max(reference.configs.resolution_y.abs())
+        .max(other.configs.resolution_x.abs())
+        .max(other.configs.resolution_y.abs());
+    let abs_tolerance =
+        (cell_scale * GEOMETRY_CELL_SCALE_TOLERANCE_FACTOR).max(GEOMETRY_MIN_ABS_TOLERANCE);
+
+    let mut mismatch_fields = Vec::new();
+    for (field_name, expected, actual) in [
+        (
+            "resolution_x",
+            reference.configs.resolution_x,
+            other.configs.resolution_x,
+        ),
+        (
+            "resolution_y",
+            reference.configs.resolution_y,
+            other.configs.resolution_y,
+        ),
+        ("west", reference.configs.west, other.configs.west),
+        ("east", reference.configs.east, other.configs.east),
+        ("south", reference.configs.south, other.configs.south),
+        ("north", reference.configs.north, other.configs.north),
+    ] {
+        if !geometry_values_match(expected, actual, abs_tolerance) {
+            mismatch_fields.push(format!(
+                "{} expected {}, got {}",
+                field_name, expected, actual
+            ));
+        }
+    }
+
+    if !mismatch_fields.is_empty() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "Raster geometry mismatch for {}: {}",
+                name,
+                mismatch_fields.join(", ")
+            ),
+        ));
+    }
+
     Ok(())
+}
+
+fn geometry_values_match(expected: f64, actual: f64, abs_tolerance: f64) -> bool {
+    if !expected.is_finite() || !actual.is_finite() {
+        return false;
+    }
+    let diff = (expected - actual).abs();
+    let rel_scale = expected.abs().max(actual.abs()) * GEOMETRY_REL_TOLERANCE;
+    diff <= abs_tolerance.max(rel_scale)
 }
 
 fn parse_integer_raster_value(
@@ -559,11 +617,11 @@ fn parse_threshold_table(table_path: &str) -> Result<HashMap<i64, ThresholdTable
         } else {
             trimmed.split_whitespace().collect()
         };
-        if parts.len() < 3 {
+        if parts.len() != 3 {
             return Err(Error::new(
                 ErrorKind::InvalidInput,
                 format!(
-                    "Threshold table line {} must contain code,csa_ha,mscl_m",
+                    "Threshold table line {} must contain exactly code,csa_ha,mscl_m",
                     line_idx + 1
                 ),
             ));

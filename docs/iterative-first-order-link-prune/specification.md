@@ -188,7 +188,7 @@ To preserve parity-consistent reproducibility:
 ## Error Contract
 
 Hard-fail with explicit errors for:
-- raster geometry mismatch;
+- raster geometry mismatch (rows/columns, resolution, or georeferenced extents);
 - invalid pointer codes on active stream path;
 - threshold code with no table entry;
 - cycles detected during traversal;

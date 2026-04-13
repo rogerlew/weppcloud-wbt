@@ -253,3 +253,45 @@ fn iterative_first_order_link_prune_phase_b_mscl_threshold_is_not_scaled_by_cell
     assert!(result.pass_traces[0].pruned_sources.is_empty());
     assert_eq!(result.stream_mask, vec![true, true]);
 }
+
+#[test]
+fn iterative_first_order_link_prune_phase_b_prunes_only_one_candidate_per_receiver_group_per_pass()
+{
+    let rows = 3;
+    let columns = 3;
+    let mut pointers = vec![2u8; (rows * columns) as usize];
+    pointers[index(rows, columns, 0, 0)] = 4; // (0,0) SE -> (1,1)
+    pointers[index(rows, columns, 0, 1)] = 8; // (0,1) S -> (1,1)
+    pointers[index(rows, columns, 1, 0)] = 2; // (1,0) E -> (1,1)
+    pointers[index(rows, columns, 1, 1)] = 8; // (1,1) S -> (2,1)
+    pointers[index(rows, columns, 2, 1)] = 8; // (2,1) S -> off-grid
+
+    let mut stream_mask = vec![false; pointers.len()];
+    stream_mask[index(rows, columns, 0, 0)] = true;
+    stream_mask[index(rows, columns, 0, 1)] = true;
+    stream_mask[index(rows, columns, 1, 0)] = true;
+    stream_mask[index(rows, columns, 1, 1)] = true;
+    stream_mask[index(rows, columns, 2, 1)] = true;
+
+    let mut local_mscl_m = vec![0.0; pointers.len()];
+    local_mscl_m[index(rows, columns, 1, 1)] = 2.0;
+    let inputs = phase_b_inputs(rows, columns, pointers, stream_mask, local_mscl_m, false);
+
+    let result = run_phase_b_pruning(&inputs).expect("phase B should succeed");
+    assert_eq!(result.pass_traces.len(), 1);
+    assert_eq!(
+        result.pass_traces[0].receiver_order,
+        vec![GridCell::new(1, 1)]
+    );
+    assert_eq!(
+        result.pass_traces[0].pruned_sources,
+        vec![GridCell::new(0, 1)]
+    );
+    assert!(!result.pass_traces[0].degeneration_flag);
+
+    // Two additional short candidates remain because Phase B does not fallback to the next
+    // candidate in the same receiver group after pruning one selected candidate.
+    assert!(result.stream_mask[index(rows, columns, 0, 0)]);
+    assert!(!result.stream_mask[index(rows, columns, 0, 1)]);
+    assert!(result.stream_mask[index(rows, columns, 1, 0)]);
+}

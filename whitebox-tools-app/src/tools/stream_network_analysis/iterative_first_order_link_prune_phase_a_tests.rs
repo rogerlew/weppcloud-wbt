@@ -197,3 +197,47 @@ fn iterative_first_order_link_prune_phase_a_rejects_non_finite_epsilon() {
     assert_eq!(err.kind(), ErrorKind::InvalidInput);
     assert!(err.to_string().contains("non-negative and finite"));
 }
+
+#[test]
+fn iterative_first_order_link_prune_phase_a_epsilon_boundary_equal_qualifies_local_csa() {
+    let rows = 1;
+    let columns = 2;
+    let pointers = vec![2u8, 2u8];
+    let upstream_area_cells = vec![9.99999, 20.0];
+    let local_csa_cells = vec![10.0, 1.0];
+
+    let result = run_phase_a_qualification(&phase_a_inputs(
+        rows,
+        columns,
+        pointers,
+        upstream_area_cells,
+        local_csa_cells,
+        1.0,
+    ))
+    .expect("phase A should succeed at epsilon equality boundary");
+
+    assert!(result.stream_mask[index(rows, columns, 0, 0)]);
+    assert!(result.stream_mask[index(rows, columns, 0, 1)]);
+}
+
+#[test]
+fn iterative_first_order_link_prune_phase_a_epsilon_boundary_below_removes_source() {
+    let rows = 1;
+    let columns = 2;
+    let pointers = vec![2u8, 2u8];
+    let upstream_area_cells = vec![9.99998, 20.0];
+    let local_csa_cells = vec![10.0, 1.0];
+
+    let result = run_phase_a_qualification(&phase_a_inputs(
+        rows,
+        columns,
+        pointers,
+        upstream_area_cells,
+        local_csa_cells,
+        1.0,
+    ))
+    .expect("phase A should succeed and prune below epsilon boundary");
+
+    assert!(!result.stream_mask[index(rows, columns, 0, 0)]);
+    assert!(result.stream_mask[index(rows, columns, 0, 1)]);
+}

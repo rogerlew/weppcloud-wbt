@@ -23,6 +23,28 @@ fn temp_threshold_table_path(stem: &str) -> PathBuf {
     std::env::temp_dir().join(format!("ifolp_{}_{}_{}.csv", stem, process::id(), nanos))
 }
 
+fn synthetic_raster_with_geometry(
+    rows: usize,
+    columns: usize,
+    west: f64,
+    east: f64,
+    south: f64,
+    north: f64,
+    resolution_x: f64,
+    resolution_y: f64,
+) -> Raster {
+    let mut raster = Raster::default();
+    raster.configs.rows = rows;
+    raster.configs.columns = columns;
+    raster.configs.west = west;
+    raster.configs.east = east;
+    raster.configs.south = south;
+    raster.configs.north = north;
+    raster.configs.resolution_x = resolution_x;
+    raster.configs.resolution_y = resolution_y;
+    raster
+}
+
 #[test]
 fn iterative_first_order_link_prune_parser_defaults_are_applied() {
     let parsed = parse_arguments(&base_args(), "/tmp/wd/").expect("parse should succeed");
@@ -348,4 +370,43 @@ fn iterative_first_order_link_prune_threshold_table_accepts_supported_header_ali
     assert!((entry.mscl_m - 100.0).abs() < f64::EPSILON);
 
     fs::remove_file(&table_path).expect("temporary table should be removable");
+}
+
+#[test]
+fn iterative_first_order_link_prune_threshold_table_rejects_rows_with_extra_fields() {
+    let table_path = temp_threshold_table_path("threshold_extra_fields");
+    fs::write(&table_path, "code,csa_ha,mscl_m\n1,12.5,100,unexpected\n")
+        .expect("table should write");
+
+    let err = parse_threshold_table(&table_path.to_string_lossy())
+        .expect_err("rows with extra fields should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err
+        .to_string()
+        .contains("must contain exactly code,csa_ha,mscl_m"));
+
+    fs::remove_file(&table_path).expect("temporary table should be removable");
+}
+
+#[test]
+fn iterative_first_order_link_prune_geometry_validation_rejects_extent_mismatch() {
+    let reference = synthetic_raster_with_geometry(2, 2, 100.0, 160.0, 40.0, 100.0, 30.0, 30.0);
+    let other = synthetic_raster_with_geometry(2, 2, 100.5, 160.5, 40.0, 100.0, 30.0, 30.0);
+
+    let err = validate_matching_geometry(&reference, &other, "--upstream_area")
+        .expect_err("extent mismatch should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("Raster geometry mismatch"));
+    assert!(err.to_string().contains("west expected"));
+}
+
+#[test]
+fn iterative_first_order_link_prune_geometry_validation_rejects_resolution_mismatch() {
+    let reference = synthetic_raster_with_geometry(2, 2, 100.0, 160.0, 40.0, 100.0, 30.0, 30.0);
+    let other = synthetic_raster_with_geometry(2, 2, 100.0, 160.0, 40.0, 100.0, 30.1, 30.0);
+
+    let err = validate_matching_geometry(&reference, &other, "--threshold_code_raster")
+        .expect_err("resolution mismatch should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("resolution_x expected"));
 }
