@@ -315,3 +315,34 @@ fn iterative_first_order_link_prune_phase_b_rejects_source_less_cycle_network() 
     assert!(err.to_string().contains("Cycle detected"));
     assert!(err.to_string().contains("HEAD/TERMINAL_HEAD"));
 }
+
+#[test]
+fn iterative_first_order_link_prune_phase_b_rejects_mixed_component_with_disconnected_cycle() {
+    let rows = 2;
+    let columns = 4;
+    let mut pointers = vec![2u8; (rows * columns) as usize];
+
+    // Valid terminal-head component at (0,0).
+    pointers[index(rows, columns, 0, 0)] = 32; // W -> off-grid
+
+    // Disconnected 2x2 directed cycle over (0,2),(0,3),(1,3),(1,2).
+    pointers[index(rows, columns, 0, 2)] = 2; // E -> (0,3)
+    pointers[index(rows, columns, 0, 3)] = 8; // S -> (1,3)
+    pointers[index(rows, columns, 1, 3)] = 32; // W -> (1,2)
+    pointers[index(rows, columns, 1, 2)] = 128; // N -> (0,2)
+
+    let mut stream_mask = vec![false; pointers.len()];
+    stream_mask[index(rows, columns, 0, 0)] = true;
+    stream_mask[index(rows, columns, 0, 2)] = true;
+    stream_mask[index(rows, columns, 0, 3)] = true;
+    stream_mask[index(rows, columns, 1, 2)] = true;
+    stream_mask[index(rows, columns, 1, 3)] = true;
+
+    let local_mscl_m = vec![0.0; pointers.len()];
+    let inputs = phase_b_inputs(rows, columns, pointers, stream_mask, local_mscl_m, false);
+
+    let err = run_phase_b_pruning(&inputs).expect_err("mixed disconnected cycle should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("Cycle detected"));
+    assert!(err.to_string().contains("(0, 2)"));
+}

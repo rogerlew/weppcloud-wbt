@@ -595,6 +595,7 @@ fn parse_threshold_table(table_path: &str) -> Result<HashMap<i64, ThresholdTable
     let reader = BufReader::new(file);
 
     let mut table = HashMap::new();
+    let mut first_data_row = true;
     for (line_idx, line_result) in reader.lines().enumerate() {
         let line = line_result.map_err(|err| {
             Error::new(
@@ -631,7 +632,8 @@ fn parse_threshold_table(table_path: &str) -> Result<HashMap<i64, ThresholdTable
         let parsed_csa = parts[1].parse::<f64>();
         let parsed_mscl = parts[2].parse::<f64>();
         if parsed_code.is_err() || parsed_csa.is_err() || parsed_mscl.is_err() {
-            if line_idx == 0 && looks_like_threshold_header(&parts) {
+            if first_data_row && looks_like_threshold_header(&parts) {
+                first_data_row = false;
                 continue;
             }
             return Err(Error::new(
@@ -667,6 +669,7 @@ fn parse_threshold_table(table_path: &str) -> Result<HashMap<i64, ThresholdTable
         }
 
         table.insert(code, ThresholdTableEntry { csa_ha, mscl_m });
+        first_data_row = false;
     }
 
     if table.is_empty() {
@@ -757,10 +760,6 @@ fn prepare_phase_inputs(args: &ParsedArgs) -> Result<PreparedPhaseInputs, Error>
                         row, col, pointer_code
                     ),
                 ));
-            }
-            if pointer_code == 0 {
-                // 0 encodes "no downslope link"; exclude these cells from IFOLP active domain.
-                continue;
             }
             pointers[idx] = pointer_code as u8;
 

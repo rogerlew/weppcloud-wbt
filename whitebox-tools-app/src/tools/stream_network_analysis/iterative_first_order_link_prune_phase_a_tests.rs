@@ -199,6 +199,16 @@ fn iterative_first_order_link_prune_phase_a_rejects_non_finite_epsilon() {
 }
 
 #[test]
+fn iterative_first_order_link_prune_phase_a_rejects_zero_pointer_on_active_stream_path() {
+    let err =
+        run_phase_a_qualification(&phase_a_inputs(1, 1, vec![0u8], vec![10.0], vec![1.0], 1.0))
+            .expect_err("active zero-coded pointer must fail with invalid D8 code");
+
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("Invalid D8 pointer value 0"));
+}
+
+#[test]
 fn iterative_first_order_link_prune_phase_a_epsilon_boundary_equal_qualifies_local_csa() {
     let rows = 1;
     let columns = 2;

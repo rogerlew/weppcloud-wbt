@@ -464,6 +464,59 @@ impl TopologyKernel {
         Ok(true)
     }
 
+    pub(crate) fn find_cycle_cell_in_active_network(
+        &self,
+        stream_mask: &[bool],
+    ) -> Result<Option<GridCell>, Error> {
+        self.validate_stream_mask(stream_mask)?;
+
+        // 0 = unseen, 1 = currently in trace, 2 = trace-complete.
+        let mut state = vec![0u8; stream_mask.len()];
+        for idx in 0..stream_mask.len() {
+            if !stream_mask[idx] || state[idx] == 2 {
+                continue;
+            }
+
+            let mut trace = Vec::<usize>::new();
+            let mut current_idx = idx;
+            loop {
+                if !stream_mask[current_idx] {
+                    break;
+                }
+
+                match state[current_idx] {
+                    2 => break,
+                    1 => return Ok(Some(self.cell_from_index(current_idx))),
+                    _ => {
+                        state[current_idx] = 1;
+                        trace.push(current_idx);
+                    }
+                }
+
+                let current = self.cell_from_index(current_idx);
+                let next = match self.downstream_stream_neighbor(current, stream_mask)? {
+                    Some(cell) => cell,
+                    None => break,
+                };
+                current_idx = self.index_of(next).ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "Grid cell ({}, {}) is out of bounds during cycle detection",
+                            next.row, next.col
+                        ),
+                    )
+                })?;
+            }
+
+            for trace_idx in trace {
+                state[trace_idx] = 2;
+            }
+        }
+
+        Ok(None)
+    }
+
     fn validate_stream_mask(&self, stream_mask: &[bool]) -> Result<(), Error> {
         if stream_mask.len() != self.pointers.len() {
             return Err(Error::new(
@@ -504,6 +557,10 @@ impl TopologyKernel {
             return None;
         }
         Some((cell.row * self.columns + cell.col) as usize)
+    }
+
+    fn cell_from_index(&self, idx: usize) -> GridCell {
+        GridCell::new(idx as isize / self.columns, idx as isize % self.columns)
     }
 
     fn half_step_length_from_pointer(

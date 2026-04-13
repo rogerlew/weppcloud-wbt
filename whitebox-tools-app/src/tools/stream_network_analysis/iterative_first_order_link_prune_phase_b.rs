@@ -53,6 +53,16 @@ pub(crate) fn run_phase_b_pruning(inputs: &PhaseBInputs) -> Result<PhaseBResult,
 
     let mut pass_traces = Vec::new();
     loop {
+        if let Some(cycle_cell) = kernel.find_cycle_cell_in_active_network(&stream_mask)? {
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "Cycle detected during first-order-link pruning at ({}, {}): active component has no resolvable HEAD/TERMINAL_HEAD traversal.",
+                    cycle_cell.row, cycle_cell.col
+                ),
+            ));
+        }
+
         let links = kernel.discover_first_order_links_row_major(
             &stream_mask,
             inputs.cell_size_x,

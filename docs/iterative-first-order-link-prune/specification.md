@@ -189,9 +189,9 @@ To preserve parity-consistent reproducibility:
 
 Hard-fail with explicit errors for:
 - raster geometry mismatch (rows/columns, resolution, or georeferenced extents);
-- invalid pointer codes on active stream path;
+- invalid pointer codes on active stream path (including `0` and any non-D8 code);
 - threshold code with no table entry;
-- cycles detected during traversal;
+- cycles detected in any active network component during traversal/pruning;
 - no channels after initial qualification;
 - no channels at pruning stage where a network is required;
 - only-channel prune guard violation when enabled.
@@ -205,6 +205,7 @@ Primary output:
 
 Background/NoData behavior:
 - preserve valid NoData footprint from raster geometry as applicable.
+- all non-NoData valid raster cells stay in output domain; do not remap valid cells to NoData solely by pointer-code value.
 
 ## Validation Matrix
 
