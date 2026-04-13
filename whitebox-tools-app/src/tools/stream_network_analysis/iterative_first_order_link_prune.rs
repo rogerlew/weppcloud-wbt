@@ -6,16 +6,31 @@ License: MIT
 */
 
 use crate::tools::*;
+use std::collections::HashMap;
 use std::env;
-use std::io::{Error, ErrorKind};
+use std::fs::File;
+use std::io::{BufRead, BufReader, Error, ErrorKind};
 use std::path;
+use whitebox_raster::Raster;
 
+#[path = "iterative_first_order_link_prune_phase_a.rs"]
+mod iterative_first_order_link_prune_phase_a;
 #[allow(dead_code)]
 #[path = "iterative_first_order_link_prune_topology.rs"]
 mod iterative_first_order_link_prune_topology;
 
+use self::iterative_first_order_link_prune_phase_a::{run_phase_a_qualification, PhaseAInputs};
+use self::iterative_first_order_link_prune_topology::D8PointerScheme;
+
 const DEFAULT_EPSILON: f64 = 1e-5;
 const DEFAULT_FAIL_IF_ONLY_CHANNEL_PRUNED: bool = true;
+const HECTARE_TO_SQUARE_METERS: f64 = 10_000.0;
+
+#[derive(Debug, Clone, Copy)]
+struct ThresholdTableEntry {
+    csa_ha: f64,
+    _mscl_m: f64,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 struct ParsedArgs {
@@ -48,7 +63,8 @@ impl IterativeFirstOrderLinkPrune {
         let name = "IterativeFirstOrderLinkPrune".to_string();
         let toolbox = "Stream Network Analysis".to_string();
         let description =
-            "Scaffolds iterative first-order link prune command contract (WP-01).".to_string();
+            "Performs iterative first-order link prune stream-network qualification/pruning."
+                .to_string();
 
         let mut parameters = vec![];
         parameters.push(ToolParameter {
@@ -416,17 +432,277 @@ fn parse_arguments(args: &[String], working_directory: &str) -> Result<ParsedArg
     })
 }
 
-fn run_phase_a_placeholder(_args: &ParsedArgs) -> Result<(), Error> {
-    Err(Error::new(
-        ErrorKind::Unsupported,
-        "Phase A source-area qualification is not implemented in WP-01 scaffolding.",
-    ))
+fn validate_matching_geometry(reference: &Raster, other: &Raster, name: &str) -> Result<(), Error> {
+    if reference.configs.rows != other.configs.rows
+        || reference.configs.columns != other.configs.columns
+    {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "Raster geometry mismatch: expected {}x{} for {}, got {}x{}",
+                reference.configs.rows,
+                reference.configs.columns,
+                name,
+                other.configs.rows,
+                other.configs.columns
+            ),
+        ));
+    }
+    Ok(())
+}
+
+fn parse_integer_raster_value(
+    value: f64,
+    raster_name: &str,
+    row: isize,
+    col: isize,
+) -> Result<i64, Error> {
+    if !value.is_finite() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!("Non-finite value in {} at ({}, {})", raster_name, row, col),
+        ));
+    }
+    let rounded = value.round();
+    if (value - rounded).abs() > 1e-6 {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "Expected integer value in {} at ({}, {}), got {}",
+                raster_name, row, col, value
+            ),
+        ));
+    }
+    Ok(rounded as i64)
+}
+
+fn csa_hectares_to_cells(csa_ha: f64, cell_area_m2: f64) -> Result<f64, Error> {
+    if !csa_ha.is_finite() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!("CSA threshold must be finite, got {}", csa_ha),
+        ));
+    }
+    if cell_area_m2 <= 0.0 || !cell_area_m2.is_finite() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "Cell area must be positive and finite for CSA conversion, got {}",
+                cell_area_m2
+            ),
+        ));
+    }
+    Ok((csa_ha * HECTARE_TO_SQUARE_METERS / cell_area_m2).max(0.0))
+}
+
+fn parse_threshold_table(table_path: &str) -> Result<HashMap<i64, ThresholdTableEntry>, Error> {
+    let file = File::open(table_path).map_err(|err| {
+        Error::new(
+            ErrorKind::InvalidInput,
+            format!("Failed to open threshold table {}: {}", table_path, err),
+        )
+    })?;
+    let reader = BufReader::new(file);
+
+    let mut table = HashMap::new();
+    for (line_idx, line_result) in reader.lines().enumerate() {
+        let line = line_result.map_err(|err| {
+            Error::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "Failed reading threshold table {} line {}: {}",
+                    table_path,
+                    line_idx + 1,
+                    err
+                ),
+            )
+        })?;
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+
+        let parts: Vec<&str> = if trimmed.contains(',') {
+            trimmed.split(',').map(|token| token.trim()).collect()
+        } else {
+            trimmed.split_whitespace().collect()
+        };
+        if parts.len() < 3 {
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "Threshold table line {} must contain code,csa_ha,mscl_m",
+                    line_idx + 1
+                ),
+            ));
+        }
+
+        let parsed_code = parts[0].parse::<i64>();
+        let parsed_csa = parts[1].parse::<f64>();
+        let parsed_mscl = parts[2].parse::<f64>();
+        if parsed_code.is_err() || parsed_csa.is_err() || parsed_mscl.is_err() {
+            if line_idx == 0 {
+                continue;
+            }
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "Threshold table parse error at line {} (expected numeric code,csa_ha,mscl_m)",
+                    line_idx + 1
+                ),
+            ));
+        }
+
+        table.insert(
+            parsed_code.unwrap(),
+            ThresholdTableEntry {
+                csa_ha: parsed_csa.unwrap(),
+                _mscl_m: parsed_mscl.unwrap(),
+            },
+        );
+    }
+
+    if table.is_empty() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "Threshold table did not contain any threshold mappings.",
+        ));
+    }
+
+    Ok(table)
+}
+
+fn run_phase_a(args: &ParsedArgs, verbose: bool) -> Result<(), Error> {
+    let d8 = Raster::new(&args.d8_pntr, "r")?;
+    let upstream_area = Raster::new(&args.upstream_area, "r")?;
+    validate_matching_geometry(&d8, &upstream_area, "--upstream_area")?;
+
+    let threshold_code_raster = if let Some(code_path) = args.threshold_code_raster.as_ref() {
+        let raster = Raster::new(code_path, "r")?;
+        validate_matching_geometry(&d8, &raster, "--threshold_code_raster")?;
+        Some(raster)
+    } else {
+        None
+    };
+    let threshold_table = if let Some(table_path) = args.threshold_table.as_ref() {
+        Some(parse_threshold_table(table_path)?)
+    } else {
+        None
+    };
+
+    let rows = d8.configs.rows as isize;
+    let columns = d8.configs.columns as isize;
+    let expected_len = (rows * columns) as usize;
+
+    let pointer_nodata = d8.configs.nodata;
+    let area_nodata = upstream_area.configs.nodata;
+    let threshold_code_nodata = threshold_code_raster.as_ref().map(|r| r.configs.nodata);
+    let cell_area_m2 =
+        upstream_area.configs.resolution_x.abs() * upstream_area.configs.resolution_y.abs();
+    let default_csa_cells = csa_hectares_to_cells(args.csa, cell_area_m2)?;
+
+    let mut pointers = vec![0u8; expected_len];
+    let mut upstream_area_cells = vec![0.0f64; expected_len];
+    let mut active_mask = vec![false; expected_len];
+    let mut local_csa_cells = vec![default_csa_cells; expected_len];
+    let mut min_active_csa_cells = f64::INFINITY;
+
+    for row in 0..rows {
+        for col in 0..columns {
+            let idx = (row * columns + col) as usize;
+            let pointer_value = d8[(row, col)];
+            let area_value = upstream_area[(row, col)];
+            if pointer_value == pointer_nodata || area_value == area_nodata {
+                continue;
+            }
+
+            let pointer_code = parse_integer_raster_value(pointer_value, "--d8_pntr", row, col)?;
+            if !(0..=255).contains(&pointer_code) {
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "D8 pointer value out of range at ({}, {}): {}",
+                        row, col, pointer_code
+                    ),
+                ));
+            }
+            pointers[idx] = pointer_code as u8;
+
+            upstream_area_cells[idx] = area_value;
+            active_mask[idx] = true;
+
+            let cell_csa_cells = if let (Some(code_raster), Some(table)) =
+                (threshold_code_raster.as_ref(), threshold_table.as_ref())
+            {
+                let code_value = code_raster[(row, col)];
+                if code_value == threshold_code_nodata.unwrap() {
+                    return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        format!("Threshold code missing at active cell ({}, {})", row, col),
+                    ));
+                }
+                let code =
+                    parse_integer_raster_value(code_value, "--threshold_code_raster", row, col)?;
+                let entry = table.get(&code).ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "No threshold table entry for code {} at ({}, {})",
+                            code, row, col
+                        ),
+                    )
+                })?;
+                csa_hectares_to_cells(entry.csa_ha, cell_area_m2)?
+            } else {
+                default_csa_cells
+            };
+
+            local_csa_cells[idx] = cell_csa_cells;
+            min_active_csa_cells = min_active_csa_cells.min(cell_csa_cells);
+        }
+    }
+
+    if !min_active_csa_cells.is_finite() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "No valid active cells were found while preparing Phase A qualification.",
+        ));
+    }
+
+    let pointer_scheme = if args.esri_pntr {
+        D8PointerScheme::Esri
+    } else {
+        D8PointerScheme::Whitebox
+    };
+
+    let phase_a = run_phase_a_qualification(&PhaseAInputs {
+        rows,
+        columns,
+        pointers,
+        pointer_scheme,
+        upstream_area_cells,
+        active_mask,
+        local_csa_cells,
+        min_active_csa_cells,
+        epsilon: args.epsilon,
+    })?;
+
+    if verbose {
+        let stream_count = phase_a.stream_mask.iter().filter(|cell| **cell).count();
+        println!(
+            "IFOLP WP-03 Phase A complete: {} stream cells remain after {} pass(es).",
+            stream_count,
+            phase_a.pass_traces.len()
+        );
+    }
+
+    Ok(())
 }
 
 fn run_phase_b_placeholder(_args: &ParsedArgs) -> Result<(), Error> {
     Err(Error::new(
         ErrorKind::Unsupported,
-        "Phase B first-order-link pruning is not implemented in WP-01 scaffolding.",
+        "Phase B first-order-link pruning is not implemented yet (WP-04 scope).",
     ))
 }
 
@@ -497,7 +773,7 @@ impl WhiteboxTool for IterativeFirstOrderLinkPrune {
             println!("{}", "*".repeat(welcome_len));
 
             println!(
-                "IFOLP WP-01 scaffolding parsed args: csa={}, mscl={}, epsilon={}, esri_pntr={}, fail_if_only_channel_pruned={}",
+                "IFOLP parsed args: csa={}, mscl={}, epsilon={}, esri_pntr={}, fail_if_only_channel_pruned={}",
                 parsed.csa,
                 parsed.mscl,
                 parsed.epsilon,
@@ -506,7 +782,7 @@ impl WhiteboxTool for IterativeFirstOrderLinkPrune {
             );
         }
 
-        run_phase_a_placeholder(&parsed)?;
+        run_phase_a(&parsed, verbose)?;
         run_phase_b_placeholder(&parsed)?;
         Ok(())
     }
@@ -519,3 +795,7 @@ mod iterative_first_order_link_prune_parser_tests;
 #[cfg(test)]
 #[path = "iterative_first_order_link_prune_topology_tests.rs"]
 mod iterative_first_order_link_prune_topology_tests;
+
+#[cfg(test)]
+#[path = "iterative_first_order_link_prune_phase_a_tests.rs"]
+mod iterative_first_order_link_prune_phase_a_tests;

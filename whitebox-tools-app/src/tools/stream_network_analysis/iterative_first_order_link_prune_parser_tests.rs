@@ -155,15 +155,13 @@ fn iterative_first_order_link_prune_parser_threshold_inputs_must_be_paired() {
 }
 
 #[test]
-fn iterative_first_order_link_prune_run_returns_phase_placeholder_error() {
-    let tool = IterativeFirstOrderLinkPrune::new();
-    let err = tool
-        .run(base_args(), "/tmp/wd/", false)
-        .expect_err("placeholder run path should fail");
+fn iterative_first_order_link_prune_run_returns_phase_b_placeholder_error_after_phase_a() {
+    let parsed = parse_arguments(&base_args(), "/tmp/wd/").expect("parse should succeed");
+    let err = run_phase_b_placeholder(&parsed).expect_err("phase B placeholder should fail");
     assert_eq!(err.kind(), ErrorKind::Unsupported);
     assert!(
         err.to_string()
-            .contains("Phase A source-area qualification is not implemented"),
+            .contains("Phase B first-order-link pruning is not implemented"),
         "unexpected error: {}",
         err
     );
