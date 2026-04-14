@@ -18,6 +18,9 @@ This fork diverges from the upstream WhiteboxTools distribution in the following
 - `ClipRasterToRaster` (gis_analysis/clip_raster_to_raster.rs) adds raster-on-raster clipping with a corresponding Python wrapper.
 - `RemoveShortStreams` enhancement (stream_network_analysis/remove_short_streams.rs)
   - Adds `--max_junctions` pruning with iterative branch deletion so no junction retains more than the requested inflows; Python API updated with the new argument.
+- `IterativeFirstOrderLinkPrune` (stream_network_analysis/iterative_first_order_link_prune.rs)
+  - Implements two-stage stream qualification/pruning with local threshold support (`--threshold_code_raster` + `--threshold_table`) and deterministic first-order-link pruning behavior used for TopAZ parity workflows.
+  - Exposed through Python bindings (`whitebox_tools.py` and `WBT/whitebox_tools.py`) and documented in [docs/iterative-first-order-link-prune/specification.md](docs/iterative-first-order-link-prune/specification.md).
 - `Slope` tool modification (terrain_analysis/slope.rs) introducing ratio units and recording the chosen unit in output metadata; banner text updated to reflect maintenance through 2025.
 - `FVSlope` (hydro_analysis/fvslope.rs)
   - Computes slope in the D8 flow direction (with ESRI pointer support, z-factor, and unit controls) to mirror TOPAZ-style flow-vector slopes used by WEPP channel hydraulics.
