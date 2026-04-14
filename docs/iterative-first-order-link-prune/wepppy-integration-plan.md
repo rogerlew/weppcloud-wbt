@@ -6,23 +6,28 @@ Replace WEPPpy's current two-step delineation path in the WBT TOPAZ emulator:
 1. `ExtractStreams` (CSA threshold)
 2. `RemoveShortStreams` (MCL threshold)
 
-with a single call to:
-- `IterativeFirstOrderLinkPrune` (`iterative_first_order_link_prune`)
+with IFOLP as the default pruning method while keeping a user-selectable legacy option:
+- default: `IterativeFirstOrderLinkPrune` (`iterative_first_order_link_prune`)
+- legacy option: `RemoveShortStreams` (`remove_short_streams`)
 
 while keeping production rollout and rollback operationally safe.
 
 ## Target Outcome
 
-1. `wbt_topaz_emulator` uses one WBT tool for source-area qualification + iterative first-order-link pruning.
-2. Downstream artifacts remain valid (`netful`, `chnjnt`, netw/subwta-derived products).
-3. Cutover is deterministic, tested, and reversible.
+1. `wbt_topaz_emulator` defaults to IFOLP pruning and supports explicit method selection (`ifolp` or `remove_short_streams`).
+2. Watershed state has `_stream_pruning_method` with default `ifolp`, and `.cfg` (`[watershed.wbt] stream_pruning_method=...`) initializes it.
+3. WBT controls expose user-facing `Stream Pruning Method` and send it through rq-engine payloads.
+4. Downstream artifacts remain valid (`netful`, `chnjnt`, netw/subwta-derived products).
+5. Cutover is deterministic, tested, and reversible.
 
 ## Scope
 
 In scope:
 - New WBT tool implementation and registration.
 - Python wrappers in both wrapper files.
-- WEPPpy emulator refactor to single-tool call.
+- WEPPpy emulator refactor to IFOLP-default, method-selectable pruning.
+- Watershed/property/config plumbing for `stream_pruning_method`.
+- WEPPcloud WBT controls and rq-engine payload plumbing for `Stream Pruning Method`.
 - Explicit treatment of other `remove_short_streams` consumers.
 - Validation, rollout, rollback runbook.
 
@@ -55,6 +60,7 @@ New wrapper method:
     threshold_table=None,
     epsilon=1e-5,
     fail_if_only_channel_pruned=True,
+    max_junctions=None,
     callback=None
   )`
 
@@ -62,6 +68,7 @@ Migration note:
 - Tool default remains `true` for parity.
 - During rollout, WEPPpy emulator may explicitly pass `fail_if_only_channel_pruned=False` as a temporary operational exception.
 - Remove this exception only after explicit operational acceptance.
+- WEPPpy integration target must explicitly pass `max_junctions=3` (CLI flag `--max_junctions=3`) for IFOLP runs.
 
 ## Work Plan
 
@@ -129,16 +136,27 @@ Repository: `/workdir/wepppy`
 Tasks:
 1. Update:
 - `/workdir/wepppy/wepppy/topo/wbt/wbt_topaz_emulator.py`
-2. Replace two-step `extract_streams + remove_short_streams` sequence with one `iterative_first_order_link_prune` call.
-3. Map inputs:
+2. Keep `extract_streams` creation of `netful0` for provenance; branch pruning by `stream_pruning_method`:
+- `ifolp` -> `iterative_first_order_link_prune`
+- `remove_short_streams` -> `remove_short_streams` (legacy selectable mode)
+3. Map IFOLP inputs:
 - `csa -> csa`
 - `mcl -> mscl`
 - `flovec -> d8_pntr`
 - `floaccum -> upstream_area`
 - `netful -> output`
-4. Update resource/provenance docs for artifact flow (`netful0` contract changes):
+4. Explicitly pass pruning junction cap:
+- `max_junctions -> 3`
+5. Add watershed-config/state contract:
+- `Watershed._stream_pruning_method` default `ifolp`
+- property `watershed.stream_pruning_method`
+- initialize from `.cfg` key `[watershed.wbt] stream_pruning_method`
+6. Expose user control and route payload:
+- WEPPcloud WBT controls field label: `Stream Pruning Method`
+- rq-engine parse/validate/pass-through (`ifolp` | `remove_short_streams`)
+7. Update resource/provenance docs for artifact flow (`netful0` contract changes):
 - `/workdir/wepppy/wepppy/topo/wbt/wbt_documentation.py`
-- explicitly replace current `netful0` and `remove_short_streams` tool-description entries.
+- explicitly document IFOLP default with selectable legacy mode.
 
 Acceptance gate:
 - command-concrete emulator integration gate passes:

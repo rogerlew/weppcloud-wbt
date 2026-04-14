@@ -68,10 +68,12 @@ Optional:
 - `--esri_pntr`: pointer encoding toggle.
 - `--epsilon`: floating comparison tolerance (default `1e-5`).
 - `--fail_if_only_channel_pruned`: default `true`.
+- `--max_junctions`: optional non-negative integer cap on retained incoming first-order links per receiver.
 
 Input validity:
 - `--csa` must be finite and strictly positive (`> 0`).
 - `--mscl` must be finite and non-negative (`>= 0`).
+- `--max_junctions` must be a non-negative integer when provided.
 - When threshold-table overrides are used, each row must satisfy finite `csa_ha`, `mscl_m`, with `csa_ha > 0` and `mscl_m >= 0`.
 
 ## Threshold Model
@@ -156,6 +158,15 @@ For selected shortest incoming link `Lmin` at receiver `R`:
 3. Apply only-channel guard:
 - parity guard condition: if current pass has exactly one generated candidate link and the current receiver group has exactly one incoming candidate link, and `fail_if_only_channel_pruned=true`, fail explicitly.
 
+### Optional junction fan-in cap (`--max_junctions`)
+
+When `--max_junctions` is provided:
+1. Evaluate live incoming candidates at each receiver group during pass-time mutation.
+2. If live incoming candidate count exceeds `max_junctions`, prune the shortest live incoming link immediately (same strict-epsilon + first-encounter tie behavior).
+3. Repeat within that receiver group until live candidate count is `<= max_junctions` or no live candidate remains.
+4. This cap is additive to MSCL pruning; either condition can trigger pruning.
+5. If `--max_junctions` is omitted, preserve retained baseline behavior (no extra fan-in cap pruning).
+
 ### Deletion timing and state handling
 
 Deletion is immediate (not batched):
@@ -179,6 +190,7 @@ To preserve parity-consistent reproducibility:
 2. Receiver evaluation follows discovery/assignment order induced by source scan.
 3. Shortest-link ties resolve by first encounter under strict epsilon-improvement.
 4. Use fixed default epsilon.
+5. Under `--max_junctions`, repeated in-group cap pruning keeps the same shortest-link selector and tie rules at each step.
 
 ## Numeric Decision Contract
 
@@ -256,22 +268,30 @@ repeat:
   links = discover_first_order_links_row_major(mask, d8)  # pass-start snapshot
 
   for receiver in receiver_discovery_order(links):
-    lmin = shortest_by_strict_epsilon_first_encounter(incoming_links(receiver))
-    if lmin is none:
-      continue
+    repeat:
+      lmin = shortest_by_strict_epsilon_first_encounter(incoming_live_links(receiver))
+      if lmin is none:
+        break
 
-    if not candidate_is_still_valid(mask, lmin):
-      continue
+      if not candidate_is_still_valid(mask, lmin):
+        if max_junctions is omitted:
+          break  # retained baseline skip/fallback behavior
+        continue
 
-    mscl = receiver_local_mscl(receiver)
-    if lmin.length_m < mscl - eps:
-      if parity_single_link_guard_violated(links, receiver):
-        fail
+      mscl = receiver_local_mscl(receiver)
+      cap_exceeded = max_junctions is set and incoming_live_count(receiver) > max_junctions
+      if lmin.length_m < mscl - eps or cap_exceeded:
+        if parity_single_link_guard_violated(links, receiver):
+          fail
 
-      prune_link_immediately(mask, lmin)  # preserve receiver except self-receiver terminal case
+        prune_link_immediately(mask, lmin)  # preserve receiver except self-receiver terminal case
 
-      if receiver_degenerated(mask, receiver):
-        degeneration_flag = true
+        if receiver_degenerated(mask, receiver):
+          degeneration_flag = true
+
+        if cap_exceeded:
+          continue  # keep pruning until cap satisfied
+      break
 
   if degeneration_flag:
     reclassify_topology(mask, d8)

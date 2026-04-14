@@ -10693,7 +10693,7 @@ Okay, that's it for now.
         if zero_background: args.append("--zero_background")
         return self.run_tool('length_of_upstream_channels', args, callback)  # returns 1 if error
 
-    def iterative_first_order_link_prune(self, d8_pntr, upstream_area, output, csa, mscl, threshold_code_raster=None, threshold_table=None, esri_pntr=False, epsilon=None, fail_if_only_channel_pruned=None, callback=None):
+    def iterative_first_order_link_prune(self, d8_pntr, upstream_area, output, csa, mscl, threshold_code_raster=None, threshold_table=None, esri_pntr=False, epsilon=None, fail_if_only_channel_pruned=None, max_junctions=None, callback=None):
         """Performs iterative first-order link prune stream-network qualification/pruning.
 
         Keyword arguments:
@@ -10708,6 +10708,7 @@ Okay, that's it for now.
         esri_pntr -- Pointer raster uses ESRI D8 encoding.
         epsilon -- Optional floating tolerance for Phase A CSA boundary checks and Phase B strict comparisons.
         fail_if_only_channel_pruned -- Optional boolean override for only-channel prune guard behavior.
+        max_junctions -- Optional maximum incoming first-order links retained per receiver.
         callback -- Custom function for handling tool text outputs.
         """
         args = []
@@ -10723,6 +10724,7 @@ Okay, that's it for now.
         if esri_pntr: args.append("--esri_pntr")
         if epsilon is not None: args.append("--epsilon='{}'".format(epsilon))
         if fail_if_only_channel_pruned is not None: args.append("--fail_if_only_channel_pruned='{}'".format(str(fail_if_only_channel_pruned).lower()))
+        if max_junctions is not None: args.append("--max_junctions='{}'".format(max_junctions))
         return self.run_tool('iterative_first_order_link_prune', args, callback)  # returns 1 if error
 
     def long_profile(self, d8_pntr, streams, dem, output, esri_pntr=False, callback=None):

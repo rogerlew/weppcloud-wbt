@@ -116,6 +116,7 @@ fn iterative_first_order_link_prune_parser_defaults_are_applied() {
         parsed.fail_if_only_channel_pruned,
         DEFAULT_FAIL_IF_ONLY_CHANNEL_PRUNED
     );
+    assert_eq!(parsed.max_junctions, None);
 }
 
 #[test]
@@ -239,6 +240,23 @@ fn iterative_first_order_link_prune_parser_rejects_non_finite_numeric_values() {
 }
 
 #[test]
+fn iterative_first_order_link_prune_parser_rejects_invalid_max_junctions() {
+    let mut negative = base_args();
+    negative.push("--max_junctions=-1".to_string());
+    let err = parse_arguments(&negative, "").expect_err("negative max_junctions should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("--max_junctions"));
+    assert!(err.to_string().contains("non-negative"));
+
+    let mut fractional = base_args();
+    fractional.push("--max_junctions=1.5".to_string());
+    let err = parse_arguments(&fractional, "").expect_err("fractional max_junctions should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("--max_junctions"));
+    assert!(err.to_string().contains("integer"));
+}
+
+#[test]
 fn iterative_first_order_link_prune_parser_optional_overrides() {
     let mut args = base_args();
     args.push("--threshold_code_raster=codes.tif".to_string());
@@ -246,6 +264,7 @@ fn iterative_first_order_link_prune_parser_optional_overrides() {
     args.push("--esri_pntr".to_string());
     args.push("--epsilon=0.25".to_string());
     args.push("--fail_if_only_channel_pruned=false".to_string());
+    args.push("--max_junctions=3".to_string());
 
     let parsed = parse_arguments(&args, "/tmp/wd/").expect("parse should succeed");
     assert_eq!(
@@ -259,6 +278,7 @@ fn iterative_first_order_link_prune_parser_optional_overrides() {
     assert!(parsed.esri_pntr);
     assert!((parsed.epsilon - 0.25).abs() < f64::EPSILON);
     assert!(!parsed.fail_if_only_channel_pruned);
+    assert_eq!(parsed.max_junctions, Some(3));
 }
 
 #[test]
@@ -554,6 +574,7 @@ fn iterative_first_order_link_prune_help_contract_contains_all_flags() {
         "--esri_pntr",
         "--epsilon",
         "--fail_if_only_channel_pruned",
+        "--max_junctions",
     ] {
         assert!(
             flags.contains(&required_flag.to_string()),

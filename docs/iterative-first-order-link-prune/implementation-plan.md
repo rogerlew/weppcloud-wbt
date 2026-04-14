@@ -28,7 +28,7 @@ Required for every work-package handoff:
 ## Source and Test File Organization Strategy (Maintainability)
 
 Goal:
-- Keep IFOLP implementation readable and reviewable as scope grows from WP-01 through WP-08.
+- Keep IFOLP implementation readable and reviewable as scope grows from WP-01 through WP-09.
 
 Source organization rules:
 1. Keep the command entry file lightweight:
@@ -310,6 +310,33 @@ Test phase:
 Exit criteria:
 - Tool is callable via CLI and both Python wrappers in packaged artifacts.
 
+## WP-09: Max Junctions Support (`--max_junctions`)
+
+Goal:
+- Add explicit IFOLP support for `--max_junctions` while preserving retained omitted-argument baseline behavior.
+
+Implementation tasks:
+1. Add parser/help/metadata surface for optional `--max_junctions` (non-negative integer).
+2. Thread `max_junctions` into Phase B pruning inputs.
+3. Implement deterministic receiver-group fan-in cap behavior when `max_junctions` is set:
+- shortest-link selection remains strict-epsilon + first encounter,
+- prune repeatedly within receiver group until live incoming candidate count `<= max_junctions`.
+4. Keep omitted `--max_junctions` path behavior equivalent to retained baseline.
+5. Add parser and phase-level tests for contract and deterministic `--max_junctions=3`.
+
+Code review phase:
+- Independent review with findings disposition; closure requires no unresolved high/medium findings.
+
+Test phase:
+- `cargo check -p whitebox_tools`
+- `cargo test -p whitebox_tools iterative_first_order_link_prune -- --nocapture`
+- `python -m py_compile whitebox_tools.py WBT/whitebox_tools.py`
+
+Exit criteria:
+- Contract/docs/wrappers include `--max_junctions`.
+- Omitted-arg parity hash remains retained baseline.
+- `--max_junctions=3` behavior is deterministic and covered by tests.
+
 ## Critical Items Beyond Core Implementation
 
 1. Clean-room compliance:
@@ -333,7 +360,7 @@ Exit criteria:
 ## Suggested Execution Order and Parallelism
 
 Primary order:
-1. WP-00 -> WP-01 -> WP-02 -> WP-03 -> WP-04 -> WP-05 -> WP-06 -> WP-07 -> WP-08
+1. WP-00 -> WP-01 -> WP-02 -> WP-03 -> WP-04 -> WP-05 -> WP-06 -> WP-07 -> WP-08 -> WP-09
 
 Parallel opportunities:
 - Wrapper work (WP-08 prep) can start after WP-01 contract is stable.
@@ -369,3 +396,4 @@ Status values:
 | WP-06 | Error Contract + Robustness Hardening | done | Codex | WP-04 | done | done | done | n/a | 2026-04-13 | 2026-04-14 | 2026-04-13 | Hardened error contracts without pruning-semantic changes: finite numeric guards (`epsilon`, cell sizes, threshold-table values) plus duplicate threshold-code rejection; added companion tests across parser/Phase A/Phase B/topology. Gates: `cargo check -p whitebox_tools` (pass), `cargo test -p whitebox_tools iterative_first_order_link_prune -- --nocapture` (pass, `50 passed`). Parity regression reran `/tmp/ifolp_wp05_remediate/run1` + `run2`; canonical hash `920cc1612bd677a1f8dab935a521f6270e226bf961fd5f72ca770b32cd134c83` in both runs and identical to retained `parity-report.final_effective.canonical.json` artifacts (no retained-state drift). Review disposition: no unresolved high/medium findings. ExecPlan archived at `/workdir/wepppy/docs/work-packages/20260413_ifolp_wp06_error_contract_robustness_hardening/prompts/completed/ifolp_wp06_error_contract_robustness_hardening_execplan.md`. |
 | WP-07 | Optimization Pass (Multithreading + Performance) | done | Codex | WP-05, WP-06 | done | done | done | done | 2026-04-13 | 2026-04-15 | 2026-04-13 | Optimized topology hot path in `iterative_first_order_link_prune_topology.rs` with bounded multithreaded inflow counting for large grids (`rows >= 1024`), allocation reduction in `inflow_count`, and downstream-classification micro-optimization; added concurrency regression test `iterative_first_order_link_prune_topology_parallel_inflow_counts_match_manual_reference`. Gates: `cargo check -p whitebox_tools` (pass), `cargo test -p whitebox_tools iterative_first_order_link_prune -- --nocapture` (pass, `51 passed`). Benchmarks vs WP-07 baseline (`run1`, 5 repeats): `blackwood_60_5` `0.046s -> 0.042s` (-8.70%), `clueless_aftertaste_anchor_10_100` `0.020s -> 0.020s` (0.00%), `gatecreek_10m_30_2` `0.750s -> 0.706s` (-5.87%); artifacts in `/workdir/wepppy/docs/work-packages/20260413_ifolp_wp07_optimization_pass/benchmarks/`. Parity regression reruns on `/tmp/ifolp_wp05_remediate/run1` + `run2` produced canonical hash `920cc1612bd677a1f8dab935a521f6270e226bf961fd5f72ca770b32cd134c83` identical to retained `parity-report.final_effective.canonical.json` artifacts (no retained-state drift). Review disposition: no unresolved high/medium findings. ExecPlan archived at `/workdir/wepppy/docs/work-packages/20260413_ifolp_wp07_optimization_pass/prompts/completed/ifolp_wp07_optimization_pass_execplan.md`. |
 | WP-08 | WBT Wrapper Exposure + Release Readiness | done | Codex | WP-05, WP-06, WP-07 | done | done | done | n/a | 2026-04-13 | 2026-04-15 | 2026-04-13 | Added IFOLP wrapper surface to both Python bindings (`whitebox_tools.py`, `WBT/whitebox_tools.py`) and validated CLI/wrapper contract (`--listtools`, `--toolhelp=IterativeFirstOrderLinkPrune`, required-arg and threshold-pair error checks). Required gates passed: `cargo check -p whitebox_tools`, `cargo test -p whitebox_tools iterative_first_order_link_prune -- --nocapture` (`51 passed`, `0 failed`), `python -m py_compile whitebox_tools.py WBT/whitebox_tools.py`. Parity spot checks rerun on retained run roots (`/tmp/ifolp_wp05_remediate/run1`, `run2`) with fresh `candidate_wp08` outputs and compare harness produced canonical hash `920cc1612bd677a1f8dab935a521f6270e226bf961fd5f72ca770b32cd134c83` in both runs, byte-identical to retained `parity-report.final_effective.canonical.json` artifacts (no retained-state drift). Mandatory review disposition completed with no unresolved high/medium findings. ExecPlan archived at `/workdir/wepppy/docs/work-packages/20260413_ifolp_wp08_wrapper_release_readiness/prompts/completed/ifolp_wp08_wrapper_release_readiness_execplan.md`. |
+| WP-09 | Max Junctions Support (`--max_junctions`) | done | Codex | WP-08 | done | done | done | n/a | 2026-04-14 | 2026-04-14 | 2026-04-14 | Added IFOLP `--max_junctions` contract support end-to-end: parser/help metadata, Phase B fan-in cap pruning when explicitly set, and wrapper exposure updates in both Python bindings. Omitted-argument behavior retained by design; fresh parity regression on `/tmp/ifolp_wp05_remediate/run1` + `run2` produced canonical hash `920cc1612bd677a1f8dab935a521f6270e226bf961fd5f72ca770b32cd134c83`, byte-identical to retained `parity-report.final_effective.canonical.json` artifacts. Added deterministic `--max_junctions=3` phase test and rerun parity compare reports (`parity-report.wp09_maxj3*.json`) showed deterministic canonical stability across run1/run2. Required gates passed: `cargo check -p whitebox_tools`, `cargo test -p whitebox_tools iterative_first_order_link_prune -- --nocapture` (`77 passed`, `0 failed`), `python -m py_compile whitebox_tools.py WBT/whitebox_tools.py`. Mandatory review disposition closed with no unresolved high/medium findings. |

@@ -14,6 +14,7 @@ pub(crate) struct PhaseBInputs {
     pub(crate) local_mscl_m: Vec<f64>,
     pub(crate) epsilon: f64,
     pub(crate) fail_if_only_channel_pruned: bool,
+    pub(crate) max_junctions: Option<usize>,
     pub(crate) cell_size_x: f64,
     pub(crate) cell_size_y: f64,
 }
@@ -84,6 +85,7 @@ pub(crate) fn run_phase_b_pruning(inputs: &PhaseBInputs) -> Result<PhaseBResult,
             &inputs.local_mscl_m,
             inputs.epsilon,
             inputs.fail_if_only_channel_pruned,
+            inputs.max_junctions,
             inputs.rows,
             inputs.columns,
             &mut active_count,
@@ -210,6 +212,7 @@ pub(crate) fn process_receiver_groups_for_single_pass(
     local_mscl_m: &[f64],
     epsilon: f64,
     fail_if_only_channel_pruned: bool,
+    max_junctions: Option<usize>,
     rows: isize,
     columns: isize,
     active_count: &mut usize,
@@ -225,23 +228,93 @@ pub(crate) fn process_receiver_groups_for_single_pass(
     for group in receiver_groups {
         pass_trace.receiver_order.push(group.receiver);
         let receiver_candidate_count = group.candidates.len();
-        let selected = match select_shortest_link_strict_epsilon(&group.candidates, epsilon) {
-            Some(candidate) => candidate,
-            None => continue,
-        };
-
-        if !kernel.candidate_is_still_alive(stream_mask, selected)? {
-            continue;
-        }
-
         let receiver_idx = index_of(rows, columns, group.receiver)?;
         if !stream_mask[receiver_idx] {
             continue;
         }
 
-        let local_mscl = local_mscl_m[receiver_idx];
-        if selected.length_m < local_mscl - epsilon {
-            if fail_if_only_channel_pruned
+        if max_junctions.is_none() {
+            let selected = match select_shortest_link_strict_epsilon(&group.candidates, epsilon) {
+                Some(candidate) => candidate,
+                None => continue,
+            };
+            if !kernel.candidate_is_still_alive(stream_mask, selected)? {
+                continue;
+            }
+
+            let local_mscl = local_mscl_m[receiver_idx];
+            if selected.length_m < local_mscl - epsilon {
+                if fail_if_only_channel_pruned
+                    && discovered_link_count == 1
+                    && receiver_candidate_count == 1
+                {
+                    return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "Only-channel prune guard violated at receiver ({}, {}).",
+                            group.receiver.row, group.receiver.col
+                        ),
+                    ));
+                }
+
+                let pre_inflow = if stream_mask[receiver_idx] {
+                    kernel.inflow_count(group.receiver, stream_mask)? as usize
+                } else {
+                    0
+                };
+
+                let removed = prune_link_immediately(stream_mask, selected, rows, columns)?;
+                *active_count = active_count.saturating_sub(removed);
+                pass_trace.pruned_sources.push(selected.source);
+
+                if *active_count == 0 {
+                    return Err(Error::new(
+                        ErrorKind::InvalidInput,
+                        "No channels remain during first-order-link pruning.",
+                    ));
+                }
+
+                let post_inflow = if stream_mask[receiver_idx] {
+                    kernel.inflow_count(group.receiver, stream_mask)? as usize
+                } else {
+                    0
+                };
+                if pre_inflow >= 2 && post_inflow <= 1 {
+                    degeneration_flag = true;
+                }
+            }
+            continue;
+        }
+
+        let max_junctions = max_junctions.unwrap();
+        loop {
+            if !stream_mask[receiver_idx] {
+                break;
+            }
+
+            let mut live_candidates: Vec<FirstOrderLink> = Vec::new();
+            for candidate in &group.candidates {
+                if kernel.candidate_is_still_alive(stream_mask, candidate)? {
+                    live_candidates.push(candidate.clone());
+                }
+            }
+            if live_candidates.is_empty() {
+                break;
+            }
+
+            let selected = match select_shortest_link_strict_epsilon(&live_candidates, epsilon) {
+                Some(candidate) => candidate,
+                None => break,
+            };
+            let local_mscl = local_mscl_m[receiver_idx];
+            let prune_for_mscl = selected.length_m < local_mscl - epsilon;
+            let prune_for_junction_cap = live_candidates.len() > max_junctions;
+            if !prune_for_mscl && !prune_for_junction_cap {
+                break;
+            }
+
+            if prune_for_mscl
+                && fail_if_only_channel_pruned
                 && discovered_link_count == 1
                 && receiver_candidate_count == 1
             {
@@ -278,6 +351,10 @@ pub(crate) fn process_receiver_groups_for_single_pass(
             };
             if pre_inflow >= 2 && post_inflow <= 1 {
                 degeneration_flag = true;
+            }
+
+            if !prune_for_junction_cap {
+                break;
             }
         }
     }

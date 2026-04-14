@@ -54,6 +54,7 @@ struct ParsedArgs {
     esri_pntr: bool,
     epsilon: f64,
     fail_if_only_channel_pruned: bool,
+    max_junctions: Option<usize>,
 }
 
 #[derive(Clone)]
@@ -183,6 +184,15 @@ impl IterativeFirstOrderLinkPrune {
             optional: true,
         });
 
+        parameters.push(ToolParameter {
+            name: "Maximum Inflowing Links Per Junction".to_owned(),
+            flags: vec!["--max_junctions".to_owned()],
+            description: "Optional cap on retained incoming first-order links per receiver; shortest links are pruned first until cap is met.".to_owned(),
+            parameter_type: ParameterType::Integer,
+            default_value: None,
+            optional: true,
+        });
+
         let sep: String = path::MAIN_SEPARATOR.to_string();
         let e = format!("{}", env::current_exe().unwrap().display());
         let mut parent = env::current_exe().unwrap();
@@ -197,7 +207,7 @@ impl IterativeFirstOrderLinkPrune {
             short_exe += ".exe";
         }
         let usage = format!(
-            ">>.*{0} -r={1} -v --wd=\"*path*to*data*\" --d8_pntr=d8.tif --upstream_area=area.tif --output=streams.tif --csa=10.0 --mscl=100.0\n>>.*{0} -r={1} -v --wd=\"*path*to*data*\" --d8_pntr=d8.tif --upstream_area=area.tif --output=streams.tif --csa=10.0 --mscl=100.0 --threshold_code_raster=codes.tif --threshold_table=thresholds.csv --epsilon=1e-5 --fail_if_only_channel_pruned=true",
+            ">>.*{0} -r={1} -v --wd=\"*path*to*data*\" --d8_pntr=d8.tif --upstream_area=area.tif --output=streams.tif --csa=10.0 --mscl=100.0\n>>.*{0} -r={1} -v --wd=\"*path*to*data*\" --d8_pntr=d8.tif --upstream_area=area.tif --output=streams.tif --csa=10.0 --mscl=100.0 --threshold_code_raster=codes.tif --threshold_table=thresholds.csv --epsilon=1e-5 --fail_if_only_channel_pruned=true --max_junctions=3",
             short_exe, name
         )
         .replace("*", &sep);
@@ -334,6 +344,22 @@ fn parse_f64(text: &str, flag: &str) -> Result<f64, Error> {
     Ok(value)
 }
 
+fn parse_non_negative_usize(text: &str, flag: &str) -> Result<usize, Error> {
+    let value = text.parse::<i64>().map_err(|_| {
+        Error::new(
+            ErrorKind::InvalidInput,
+            format!("Error parsing {} as integer: {}", flag, text),
+        )
+    })?;
+    if value < 0 {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!("{} must be non-negative, got {}", flag, text),
+        ));
+    }
+    Ok(value as usize)
+}
+
 fn resolve_path(file_name: &str, working_directory: &str) -> String {
     let sep: String = path::MAIN_SEPARATOR.to_string();
     if !file_name.contains(&sep) && !file_name.contains("/") {
@@ -354,6 +380,7 @@ fn parse_arguments(args: &[String], working_directory: &str) -> Result<ParsedArg
     let mut esri_pntr = false;
     let mut epsilon = DEFAULT_EPSILON;
     let mut fail_if_only_channel_pruned = DEFAULT_FAIL_IF_ONLY_CHANNEL_PRUNED;
+    let mut max_junctions: Option<usize> = None;
 
     for i in 0..args.len() {
         let cmd = args[i].splitn(2, '=');
@@ -402,6 +429,9 @@ fn parse_arguments(args: &[String], working_directory: &str) -> Result<ParsedArg
                 &vec,
                 "--fail_if_only_channel_pruned",
             )?;
+        } else if flag_val == "-max_junctions" {
+            let value = parse_numeric_argument(args, i, keyval, &vec, "--max_junctions")?;
+            max_junctions = Some(parse_non_negative_usize(&value, "--max_junctions")?);
         }
     }
 
@@ -477,6 +507,7 @@ fn parse_arguments(args: &[String], working_directory: &str) -> Result<ParsedArg
         esri_pntr,
         epsilon,
         fail_if_only_channel_pruned,
+        max_junctions,
     })
 }
 
@@ -785,9 +816,18 @@ fn prepare_phase_inputs(args: &ParsedArgs) -> Result<PreparedPhaseInputs, Error>
                 ));
             }
             pointers[idx] = pointer_code as u8;
+            active_mask[idx] = true;
+
+            if pointer_code == 0 {
+                // Retain valid-domain zero-pointer cells in output footprint while
+                // excluding them from Phase A/B stream traversal candidates.
+                upstream_area_cells[idx] = 0.0;
+                local_csa_cells[idx] = default_csa_cells;
+                local_mscl_m[idx] = args.mscl;
+                continue;
+            }
 
             upstream_area_cells[idx] = area_value;
-            active_mask[idx] = true;
 
             let cell_csa_cells = if let (Some(code_raster), Some(table)) =
                 (threshold_code_raster.as_ref(), threshold_table.as_ref())
@@ -904,6 +944,7 @@ fn run_phase_b(
         local_mscl_m: prepared.local_mscl_m.clone(),
         epsilon: args.epsilon,
         fail_if_only_channel_pruned: args.fail_if_only_channel_pruned,
+        max_junctions: args.max_junctions,
         cell_size_x: prepared.cell_size_x,
         cell_size_y: prepared.cell_size_y,
     })?;
@@ -973,6 +1014,10 @@ fn write_stream_mask_output(
         "Fail if only channel pruned: {}",
         args.fail_if_only_channel_pruned
     ));
+    output.add_metadata_entry(match args.max_junctions {
+        Some(max_junctions) => format!("Max junctions: {}", max_junctions),
+        None => "Max junctions: omitted (retained baseline behavior)".to_string(),
+    });
     output.add_metadata_entry(format!("Phase A passes: {}", phase_a.pass_traces.len()));
     output.add_metadata_entry(format!("Phase B passes: {}", phase_b.pass_traces.len()));
     output.add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed_time));
@@ -1054,12 +1099,16 @@ impl WhiteboxTool for IterativeFirstOrderLinkPrune {
             println!("{}", "*".repeat(welcome_len));
 
             println!(
-                "IFOLP parsed args: csa={}, mscl={}, epsilon={}, esri_pntr={}, fail_if_only_channel_pruned={}",
+                "IFOLP parsed args: csa={}, mscl={}, epsilon={}, esri_pntr={}, fail_if_only_channel_pruned={}, max_junctions={}",
                 parsed.csa,
                 parsed.mscl,
                 parsed.epsilon,
                 parsed.esri_pntr,
-                parsed.fail_if_only_channel_pruned
+                parsed.fail_if_only_channel_pruned,
+                parsed
+                    .max_junctions
+                    .map(|value| value.to_string())
+                    .unwrap_or_else(|| "omitted".to_string())
             );
         }
 

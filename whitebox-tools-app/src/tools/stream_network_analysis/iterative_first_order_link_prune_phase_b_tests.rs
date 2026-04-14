@@ -55,6 +55,7 @@ fn phase_b_inputs_with_scheme(
         local_mscl_m,
         epsilon: 1e-5,
         fail_if_only_channel_pruned,
+        max_junctions: None,
         cell_size_x: 1.0,
         cell_size_y: 1.0,
     }
@@ -418,6 +419,7 @@ fn iterative_first_order_link_prune_phase_b_skips_stale_later_group_without_fall
         &local_mscl_m,
         1e-5,
         false,
+        None,
         rows,
         columns,
         &mut active_count,
@@ -444,6 +446,48 @@ fn iterative_first_order_link_prune_phase_b_skips_stale_later_group_without_fall
             true
         ]
     );
+}
+
+#[test]
+fn iterative_first_order_link_prune_phase_b_max_junctions_three_prunes_deterministically() {
+    let rows = 5;
+    let columns = 5;
+    let mut pointers = vec![2u8; (rows * columns) as usize];
+    let receiver = GridCell::new(2, 2);
+
+    // Four incoming first-order links into one receiver.
+    pointers[index(rows, columns, 1, 1)] = 4; // (1,1) SE -> (2,2)
+    pointers[index(rows, columns, 1, 2)] = 8; // (1,2) S -> (2,2)
+    pointers[index(rows, columns, 2, 1)] = 2; // (2,1) E -> (2,2)
+    pointers[index(rows, columns, 3, 2)] = 128; // (3,2) N -> (2,2)
+
+    let mut stream_mask = vec![false; pointers.len()];
+    stream_mask[index(rows, columns, 1, 1)] = true;
+    stream_mask[index(rows, columns, 1, 2)] = true;
+    stream_mask[index(rows, columns, 2, 1)] = true;
+    stream_mask[index(rows, columns, 2, 2)] = true;
+    stream_mask[index(rows, columns, 3, 2)] = true;
+
+    let local_mscl_m = vec![0.0; pointers.len()];
+    let mut inputs = phase_b_inputs(rows, columns, pointers, stream_mask, local_mscl_m, false);
+    inputs.max_junctions = Some(3);
+
+    let first = run_phase_b_pruning(&inputs).expect("phase B should succeed");
+    let second = run_phase_b_pruning(&inputs).expect("phase B rerun should be deterministic");
+
+    assert_eq!(first.pass_traces, second.pass_traces);
+    assert_eq!(first.stream_mask, second.stream_mask);
+    assert_eq!(first.pass_traces.len(), 1);
+    assert_eq!(first.pass_traces[0].receiver_order, vec![receiver]);
+    assert_eq!(
+        first.pass_traces[0].pruned_sources,
+        vec![GridCell::new(1, 2)]
+    );
+    assert!(!first.pass_traces[0].degeneration_flag);
+    assert!(!first.stream_mask[index(rows, columns, 1, 2)]);
+    assert!(first.stream_mask[index(rows, columns, 1, 1)]);
+    assert!(first.stream_mask[index(rows, columns, 2, 1)]);
+    assert!(first.stream_mask[index(rows, columns, 3, 2)]);
 }
 
 #[test]
