@@ -55,11 +55,11 @@ New wrapper method:
     output,
     csa,
     mscl,
-    esri_pntr=False,
     threshold_code_raster=None,
     threshold_table=None,
-    epsilon=1e-5,
-    fail_if_only_channel_pruned=True,
+    esri_pntr=False,
+    epsilon=None,
+    fail_if_only_channel_pruned=None,
     max_junctions=None,
     callback=None
   )`
@@ -67,8 +67,21 @@ New wrapper method:
 Migration note:
 - Tool default remains `true` for parity.
 - During rollout, WEPPpy emulator may explicitly pass `fail_if_only_channel_pruned=False` as a temporary operational exception.
-- Remove this exception only after explicit operational acceptance.
+- Remove this exception only after all of the following are true:
+  - IFOLP emulator integration tests pass with explicit `fail_if_only_channel_pruned=True`.
+  - Staging reruns of representative watersheds pass with no only-channel guard regressions.
+  - One release cycle completes without rollback triggered by only-channel guard behavior.
 - WEPPpy integration target must explicitly pass `max_junctions=3` (CLI flag `--max_junctions=3`) for IFOLP runs.
+- Wrapper-level contract note:
+  - `epsilon=None` and `fail_if_only_channel_pruned=None` mean those flags are omitted and IFOLP tool defaults apply.
+
+## Compatibility and State Contract
+
+- Allowed `stream_pruning_method` values are exactly: `ifolp`, `remove_short_streams`.
+- Missing/blank persisted values must resolve to `ifolp` default.
+- Invalid persisted values must resolve to `ifolp` default for read/default surfaces.
+- Mutation payload validation must reject unknown values with explicit validation error (no silent coercion).
+- Pair-A rollback compatibility must explicitly confirm behavior when `.cfg` contains `[watershed.wbt] stream_pruning_method`; if Pair A cannot tolerate the key, rollback procedure must strip or normalize it.
 
 ## Work Plan
 
@@ -161,6 +174,11 @@ Tasks:
 Acceptance gate:
 - command-concrete emulator integration gate passes:
   `wctl run-pytest tests/topo/test_terrain_processor_wbt_integration.py`
+- rq-engine payload/state validation gates pass:
+  - `wctl run-pytest tests/microservices/test_rq_engine_watershed_routes.py`
+  - `wctl run-pytest tests/rq/test_project_rq_mutation_guards.py`
+- WEPPcloud control/payload gates pass:
+  - `wctl run-npm test` (including stream-pruning assertions in `channel_delineation` and `channel_gl` controller tests)
 - provenance/resources documentation updated and reviewed.
 
 ## Phase 4: Non-Emulator Consumer Disposition (`culvert_rq`)
@@ -186,9 +204,11 @@ Checks:
 1. `netful` exists, has non-zero stream-cell count for expected-positive fixtures, and preserves expected outlet reachability.
 2. `chnjnt` consistency.
 3. downstream hillslope/channel outputs match expected count bounds and required schema fields.
-4. deterministic output across repeated runs.
-5. culvert pipeline behavior under chosen Phase 4 strategy.
-6. negative-case error-contract tests pass (invalid pointer, cycle, no-network).
+4. deterministic output across repeated runs for IFOLP path (`stream_pruning_method=ifolp`, `max_junctions=3`).
+5. legacy selectable path remains functional (`stream_pruning_method=remove_short_streams`) and produces expected legacy-consistent outputs.
+6. missing/invalid `stream_pruning_method` compatibility behavior matches contract (default/reject rules above).
+7. culvert pipeline behavior under chosen Phase 4 strategy.
+8. negative-case error-contract tests pass (invalid pointer, cycle, no-network).
 
 Acceptance gate examples:
 - WEPPpy emulator tests.
@@ -196,7 +216,10 @@ Acceptance gate examples:
 - packaged-WBT smoke invoking new tool.
 - suggested concrete commands:
   - `wctl run-pytest tests/topo/test_terrain_processor_wbt_integration.py`
+  - `wctl run-pytest tests/microservices/test_rq_engine_watershed_routes.py`
+  - `wctl run-pytest tests/rq/test_project_rq_mutation_guards.py`
   - `wctl run-pytest tests/culverts/test_culvert_batch_rq.py`
+  - `wctl run-npm test`
 
 ## Phase 6: Rollout
 
@@ -211,7 +234,8 @@ Acceptance gate examples:
 Rollback must be pair-wise:
 1. Roll back WEPPpy and WBT together to Pair A.
 2. Do not roll back WBT alone after WEPPpy has switched call sites.
-3. Verify recovery with emulator and culvert smoke runs.
+3. Verify Pair-A handling of persisted `stream_pruning_method` state/config; strip or normalize key during rollback if Pair A requires it.
+4. Verify recovery with emulator and culvert smoke runs.
 
 Rollback trigger examples:
 - topology regressions breaking downstream jobs,
@@ -237,6 +261,10 @@ Risk: hard-fail behavior shock.
 Mitigation:
 - temporary WEPPpy call-site exception sets `fail_if_only_channel_pruned=false`; phase-gate before removing exception.
 
+Risk: state/config compatibility drift between Pair A and Pair B.
+Mitigation:
+- explicit compatibility checks for missing/invalid `.cfg` `stream_pruning_method` values and rollback normalization path when required.
+
 Risk: VRT regressions.
 Mitigation:
 - mandatory VRT-mode validation in Phase 5.
@@ -248,7 +276,7 @@ Mitigation:
 3. WEPPpy emulator refactor.
 4. WEPPpy artifact/provenance doc updates.
 5. Culvert consumer disposition completed.
-6. Regression report (including VRT and culvert results).
+6. Regression report (including IFOLP + legacy mode matrix, VRT, and culvert results).
 7. Version-pair rollout/rollback runbook.
 
 ## Execution Order
