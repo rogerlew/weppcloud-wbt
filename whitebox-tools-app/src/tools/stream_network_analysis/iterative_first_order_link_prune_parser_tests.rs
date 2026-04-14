@@ -518,6 +518,40 @@ fn iterative_first_order_link_prune_threshold_table_accepts_header_after_comment
 }
 
 #[test]
+fn iterative_first_order_link_prune_threshold_table_accepts_whitespace_delimited_rows() {
+    let table_path = temp_threshold_table_path("threshold_whitespace_rows");
+    fs::write(&table_path, "code csa_ha mscl_m\n1 12.5 100\n2 8.0 25\n")
+        .expect("table should write");
+
+    let parsed = parse_threshold_table(&table_path.to_string_lossy())
+        .expect("whitespace-delimited threshold table should parse");
+    let first = parsed.get(&1).expect("table must contain first code row");
+    let second = parsed.get(&2).expect("table must contain second code row");
+    assert!((first.csa_ha - 12.5).abs() < f64::EPSILON);
+    assert!((first.mscl_m - 100.0).abs() < f64::EPSILON);
+    assert!((second.csa_ha - 8.0).abs() < f64::EPSILON);
+    assert!((second.mscl_m - 25.0).abs() < f64::EPSILON);
+
+    fs::remove_file(&table_path).expect("temporary table should be removable");
+}
+
+#[test]
+fn iterative_first_order_link_prune_threshold_table_rejects_whitespace_rows_with_extra_fields() {
+    let table_path = temp_threshold_table_path("threshold_whitespace_extra_fields");
+    fs::write(&table_path, "code csa_ha mscl_m\n1 12.5 100 unexpected\n")
+        .expect("table should write");
+
+    let err = parse_threshold_table(&table_path.to_string_lossy())
+        .expect_err("whitespace rows with extra fields should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err
+        .to_string()
+        .contains("must contain exactly code,csa_ha,mscl_m"));
+
+    fs::remove_file(&table_path).expect("temporary table should be removable");
+}
+
+#[test]
 fn iterative_first_order_link_prune_threshold_table_rejects_rows_with_extra_fields() {
     let table_path = temp_threshold_table_path("threshold_extra_fields");
     fs::write(&table_path, "code,csa_ha,mscl_m\n1,12.5,100,unexpected\n")

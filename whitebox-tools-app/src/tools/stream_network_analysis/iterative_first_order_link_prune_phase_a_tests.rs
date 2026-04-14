@@ -16,6 +16,26 @@ fn phase_a_inputs(
     local_csa_cells: Vec<f64>,
     min_active_csa_cells: f64,
 ) -> PhaseAInputs {
+    phase_a_inputs_with_scheme(
+        rows,
+        columns,
+        pointers,
+        upstream_area_cells,
+        local_csa_cells,
+        min_active_csa_cells,
+        D8PointerScheme::Whitebox,
+    )
+}
+
+fn phase_a_inputs_with_scheme(
+    rows: isize,
+    columns: isize,
+    pointers: Vec<u8>,
+    upstream_area_cells: Vec<f64>,
+    local_csa_cells: Vec<f64>,
+    min_active_csa_cells: f64,
+    pointer_scheme: D8PointerScheme,
+) -> PhaseAInputs {
     let expected_len = (rows * columns) as usize;
     assert_eq!(pointers.len(), expected_len);
     assert_eq!(upstream_area_cells.len(), expected_len);
@@ -25,7 +45,7 @@ fn phase_a_inputs(
         rows,
         columns,
         pointers,
-        pointer_scheme: D8PointerScheme::Whitebox,
+        pointer_scheme,
         upstream_area_cells,
         active_mask: vec![true; expected_len],
         local_csa_cells,
@@ -62,6 +82,33 @@ fn iterative_first_order_link_prune_phase_a_rejects_source_and_promotes_downstre
         2.0,
     ))
     .expect("phase A should succeed");
+
+    assert!(!result.stream_mask[index(rows, columns, 0, 0)]);
+    assert!(result.stream_mask[index(rows, columns, 0, 1)]);
+    assert_eq!(
+        result.topology[index(rows, columns, 0, 1)],
+        TopologyClass::Head
+    );
+}
+
+#[test]
+fn iterative_first_order_link_prune_phase_a_esri_pointer_mode_promotes_downstream_head() {
+    let rows = 1;
+    let columns = 4;
+    let pointers = vec![1u8, 1u8, 1u8, 1u8];
+    let upstream_area_cells = vec![3.0, 5.0, 6.0, 7.0];
+    let local_csa_cells = vec![6.0, 2.0, 2.0, 2.0];
+
+    let result = run_phase_a_qualification(&phase_a_inputs_with_scheme(
+        rows,
+        columns,
+        pointers,
+        upstream_area_cells,
+        local_csa_cells,
+        2.0,
+        D8PointerScheme::Esri,
+    ))
+    .expect("phase A should succeed in ESRI pointer mode");
 
     assert!(!result.stream_mask[index(rows, columns, 0, 0)]);
     assert!(result.stream_mask[index(rows, columns, 0, 1)]);

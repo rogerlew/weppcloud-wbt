@@ -21,6 +21,26 @@ fn phase_b_inputs(
     local_mscl_m: Vec<f64>,
     fail_if_only_channel_pruned: bool,
 ) -> PhaseBInputs {
+    phase_b_inputs_with_scheme(
+        rows,
+        columns,
+        pointers,
+        initial_stream_mask,
+        local_mscl_m,
+        fail_if_only_channel_pruned,
+        D8PointerScheme::Whitebox,
+    )
+}
+
+fn phase_b_inputs_with_scheme(
+    rows: isize,
+    columns: isize,
+    pointers: Vec<u8>,
+    initial_stream_mask: Vec<bool>,
+    local_mscl_m: Vec<f64>,
+    fail_if_only_channel_pruned: bool,
+    pointer_scheme: D8PointerScheme,
+) -> PhaseBInputs {
     let expected_len = (rows * columns) as usize;
     assert_eq!(pointers.len(), expected_len);
     assert_eq!(initial_stream_mask.len(), expected_len);
@@ -30,7 +50,7 @@ fn phase_b_inputs(
         rows,
         columns,
         pointers,
-        pointer_scheme: D8PointerScheme::Whitebox,
+        pointer_scheme,
         initial_stream_mask,
         local_mscl_m,
         epsilon: 1e-5,
@@ -178,6 +198,41 @@ fn iterative_first_order_link_prune_phase_b_only_channel_guard_can_be_disabled()
     assert_eq!(result.stream_mask, vec![false, false, false, true]);
     assert_eq!(
         result.topology[index(1, 4, 0, 3)],
+        TopologyClass::TerminalHead
+    );
+}
+
+#[test]
+fn iterative_first_order_link_prune_phase_b_esri_pointer_mode_prunes_short_link() {
+    let rows = 1;
+    let columns = 4;
+    let pointers = vec![1u8, 1u8, 1u8, 1u8];
+    let stream_mask = vec![true, true, true, true];
+    let local_mscl_m = vec![0.0, 0.0, 0.0, 4.0];
+    let inputs = phase_b_inputs_with_scheme(
+        rows,
+        columns,
+        pointers,
+        stream_mask,
+        local_mscl_m,
+        false,
+        D8PointerScheme::Esri,
+    );
+
+    let result = run_phase_b_pruning(&inputs).expect("phase B should succeed in ESRI mode");
+    assert_eq!(result.pass_traces.len(), 1);
+    assert_eq!(
+        result.pass_traces[0].receiver_order,
+        vec![GridCell::new(0, 3)]
+    );
+    assert_eq!(
+        result.pass_traces[0].pruned_sources,
+        vec![GridCell::new(0, 0)]
+    );
+    assert!(!result.pass_traces[0].degeneration_flag);
+    assert_eq!(result.stream_mask, vec![false, false, false, true]);
+    assert_eq!(
+        result.topology[index(rows, columns, 0, 3)],
         TopologyClass::TerminalHead
     );
 }
