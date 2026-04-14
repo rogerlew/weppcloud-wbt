@@ -44,7 +44,8 @@ pub(crate) fn run_phase_b_pruning(inputs: &PhaseBInputs) -> Result<PhaseBResult,
     )?;
 
     let mut stream_mask = inputs.initial_stream_mask.clone();
-    if !stream_mask.iter().any(|active| *active) {
+    let mut active_count = stream_mask.iter().filter(|active| **active).count();
+    if active_count == 0 {
         return Err(Error::new(
             ErrorKind::InvalidInput,
             "No channels remain at first-order-link pruning stage.",
@@ -68,7 +69,7 @@ pub(crate) fn run_phase_b_pruning(inputs: &PhaseBInputs) -> Result<PhaseBResult,
             inputs.cell_size_x,
             inputs.cell_size_y,
         )?;
-        if links.is_empty() && stream_mask.iter().any(|active| *active) {
+        if links.is_empty() && active_count > 0 {
             return Err(Error::new(
                 ErrorKind::InvalidInput,
                 "Cycle detected during first-order-link pruning: active network has no discoverable HEAD/TERMINAL_HEAD sources.",
@@ -85,6 +86,7 @@ pub(crate) fn run_phase_b_pruning(inputs: &PhaseBInputs) -> Result<PhaseBResult,
             inputs.fail_if_only_channel_pruned,
             inputs.rows,
             inputs.columns,
+            &mut active_count,
         )?;
         let degeneration_flag = pass_trace.degeneration_flag;
         pass_traces.push(pass_trace);
@@ -174,7 +176,7 @@ fn prune_link_immediately(
     candidate: &FirstOrderLink,
     rows: isize,
     columns: isize,
-) -> Result<(), Error> {
+) -> Result<usize, Error> {
     if candidate.path.is_empty() {
         return Err(Error::new(
             ErrorKind::InvalidInput,
@@ -184,15 +186,20 @@ fn prune_link_immediately(
 
     if candidate.source == candidate.receiver {
         let idx = index_of(rows, columns, candidate.source)?;
+        let removed = usize::from(stream_mask[idx]);
         stream_mask[idx] = false;
-        return Ok(());
+        return Ok(removed);
     }
 
+    let mut removed = 0usize;
     for cell in candidate.path.iter().take(candidate.path.len() - 1) {
         let idx = index_of(rows, columns, *cell)?;
-        stream_mask[idx] = false;
+        if stream_mask[idx] {
+            stream_mask[idx] = false;
+            removed += 1;
+        }
     }
-    Ok(())
+    Ok(removed)
 }
 
 pub(crate) fn process_receiver_groups_for_single_pass(
@@ -205,6 +212,7 @@ pub(crate) fn process_receiver_groups_for_single_pass(
     fail_if_only_channel_pruned: bool,
     rows: isize,
     columns: isize,
+    active_count: &mut usize,
 ) -> Result<PhaseBPassTrace, Error> {
     let mut degeneration_flag = false;
     let mut pass_trace = PhaseBPassTrace {
@@ -252,10 +260,11 @@ pub(crate) fn process_receiver_groups_for_single_pass(
                 0
             };
 
-            prune_link_immediately(stream_mask, selected, rows, columns)?;
+            let removed = prune_link_immediately(stream_mask, selected, rows, columns)?;
+            *active_count = active_count.saturating_sub(removed);
             pass_trace.pruned_sources.push(selected.source);
 
-            if !stream_mask.iter().any(|active| *active) {
+            if *active_count == 0 {
                 return Err(Error::new(
                     ErrorKind::InvalidInput,
                     "No channels remain during first-order-link pruning.",

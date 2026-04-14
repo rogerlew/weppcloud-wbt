@@ -409,6 +409,7 @@ fn iterative_first_order_link_prune_phase_b_skips_stale_later_group_without_fall
         },
     ];
 
+    let mut active_count = stream_mask.iter().filter(|active| **active).count();
     let pass_trace = process_receiver_groups_for_single_pass(
         &kernel,
         &mut stream_mask,
@@ -419,6 +420,7 @@ fn iterative_first_order_link_prune_phase_b_skips_stale_later_group_without_fall
         false,
         rows,
         columns,
+        &mut active_count,
     )
     .expect("single-pass receiver processing should succeed");
 

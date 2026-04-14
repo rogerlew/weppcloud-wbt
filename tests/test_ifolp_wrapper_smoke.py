@@ -60,7 +60,7 @@ class IFOLPWrapperSmokeTests(unittest.TestCase):
                 "--threshold_table='thresholds.csv'",
                 "--esri_pntr",
                 "--epsilon='1e-05'",
-                "--fail_if_only_channel_pruned=false",
+                "--fail_if_only_channel_pruned='false'",
             ],
         )
 
@@ -73,7 +73,7 @@ class IFOLPWrapperSmokeTests(unittest.TestCase):
             mscl=100.0,
             fail_if_only_channel_pruned=True,
         )
-        self.assertIn("--fail_if_only_channel_pruned=true", captured["args"])
+        self.assertIn("--fail_if_only_channel_pruned='true'", captured["args"])
 
         with self.assertRaises(ValueError):
             probe.iterative_first_order_link_prune(

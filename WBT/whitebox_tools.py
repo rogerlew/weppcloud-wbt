@@ -10722,7 +10722,7 @@ Okay, that's it for now.
         if threshold_table is not None: args.append("--threshold_table='{}'".format(threshold_table))
         if esri_pntr: args.append("--esri_pntr")
         if epsilon is not None: args.append("--epsilon='{}'".format(epsilon))
-        if fail_if_only_channel_pruned is not None: args.append("--fail_if_only_channel_pruned={}".format(str(fail_if_only_channel_pruned).lower()))
+        if fail_if_only_channel_pruned is not None: args.append("--fail_if_only_channel_pruned='{}'".format(str(fail_if_only_channel_pruned).lower()))
         return self.run_tool('iterative_first_order_link_prune', args, callback)  # returns 1 if error
 
     def long_profile(self, d8_pntr, streams, dem, output, esri_pntr=False, callback=None):

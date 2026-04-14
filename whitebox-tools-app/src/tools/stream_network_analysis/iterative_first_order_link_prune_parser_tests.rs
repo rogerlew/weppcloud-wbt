@@ -31,6 +31,14 @@ fn temp_threshold_code_raster_path(stem: &str) -> PathBuf {
     std::env::temp_dir().join(format!("ifolp_{}_{}_{}.tif", stem, process::id(), nanos))
 }
 
+fn temp_output_raster_path(stem: &str) -> PathBuf {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock should be after unix epoch")
+        .as_nanos();
+    std::env::temp_dir().join(format!("ifolp_{}_{}_{}.tif", stem, process::id(), nanos))
+}
+
 fn cleanup_whitebox_raster_artifacts(path: &PathBuf) {
     let _ = fs::remove_file(path);
     let _ = fs::remove_file(PathBuf::from(format!("{}.aux.xml", path.to_string_lossy())));
@@ -146,16 +154,43 @@ fn iterative_first_order_link_prune_parser_preserves_inner_quotes_in_values() {
 }
 
 #[test]
-fn iterative_first_order_link_prune_parser_accepts_space_separated_signed_numeric_values() {
+fn iterative_first_order_link_prune_parser_accepts_space_separated_signed_positive_numeric_values()
+{
     let mut args = base_args();
     args[3] = "--csa".to_string();
-    args.insert(4, "-1.5".to_string());
+    args.insert(4, "+1.5".to_string());
+    args[5] = "--mscl=+100.0".to_string();
     args.push("--epsilon".to_string());
     args.push("+0.25".to_string());
 
     let parsed = parse_arguments(&args, "/tmp/wd/").expect("parse should succeed");
-    assert_eq!(parsed.csa, -1.5);
+    assert_eq!(parsed.csa, 1.5);
+    assert_eq!(parsed.mscl, 100.0);
     assert!((parsed.epsilon - 0.25).abs() < f64::EPSILON);
+}
+
+#[test]
+fn iterative_first_order_link_prune_parser_rejects_non_positive_csa_and_negative_mscl() {
+    let mut zero_csa = base_args();
+    zero_csa[3] = "--csa=0.0".to_string();
+    let err = parse_arguments(&zero_csa, "").expect_err("non-positive csa should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("--csa"));
+    assert!(err.to_string().contains("positive"));
+
+    let mut negative_csa = base_args();
+    negative_csa[3] = "--csa=-1.0".to_string();
+    let err = parse_arguments(&negative_csa, "").expect_err("negative csa should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("--csa"));
+    assert!(err.to_string().contains("positive"));
+
+    let mut negative_mscl = base_args();
+    negative_mscl[4] = "--mscl=-10.0".to_string();
+    let err = parse_arguments(&negative_mscl, "").expect_err("negative mscl should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("--mscl"));
+    assert!(err.to_string().contains("non-negative"));
 }
 
 #[test]
@@ -394,6 +429,104 @@ fn iterative_first_order_link_prune_prepare_phase_inputs_rejects_threshold_code_
 }
 
 #[test]
+fn iterative_first_order_link_prune_run_integration_writes_binary_stream_output() {
+    let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .canonicalize()
+        .expect("repo root should resolve");
+    let source_d8_path = repo_root.join("test_fixtures/blackwood_60_5/flovec.tif");
+    let source_upstream_area_path = repo_root.join("test_fixtures/blackwood_60_5/floaccum.tif");
+    let d8_path = temp_output_raster_path("ifolp_run_integration_d8");
+    let upstream_area_path = temp_output_raster_path("ifolp_run_integration_area");
+    let output_path = temp_output_raster_path("ifolp_run_integration");
+
+    let source_d8 =
+        Raster::new(&source_d8_path.to_string_lossy(), "r").expect("source d8 fixture should open");
+    let source_upstream_area = Raster::new(&source_upstream_area_path.to_string_lossy(), "r")
+        .expect("source upstream-area fixture should open");
+    let mut d8 = Raster::initialize_using_file(&d8_path.to_string_lossy(), &source_d8);
+    let mut upstream_area =
+        Raster::initialize_using_file(&upstream_area_path.to_string_lossy(), &source_upstream_area);
+
+    let d8_nodata = source_d8.configs.nodata;
+    let area_nodata = source_upstream_area.configs.nodata;
+    d8.reinitialize_values(d8_nodata);
+    upstream_area.reinitialize_values(area_nodata);
+
+    let mut retained_active = 0usize;
+    for row in 0..source_d8.configs.rows as isize {
+        for col in 0..source_d8.configs.columns as isize {
+            let pointer_value = source_d8[(row, col)];
+            let area_value = source_upstream_area[(row, col)];
+            if pointer_value == d8_nodata || area_value == area_nodata {
+                continue;
+            }
+
+            let pointer_code = parse_integer_raster_value(pointer_value, "--d8_pntr", row, col)
+                .expect("source fixture pointer should be parseable");
+            if pointer_code == 0 {
+                continue;
+            }
+
+            d8.set_value(row, col, pointer_value);
+            upstream_area.set_value(row, col, area_value);
+            retained_active += 1;
+        }
+    }
+    assert!(
+        retained_active > 0,
+        "sanitized integration fixture should retain active non-zero pointer cells"
+    );
+    d8.write()
+        .expect("sanitized d8 raster should write for integration test");
+    upstream_area
+        .write()
+        .expect("sanitized upstream-area raster should write for integration test");
+
+    let tool = IterativeFirstOrderLinkPrune::new();
+    let args = vec![
+        format!("--d8_pntr={}", d8_path.display()),
+        format!("--upstream_area={}", upstream_area_path.display()),
+        format!("--output={}", output_path.display()),
+        "--csa=60.0".to_string(),
+        "--mscl=5.0".to_string(),
+    ];
+    tool.run(args, "", false)
+        .expect("tool run integration should succeed");
+
+    let output = Raster::new(&output_path.to_string_lossy(), "r")
+        .expect("integration output raster should open");
+    let nodata = output.configs.nodata;
+    let mut active_stream_count = 0usize;
+    for row in 0..output.configs.rows as isize {
+        for col in 0..output.configs.columns as isize {
+            let value = output[(row, col)];
+            if value == nodata {
+                continue;
+            }
+            assert!(
+                (value - 0.0).abs() < f64::EPSILON || (value - 1.0).abs() < f64::EPSILON,
+                "output value at ({}, {}) must be binary 0/1 or NoData, got {}",
+                row,
+                col,
+                value
+            );
+            if (value - 1.0).abs() < f64::EPSILON {
+                active_stream_count += 1;
+            }
+        }
+    }
+    assert!(
+        active_stream_count > 0,
+        "integration run should retain stream cells"
+    );
+
+    cleanup_whitebox_raster_artifacts(&d8_path);
+    cleanup_whitebox_raster_artifacts(&upstream_area_path);
+    cleanup_whitebox_raster_artifacts(&output_path);
+}
+
+#[test]
 fn iterative_first_order_link_prune_help_contract_contains_all_flags() {
     let tool = IterativeFirstOrderLinkPrune::new();
     let params_json = tool.get_tool_parameters();
@@ -467,6 +600,25 @@ fn iterative_first_order_link_prune_threshold_table_rejects_non_finite_values() 
         .to_string()
         .contains("must use finite csa_ha and mscl_m values"));
 
+    fs::remove_file(&table_path).expect("temporary table should be removable");
+}
+
+#[test]
+fn iterative_first_order_link_prune_threshold_table_rejects_non_physical_threshold_values() {
+    let table_path = temp_threshold_table_path("threshold_non_physical");
+    fs::write(&table_path, "code,csa_ha,mscl_m\n1,0,100\n").expect("table should write");
+    let err = parse_threshold_table(&table_path.to_string_lossy())
+        .expect_err("non-positive csa_ha should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("csa_ha > 0"));
+    fs::remove_file(&table_path).expect("temporary table should be removable");
+
+    let table_path = temp_threshold_table_path("threshold_negative_mscl");
+    fs::write(&table_path, "code,csa_ha,mscl_m\n1,10,-1\n").expect("table should write");
+    let err = parse_threshold_table(&table_path.to_string_lossy())
+        .expect_err("negative mscl_m should fail");
+    assert_eq!(err.kind(), ErrorKind::InvalidInput);
+    assert!(err.to_string().contains("mscl_m >= 0"));
     fs::remove_file(&table_path).expect("temporary table should be removable");
 }
 

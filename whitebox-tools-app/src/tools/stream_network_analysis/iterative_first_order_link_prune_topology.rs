@@ -142,6 +142,7 @@ impl TopologyKernel {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn upstream_stream_neighbors(
         &self,
         cell: GridCell,

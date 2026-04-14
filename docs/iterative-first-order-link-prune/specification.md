@@ -69,6 +69,11 @@ Optional:
 - `--epsilon`: floating comparison tolerance (default `1e-5`).
 - `--fail_if_only_channel_pruned`: default `true`.
 
+Input validity:
+- `--csa` must be finite and strictly positive (`> 0`).
+- `--mscl` must be finite and non-negative (`>= 0`).
+- When threshold-table overrides are used, each row must satisfy finite `csa_ha`, `mscl_m`, with `csa_ha > 0` and `mscl_m >= 0`.
+
 ## Threshold Model
 
 ### Code resolution

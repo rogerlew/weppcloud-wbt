@@ -18,7 +18,6 @@ use whitebox_raster::{PhotometricInterpretation, Raster};
 mod iterative_first_order_link_prune_phase_a;
 #[path = "iterative_first_order_link_prune_phase_b.rs"]
 mod iterative_first_order_link_prune_phase_b;
-#[allow(dead_code)]
 #[path = "iterative_first_order_link_prune_topology.rs"]
 mod iterative_first_order_link_prune_topology;
 
@@ -430,12 +429,27 @@ fn parse_arguments(args: &[String], working_directory: &str) -> Result<ParsedArg
             "Critical source area not specified (--csa).",
         )
     })?;
+    if csa <= 0.0 {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!("Critical source area must be positive (--csa), got {}", csa),
+        ));
+    }
     let mscl = mscl.ok_or_else(|| {
         Error::new(
             ErrorKind::InvalidInput,
             "Minimum source channel length not specified (--mscl).",
         )
     })?;
+    if mscl < 0.0 {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "Minimum source channel length must be non-negative (--mscl), got {}",
+                mscl
+            ),
+        ));
+    }
     if epsilon < 0.0 {
         return Err(Error::new(
             ErrorKind::InvalidInput,
@@ -653,6 +667,15 @@ fn parse_threshold_table(table_path: &str) -> Result<HashMap<i64, ThresholdTable
                 ErrorKind::InvalidInput,
                 format!(
                     "Threshold table line {} must use finite csa_ha and mscl_m values",
+                    line_idx + 1
+                ),
+            ));
+        }
+        if csa_ha <= 0.0 || mscl_m < 0.0 {
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "Threshold table line {} must use csa_ha > 0 and mscl_m >= 0",
                     line_idx + 1
                 ),
             ));
