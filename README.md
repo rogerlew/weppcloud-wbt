@@ -45,6 +45,9 @@ This fork diverges from the upstream WhiteboxTools distribution in the following
 
 Developers extending this fork can follow the guidelines in [DEVELOPING_TOOLS.md](DEVELOPING_TOOLS.md).
 
+Release build/install procedure (required for WEPPpy cutovers):
+[docs/release-build-install.md](docs/release-build-install.md)
+
 
 **This repository tracks the generated `WBT` build compiled on Linux (Ubuntu 24.04) so the deployment artifacts remain versioned alongside the code.**
 
