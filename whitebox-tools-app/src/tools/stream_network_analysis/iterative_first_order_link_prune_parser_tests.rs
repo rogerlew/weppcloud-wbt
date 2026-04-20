@@ -57,6 +57,54 @@ fn first_active_cell(d8: &Raster, upstream_area: &Raster) -> Option<(isize, isiz
     None
 }
 
+fn max_stream_inflow_count(d8: &Raster, streams: &Raster) -> usize {
+    let rows = streams.configs.rows as isize;
+    let columns = streams.configs.columns as isize;
+    let streams_nodata = streams.configs.nodata;
+    let d8_nodata = d8.configs.nodata;
+
+    let dx = [1isize, 1, 1, 0, -1, -1, -1, 0];
+    let dy = [-1isize, 0, 1, 1, 1, 0, -1, -1];
+    let inflowing_vals = [16i32, 32, 64, 128, 1, 2, 4, 8];
+
+    let mut max_inflow_count = 0usize;
+    for row in 0..rows {
+        for col in 0..columns {
+            let stream_val = streams[(row, col)];
+            if stream_val == streams_nodata || stream_val <= 0.0 {
+                continue;
+            }
+
+            let mut inflow_count = 0usize;
+            for k in 0..8 {
+                let rn = row + dy[k];
+                let cn = col + dx[k];
+                if rn < 0 || rn >= rows || cn < 0 || cn >= columns {
+                    continue;
+                }
+
+                let upstream_stream_val = streams[(rn, cn)];
+                if upstream_stream_val == streams_nodata || upstream_stream_val <= 0.0 {
+                    continue;
+                }
+
+                let pointer_val = d8[(rn, cn)];
+                if pointer_val == d8_nodata {
+                    continue;
+                }
+
+                if (pointer_val as i32) == inflowing_vals[k] {
+                    inflow_count += 1;
+                }
+            }
+
+            max_inflow_count = max_inflow_count.max(inflow_count);
+        }
+    }
+
+    max_inflow_count
+}
+
 fn write_threshold_code_raster_with_active_nodata(
     d8_path: &PathBuf,
     upstream_area_path: &PathBuf,
@@ -543,6 +591,61 @@ fn iterative_first_order_link_prune_run_integration_writes_binary_stream_output(
 
     cleanup_whitebox_raster_artifacts(&d8_path);
     cleanup_whitebox_raster_artifacts(&upstream_area_path);
+    cleanup_whitebox_raster_artifacts(&output_path);
+}
+
+#[test]
+fn iterative_first_order_link_prune_run_integration_caps_receiver_inflow_for_strained_gown_fixture()
+{
+    let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .canonicalize()
+        .expect("repo root should resolve");
+    let d8_path = repo_root.join("test_fixtures/strained_gown/flovec.tif");
+    let upstream_area_path = repo_root.join("test_fixtures/strained_gown/floaccum.tif");
+    let output_path = temp_output_raster_path("ifolp_strained_gown_max_junctions");
+
+    let tool = IterativeFirstOrderLinkPrune::new();
+    let args = vec![
+        format!("--d8_pntr={}", d8_path.display()),
+        format!("--upstream_area={}", upstream_area_path.display()),
+        format!("--output={}", output_path.display()),
+        "--csa=3.0".to_string(),
+        "--mscl=60.0".to_string(),
+        "--max_junctions=3".to_string(),
+    ];
+    tool.run(args, "", false)
+        .expect("tool run on strained-gown fixture should succeed");
+
+    let d8 = Raster::new(&d8_path.to_string_lossy(), "r")
+        .expect("strained-gown d8 fixture should open");
+    let output = Raster::new(&output_path.to_string_lossy(), "r")
+        .expect("strained-gown output raster should open");
+
+    let mut active_stream_count = 0usize;
+    for row in 0..output.configs.rows as isize {
+        for col in 0..output.configs.columns as isize {
+            let value = output[(row, col)];
+            if value == output.configs.nodata {
+                continue;
+            }
+            if (value - 1.0).abs() < f64::EPSILON {
+                active_stream_count += 1;
+            }
+        }
+    }
+    assert!(
+        active_stream_count > 0,
+        "strained-gown fixture run should retain non-zero stream cells"
+    );
+
+    let max_inflow_count = max_stream_inflow_count(&d8, &output);
+    assert!(
+        max_inflow_count <= 3,
+        "max inflow count should be capped at 3 for max_junctions=3; observed {}",
+        max_inflow_count
+    );
+
     cleanup_whitebox_raster_artifacts(&output_path);
 }
 

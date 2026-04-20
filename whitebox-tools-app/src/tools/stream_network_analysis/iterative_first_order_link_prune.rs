@@ -187,7 +187,7 @@ impl IterativeFirstOrderLinkPrune {
         parameters.push(ToolParameter {
             name: "Maximum Inflowing Links Per Junction".to_owned(),
             flags: vec!["--max_junctions".to_owned()],
-            description: "Optional cap on retained incoming first-order links per receiver; shortest links are pruned first until cap is met.".to_owned(),
+            description: "Optional cap on retained active inflowing stream cells per receiver; shortest links are pruned first until cap is met.".to_owned(),
             parameter_type: ParameterType::Integer,
             default_value: None,
             optional: true,

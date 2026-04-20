@@ -308,7 +308,8 @@ pub(crate) fn process_receiver_groups_for_single_pass(
             };
             let local_mscl = local_mscl_m[receiver_idx];
             let prune_for_mscl = selected.length_m < local_mscl - epsilon;
-            let prune_for_junction_cap = live_candidates.len() > max_junctions;
+            let receiver_inflow_count = kernel.inflow_count(group.receiver, stream_mask)? as usize;
+            let prune_for_junction_cap = receiver_inflow_count > max_junctions;
             if !prune_for_mscl && !prune_for_junction_cap {
                 break;
             }

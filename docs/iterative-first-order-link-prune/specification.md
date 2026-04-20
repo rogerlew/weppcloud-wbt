@@ -68,7 +68,7 @@ Optional:
 - `--esri_pntr`: pointer encoding toggle.
 - `--epsilon`: floating comparison tolerance (default `1e-5`).
 - `--fail_if_only_channel_pruned`: default `true`.
-- `--max_junctions`: optional non-negative integer cap on retained incoming first-order links per receiver.
+- `--max_junctions`: optional non-negative integer cap on retained active inflowing stream cells per receiver.
 
 Input validity:
 - `--csa` must be finite and strictly positive (`> 0`).
@@ -161,9 +161,9 @@ For selected shortest incoming link `Lmin` at receiver `R`:
 ### Optional junction fan-in cap (`--max_junctions`)
 
 When `--max_junctions` is provided:
-1. Evaluate live incoming candidates at each receiver group during pass-time mutation.
-2. If live incoming candidate count exceeds `max_junctions`, prune the shortest live incoming link immediately (same strict-epsilon + first-encounter tie behavior).
-3. Repeat within that receiver group until live candidate count is `<= max_junctions` or no live candidate remains.
+1. Evaluate live receiver inflow count at each receiver group during pass-time mutation.
+2. If live receiver inflow count exceeds `max_junctions`, prune the shortest live incoming link immediately (same strict-epsilon + first-encounter tie behavior).
+3. Repeat within that receiver group until receiver inflow count is `<= max_junctions` or no live candidate remains.
 4. This cap is additive to MSCL pruning; either condition can trigger pruning.
 5. If `--max_junctions` is omitted, preserve retained baseline behavior (no extra fan-in cap pruning).
 
@@ -279,7 +279,7 @@ repeat:
         continue
 
       mscl = receiver_local_mscl(receiver)
-      cap_exceeded = max_junctions is set and incoming_live_count(receiver) > max_junctions
+      cap_exceeded = max_junctions is set and inflow_count(receiver, mask) > max_junctions
       if lmin.length_m < mscl - eps or cap_exceeded:
         if parity_single_link_guard_violated(links, receiver):
           fail
