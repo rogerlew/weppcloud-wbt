@@ -4261,7 +4261,7 @@ Okay, that's it for now.
 
         Keyword arguments:
 
-        dem -- Input raster DEM file.
+        dem -- Input raster DEM file. For derived DInf SCA, small interior no-flow defects may trigger a conservative single-cell-pit breach fallback; larger defects still fail fast.
         output -- Output LS raster file.
         l_output -- Optional output L raster file.
         s_output -- Optional output S raster file.
