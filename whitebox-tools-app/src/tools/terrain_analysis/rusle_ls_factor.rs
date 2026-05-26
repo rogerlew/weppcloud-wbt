@@ -451,6 +451,8 @@ impl WhiteboxTool for RusleLsFactor {
         let mut noflow_initial_count: usize = 0;
         let mut noflow_post_fallback_count: usize = 0;
         let mut noflow_eligible_count: usize = 0;
+        let mut noflow_masked_count: usize = 0;
+        let mut unresolved_noflow_mask = vec![false; (rows * columns) as usize];
 
         let (sca_raster, sca_source) = if !sca_input_file.is_empty() {
             let raster = Raster::new(&sca_input_file, "r")?;
@@ -469,20 +471,6 @@ impl WhiteboxTool for RusleLsFactor {
                 temp_paths.push(tmp_noflow);
 
                 if noflow_stats.interior_count > 0 {
-                    let fallback_threshold =
-                        interior_noflow_fallback_threshold(noflow_stats.eligible_interior_cells);
-                    if noflow_stats.interior_count > fallback_threshold {
-                        return Err(Error::new(
-                            ErrorKind::InvalidInput,
-                            format!(
-                                "DEM contains {} interior no-flow cells. Conservative fallback only applies to small defects (<= {} interior cells, {:.4} of eligible interior cells). Condition DEM upstream before running RusleLsFactor.",
-                                noflow_stats.interior_count,
-                                fallback_threshold,
-                                INTERIOR_NOFLOW_FALLBACK_MAX_FRACTION,
-                            ),
-                        ));
-                    }
-
                     let corrected_dem = make_temp_raster_path(&output_file, "dem_single_cell_breach");
                     run_breach_single_cell_pits_tool(
                         &dem_for_derivation_file,
@@ -514,23 +502,34 @@ impl WhiteboxTool for RusleLsFactor {
                     temp_paths.push(tmp_corrected_noflow);
 
                     if corrected_stats.interior_count > 0 {
-                        return Err(Error::new(
-                            ErrorKind::InvalidInput,
-                            format!(
-                                "DEM contains {} interior no-flow cells; conservative single-cell pit fallback reduced this to {} but did not fully correct the DEM. Condition DEM upstream before running RusleLsFactor.",
-                                noflow_stats.interior_count, corrected_stats.interior_count
-                            ),
-                        ));
-                    }
-
-                    noflow_guard_status = "breach_single_cell_pits".to_string();
-                    dem_for_derivation_file = corrected_dem;
-                    if verbose {
-                        println!(
-                            "Applied conservative single-cell pit fallback for {} interior no-flow cells.",
-                            noflow_stats.interior_count
+                        let (residual_mask, residual_count) = build_interior_noflow_mask(
+                            &corrected_dem_raster,
+                            &corrected_noflow,
+                            rows,
+                            columns,
+                            &stop_mask,
                         );
+                        unresolved_noflow_mask = residual_mask;
+                        noflow_masked_count = residual_count;
+                        noflow_guard_status = "breach_single_cell_pits_with_mask".to_string();
+                        if verbose {
+                            println!(
+                                "Single-cell pit fallback reduced interior no-flow cells from {} to {}; masking {} unresolved interior cells.",
+                                noflow_stats.interior_count,
+                                corrected_stats.interior_count,
+                                residual_count
+                            );
+                        }
+                    } else {
+                        noflow_guard_status = "breach_single_cell_pits".to_string();
+                        if verbose {
+                            println!(
+                                "Applied single-cell pit fallback for {} interior no-flow cells.",
+                                noflow_stats.interior_count
+                            );
+                        }
                     }
+                    dem_for_derivation_file = corrected_dem;
                 } else {
                     noflow_guard_status = "none".to_string();
                 }
@@ -589,6 +588,9 @@ impl WhiteboxTool for RusleLsFactor {
 
                 let idx = (row * columns + col) as usize;
                 if stop_mask[idx] {
+                    continue;
+                }
+                if unresolved_noflow_mask[idx] {
                     continue;
                 }
 
@@ -659,6 +661,7 @@ impl WhiteboxTool for RusleLsFactor {
             noflow_initial_count,
             noflow_post_fallback_count,
             noflow_eligible_count,
+            noflow_masked_count,
             &elapsed_time,
         );
         add_ls_metadata(
@@ -675,6 +678,7 @@ impl WhiteboxTool for RusleLsFactor {
             noflow_initial_count,
             noflow_post_fallback_count,
             noflow_eligible_count,
+            noflow_masked_count,
             &elapsed_time,
         );
         add_ls_metadata(
@@ -691,6 +695,7 @@ impl WhiteboxTool for RusleLsFactor {
             noflow_initial_count,
             noflow_post_fallback_count,
             noflow_eligible_count,
+            noflow_masked_count,
             &elapsed_time,
         );
         add_ls_metadata(
@@ -707,6 +712,7 @@ impl WhiteboxTool for RusleLsFactor {
             noflow_initial_count,
             noflow_post_fallback_count,
             noflow_eligible_count,
+            noflow_masked_count,
             &elapsed_time,
         );
         add_ls_metadata(
@@ -723,6 +729,7 @@ impl WhiteboxTool for RusleLsFactor {
             noflow_initial_count,
             noflow_post_fallback_count,
             noflow_eligible_count,
+            noflow_masked_count,
             &elapsed_time,
         );
 
@@ -766,6 +773,7 @@ fn add_ls_metadata(
     interior_noflow_cells_initial: usize,
     interior_noflow_cells_post_fallback: usize,
     interior_noflow_cells_eligible: usize,
+    interior_noflow_cells_masked: usize,
     elapsed_time: &str,
 ) {
     raster.add_metadata_entry("tool = RusleLsFactor".to_string());
@@ -802,12 +810,8 @@ fn add_ls_metadata(
         interior_noflow_cells_eligible
     ));
     raster.add_metadata_entry(format!(
-        "interior_noflow_fallback_max_count = {}",
-        INTERIOR_NOFLOW_FALLBACK_MAX_COUNT
-    ));
-    raster.add_metadata_entry(format!(
-        "interior_noflow_fallback_max_fraction = {:.6}",
-        INTERIOR_NOFLOW_FALLBACK_MAX_FRACTION
+        "interior_noflow_cells_masked = {}",
+        interior_noflow_cells_masked
     ));
     raster.add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed_time));
 }
@@ -824,22 +828,9 @@ fn ensure_same_grid(reference: &Raster, other: &Raster, label: &str) -> Result<(
     Ok(())
 }
 
-const INTERIOR_NOFLOW_FALLBACK_MAX_COUNT: usize = 64;
-const INTERIOR_NOFLOW_FALLBACK_MAX_FRACTION: f64 = 0.001;
-
 struct InteriorNoFlowStats {
     interior_count: usize,
     eligible_interior_cells: usize,
-}
-
-fn interior_noflow_fallback_threshold(eligible_interior_cells: usize) -> usize {
-    if eligible_interior_cells == 0 {
-        return 0;
-    }
-    let fractional_limit = ((eligible_interior_cells as f64) * INTERIOR_NOFLOW_FALLBACK_MAX_FRACTION)
-        .ceil()
-        .max(1.0) as usize;
-    fractional_limit.min(INTERIOR_NOFLOW_FALLBACK_MAX_COUNT)
 }
 
 fn count_interior_noflow(
@@ -874,6 +865,38 @@ fn count_interior_noflow(
         interior_count,
         eligible_interior_cells,
     }
+}
+
+fn build_interior_noflow_mask(
+    dem: &Raster,
+    noflow: &Raster,
+    rows: isize,
+    columns: isize,
+    stop_mask: &[bool],
+) -> (Vec<bool>, usize) {
+    let mut mask = vec![false; (rows * columns) as usize];
+    let mut masked_count: usize = 0;
+    let dem_nodata = dem.configs.nodata;
+    let noflow_nodata = noflow.configs.nodata;
+
+    for row in 1..(rows - 1).max(1) {
+        for col in 1..(columns - 1).max(1) {
+            if dem[(row, col)] == dem_nodata {
+                continue;
+            }
+            let idx = (row * columns + col) as usize;
+            if stop_mask[idx] {
+                continue;
+            }
+            let v = noflow[(row, col)];
+            if v != noflow_nodata && v > 0.0 {
+                mask[idx] = true;
+                masked_count += 1;
+            }
+        }
+    }
+
+    (mask, masked_count)
 }
 
 fn build_stop_mask(
@@ -1170,11 +1193,33 @@ mod tests {
     }
 
     #[test]
-    fn test_interior_noflow_fallback_threshold_policy() {
-        assert_eq!(interior_noflow_fallback_threshold(0), 0);
-        assert_eq!(interior_noflow_fallback_threshold(1), 1);
-        assert_eq!(interior_noflow_fallback_threshold(100), 1);
-        assert_eq!(interior_noflow_fallback_threshold(5_000), 5);
-        assert_eq!(interior_noflow_fallback_threshold(1_000_000), 64);
+    fn test_build_interior_noflow_mask_counts_cells() {
+        let mut dem = Raster::initialize_using_config(
+            "dem.tif",
+            &RasterConfigs {
+                rows: 4,
+                columns: 4,
+                nodata: -9999.0,
+                ..Default::default()
+            },
+        );
+        dem.reinitialize_values(10.0);
+        let mut noflow = Raster::initialize_using_config(
+            "noflow.tif",
+            &RasterConfigs {
+                rows: 4,
+                columns: 4,
+                nodata: -9999.0,
+                ..Default::default()
+            },
+        );
+        noflow.reinitialize_values(0.0);
+        noflow[(1, 1)] = 1.0;
+        noflow[(2, 2)] = 1.0;
+        let stop_mask = vec![false; 16];
+        let (mask, count) = build_interior_noflow_mask(&dem, &noflow, 4, 4, &stop_mask);
+        assert_eq!(count, 2);
+        assert!(mask[5]);
+        assert!(mask[10]);
     }
 }
