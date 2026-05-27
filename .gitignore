@@ -11,4 +11,5 @@
 *.zip
 /.idea
 /WBT/
+/WBT/__pycache__/
 /zip_file/
