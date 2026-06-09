@@ -6,6 +6,7 @@ use whitebox_raster::DataType;
 fn data_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")
+        .join("test_fixtures")
         .join("vrt_test_data")
 }
 
@@ -34,7 +35,7 @@ fn test_parse_valid_vrt() {
     assert_eq!(band.data_type, Some(DataType::F64));
 
     let source = band.simple_source;
-    assert!(!source.relative_to_vrt);
+    assert!(source.relative_to_vrt);
     assert_eq!(source.source_band, 1);
     assert_eq!(source.src_rect.x_off, 200);
     assert_eq!(source.src_rect.y_off, 200);

@@ -6,6 +6,7 @@ use whitebox_raster::{DataType, Raster, RasterConfigs};
 fn data_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")
+        .join("test_fixtures")
         .join("vrt_test_data")
 }
 

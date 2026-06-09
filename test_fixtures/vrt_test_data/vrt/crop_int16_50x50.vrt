@@ -15,7 +15,7 @@
     <NoDataValue>0</NoDataValue>
     <ColorInterp>Gray</ColorInterp>
     <SimpleSource>
-      <SourceFilename relativeToVRT="0">/workdir/weppcloud-wbt/vrt_test_data/source/dem_100x100_int16.tif</SourceFilename>
+      <SourceFilename relativeToVRT="1">../source/dem_100x100_int16.tif</SourceFilename>
       <SourceBand>1</SourceBand>
       <SourceProperties RasterXSize="100" RasterYSize="100" DataType="Int16" BlockXSize="100" BlockYSize="40" />
       <SrcRect xOff="25" yOff="25" xSize="50" ySize="50" />

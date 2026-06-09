@@ -5,6 +5,7 @@ use whitebox_raster::{DataType, Raster};
 fn data_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")
+        .join("test_fixtures")
         .join("vrt_test_data")
 }
 
@@ -103,5 +104,126 @@ fn test_vrt_raster_loads_fullsize_no_rect() {
     let reference = Raster::new(source_path.to_str().unwrap(), "r")
         .expect("Expected source raster to load.");
 
+    assert_raster_matches_reference(&raster, &reference);
+}
+
+#[test]
+fn test_vrt_raster_loads_bottomright_crop() {
+    let vrt_path = data_path("vrt/crop_bottomright_200x200.vrt");
+    let reference_path = data_path("reference/crop_bottomright_200x200.tif");
+    let raster = Raster::new(vrt_path.to_str().unwrap(), "r")
+        .expect("Expected VRT raster to load.");
+    let reference = Raster::new(reference_path.to_str().unwrap(), "r")
+        .expect("Expected reference raster to load.");
+    assert_raster_matches_reference(&raster, &reference);
+}
+
+#[test]
+fn test_vrt_raster_loads_topleft_crop() {
+    let vrt_path = data_path("vrt/crop_topleft_150x150.vrt");
+    let reference_path = data_path("reference/crop_topleft_150x150.tif");
+    let raster = Raster::new(vrt_path.to_str().unwrap(), "r")
+        .expect("Expected VRT raster to load.");
+    let reference = Raster::new(reference_path.to_str().unwrap(), "r")
+        .expect("Expected reference raster to load.");
+    assert_raster_matches_reference(&raster, &reference);
+}
+
+#[test]
+fn test_vrt_raster_loads_lzw_compressed_source() {
+    let vrt_path = data_path("vrt/crop_lzw_200x200.vrt");
+    let reference_path = data_path("reference/crop_lzw_200x200.tif");
+    let raster = Raster::new(vrt_path.to_str().unwrap(), "r")
+        .expect("Expected VRT raster to load.");
+    let reference = Raster::new(reference_path.to_str().unwrap(), "r")
+        .expect("Expected reference raster to load.");
+    assert_raster_matches_reference(&raster, &reference);
+}
+
+#[test]
+fn test_vrt_raster_loads_deflate_compressed_source() {
+    let vrt_path = data_path("vrt/crop_deflate_300x300.vrt");
+    let reference_path = data_path("reference/crop_deflate_300x300.tif");
+    let raster = Raster::new(vrt_path.to_str().unwrap(), "r")
+        .expect("Expected VRT raster to load.");
+    let reference = Raster::new(reference_path.to_str().unwrap(), "r")
+        .expect("Expected reference raster to load.");
+    assert_raster_matches_reference(&raster, &reference);
+}
+
+#[test]
+fn test_vrt_raster_loads_tiled_source() {
+    let vrt_path = data_path("vrt/crop_tiled_nonaligned.vrt");
+    let reference_path = data_path("reference/crop_tiled_nonaligned.tif");
+    let raster = Raster::new(vrt_path.to_str().unwrap(), "r")
+        .expect("Expected VRT raster to load.");
+    let reference = Raster::new(reference_path.to_str().unwrap(), "r")
+        .expect("Expected reference raster to load.");
+    assert_raster_matches_reference(&raster, &reference);
+}
+
+#[test]
+fn test_vrt_raster_loads_tiled_lzw_source() {
+    let vrt_path = data_path("vrt/crop_tiled_lzw_150x150.vrt");
+    let reference_path = data_path("reference/crop_tiled_lzw_150x150.tif");
+    let raster = Raster::new(vrt_path.to_str().unwrap(), "r")
+        .expect("Expected VRT raster to load.");
+    let reference = Raster::new(reference_path.to_str().unwrap(), "r")
+        .expect("Expected reference raster to load.");
+    assert_raster_matches_reference(&raster, &reference);
+}
+
+#[test]
+fn test_vrt_raster_loads_int16_source() {
+    let vrt_path = data_path("vrt/crop_int16_50x50.vrt");
+    let reference_path = data_path("reference/crop_int16_50x50.tif");
+    let raster = Raster::new(vrt_path.to_str().unwrap(), "r")
+        .expect("Expected VRT raster to load.");
+    let reference = Raster::new(reference_path.to_str().unwrap(), "r")
+        .expect("Expected reference raster to load.");
+    assert_raster_matches_reference(&raster, &reference);
+}
+
+#[test]
+fn test_vrt_raster_loads_int16_lzw_pred2_source() {
+    let vrt_path = data_path("vrt/crop_int16_pred2_50x50.vrt");
+    let reference_path = data_path("reference/crop_int16_pred2_50x50.tif");
+    let raster = Raster::new(vrt_path.to_str().unwrap(), "r")
+        .expect("Expected VRT raster to load.");
+    let reference = Raster::new(reference_path.to_str().unwrap(), "r")
+        .expect("Expected reference raster to load.");
+    assert_raster_matches_reference(&raster, &reference);
+}
+
+#[test]
+fn test_vrt_raster_loads_int16_packbits_source() {
+    let vrt_path = data_path("vrt/crop_int16_packbits_50x50.vrt");
+    let reference_path = data_path("reference/crop_int16_packbits_50x50.tif");
+    let raster = Raster::new(vrt_path.to_str().unwrap(), "r")
+        .expect("Expected VRT raster to load.");
+    let reference = Raster::new(reference_path.to_str().unwrap(), "r")
+        .expect("Expected reference raster to load.");
+    assert_raster_matches_reference(&raster, &reference);
+}
+
+#[test]
+fn test_vrt_raster_loads_float32_source() {
+    let vrt_path = data_path("vrt/crop_float32_50x50.vrt");
+    let reference_path = data_path("reference/crop_float32_50x50.tif");
+    let raster = Raster::new(vrt_path.to_str().unwrap(), "r")
+        .expect("Expected VRT raster to load.");
+    let reference = Raster::new(reference_path.to_str().unwrap(), "r")
+        .expect("Expected reference raster to load.");
+    assert_raster_matches_reference(&raster, &reference);
+}
+
+#[test]
+fn test_vrt_raster_loads_sparse_source() {
+    let vrt_path = data_path("vrt/crop_sparse_120x120.vrt");
+    let reference_path = data_path("reference/crop_sparse_120x120.tif");
+    let raster = Raster::new(vrt_path.to_str().unwrap(), "r")
+        .expect("Expected VRT raster to load.");
+    let reference = Raster::new(reference_path.to_str().unwrap(), "r")
+        .expect("Expected reference raster to load.");
     assert_raster_matches_reference(&raster, &reference);
 }
