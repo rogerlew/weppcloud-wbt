@@ -1,8 +1,12 @@
 [package]
-name = "whitebox_tools"
+name = "whitebox-tools-app"
 version = "2.4.0"
 authors = ["John Lindsay <jlindsay@uoguelph.ca>"]
 edition = "2021"
+
+[[bin]]
+name = "whitebox_tools"
+path = "src/main.rs"
 
 [dependencies]
 byteorder = "^1.4.3"
