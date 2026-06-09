@@ -1337,3 +1337,7 @@ impl WhiteboxTool for FindOutlet {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "find_outlet_integration_tests.rs"]
+mod find_outlet_integration_tests;

@@ -1489,3 +1489,7 @@ fn rasters_share_geometry(rasters: &[&Raster]) -> bool {
     }
     true
 }
+
+#[cfg(test)]
+#[path = "hillslopes_topaz_integration_tests.rs"]
+mod hillslopes_topaz_integration_tests;
