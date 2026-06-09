@@ -1928,3 +1928,7 @@ mod tests {
         assert!(!looks_like_lon_lat_bounds(540000.0, 5020000.0, 541000.0, 5021000.0));
     }
 }
+
+#[cfg(test)]
+#[path = "raise_roads_integration_tests.rs"]
+mod raise_roads_integration_tests;
