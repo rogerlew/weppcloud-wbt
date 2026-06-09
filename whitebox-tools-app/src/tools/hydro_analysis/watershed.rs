@@ -569,3 +569,7 @@ impl WhiteboxTool for Watershed {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "watershed_integration_tests.rs"]
+mod watershed_integration_tests;

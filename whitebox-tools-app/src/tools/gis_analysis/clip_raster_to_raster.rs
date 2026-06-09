@@ -250,3 +250,7 @@ impl WhiteboxTool for ClipRasterToRaster {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "clip_raster_to_raster_integration_tests.rs"]
+mod clip_raster_to_raster_integration_tests;
