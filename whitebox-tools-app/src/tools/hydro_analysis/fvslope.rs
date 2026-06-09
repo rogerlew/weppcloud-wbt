@@ -477,3 +477,7 @@ impl WhiteboxTool for FVSlope {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "fvslope_integration_tests.rs"]
+mod fvslope_integration_tests;
