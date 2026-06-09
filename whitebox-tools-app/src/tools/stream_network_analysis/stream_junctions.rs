@@ -222,6 +222,8 @@ impl WhiteboxTool for StreamJunctionIdentifier {
         }
 
         let mut output = Raster::initialize_using_file(&output_file, &streams);
+        output.configs.data_type = DataType::F64;
+        output.configs.nodata = nodata;
 
         let dx = [1, 1, 1, 0, -1, -1, -1, 0];
         let dy = [-1, 0, 1, 1, 1, 0, -1, -1];
@@ -284,3 +286,7 @@ impl WhiteboxTool for StreamJunctionIdentifier {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "stream_junctions_integration_tests.rs"]
+mod stream_junctions_integration_tests;
