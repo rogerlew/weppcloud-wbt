@@ -13,11 +13,12 @@
 2. Read the active exec plan end-to-end before code changes.
 3. Execute milestone by milestone; do not skip validation gates.
 4. Keep the exec plan updated as a living artifact:
-   - `Progress`
-   - `Surprises and Discoveries`
-   - `Decision Log`
-   - `Outcomes and Retrospective`
+ - `Progress`
+ - `Surprises and Discoveries`
+ - `Decision Log`
+ - `Outcomes and Retrospective`
 5. If blocked by missing external dependencies/data, record the blocker in the plan and stop.
+6. Keep `CHANGELOG.md` up to date with commit-level or grouped changes for repository work.
 
 ## Tool Development Conventions
 - Follow `DEVELOPING_TOOLS.md` for:
