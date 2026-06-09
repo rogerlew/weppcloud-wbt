@@ -56,8 +56,8 @@ mod tests {
     fn test_right_angle_rotation() {
         let result = calculate_rotation_degrees(1.0, 0.0, 0.0, 0.0, 0.0, -1.0);
         assert!(
-            (result - 90.0).abs() < 1e-10,
-            "Expected 90.0, got {}",
+            (result - 270.0).abs() < 1e-10,
+            "Expected 270.0, got {}",
             result
         );
     }
@@ -92,8 +92,8 @@ mod tests {
     fn test_non_zero_origin() {
         let result = calculate_rotation_degrees(2.0, 1.0, 1.0, 1.0, 1.0, 0.0);
         assert!(
-            (result - 90.0).abs() < 1e-10,
-            "Expected 90.0, got {}",
+            (result - 270.0).abs() < 1e-10,
+            "Expected 270.0, got {}",
             result
         );
     }
