@@ -1,6 +1,6 @@
 {
   "verbose_mode": false,
-  "working_directory": "/wc1/runs/ci/civilized-projection/rusle/",
+  "working_directory": "/workdir/weppcloud-wbt/test_fixtures/blackwood_60_5/",
   "compress_rasters": false,
   "max_procs": -1
 }
