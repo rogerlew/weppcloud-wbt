@@ -972,3 +972,7 @@ mod tests {
         let _ = fs::remove_file(&sidecar_file);
     }
 }
+
+#[cfg(test)]
+#[path = "unnest_basins_integration_tests.rs"]
+mod unnest_basins_integration_tests;
