@@ -311,3 +311,7 @@ impl WhiteboxTool for PruneStrahlerStreamOrder {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "prune_strahler_order_integration_tests.rs"]
+mod prune_strahler_order_integration_tests;
