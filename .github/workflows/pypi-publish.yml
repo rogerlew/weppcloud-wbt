@@ -33,8 +33,38 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install Linux native dependencies
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libproj-dev libsqlite3-dev libtiff-dev pkg-config cmake
+
+      - name: Install macOS native dependencies
+        if: startsWith(matrix.os, 'macos')
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew update
+          brew install proj sqlite libtiff pkg-config cmake
+          echo "PKG_CONFIG_PATH=$(brew --prefix proj)/lib/pkgconfig:$(brew --prefix sqlite)/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig" >> "$GITHUB_ENV"
+
+      - name: Install Windows native dependencies
+        if: startsWith(matrix.os, 'windows')
+        shell: pwsh
+        run: |
+          choco install -y pkgconfiglite
+          $vcpkg = if ($env:VCPKG_INSTALLATION_ROOT) { $env:VCPKG_INSTALLATION_ROOT } else { "C:\vcpkg" }
+          if (-not (Test-Path "$vcpkg\vcpkg.exe")) {
+            git clone https://github.com/microsoft/vcpkg $vcpkg
+            & "$vcpkg\bootstrap-vcpkg.bat"
+          }
+          & "$vcpkg\vcpkg.exe" install proj:x64-windows sqlite3:x64-windows tiff:x64-windows curl:x64-windows
+          "VCPKG_ROOT=$vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "CMAKE_TOOLCHAIN_FILE=$vcpkg\scripts\buildsystems\vcpkg.cmake" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "PKG_CONFIG_PATH=$vcpkg\installed\x64-windows\lib\pkgconfig" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Install build dependencies
-        run: python -m pip install --upgrade pip build setuptools wheel pytest
+        run: python -m pip install --upgrade pip setuptools wheel pytest
 
       - name: Build whitebox_tools binary
         run: cargo build -p whitebox-tools-app --release
@@ -47,7 +77,7 @@ jobs:
           cp "target/release/${{ matrix.exe }}" "python/weppcloud_wbt/bin/${{ matrix.exe }}"
 
       - name: Build platform wheel
-        run: python -m build --wheel
+        run: python -m pip wheel . --no-deps --wheel-dir dist
 
       - name: Verify wheel is platform tagged
         shell: bash
