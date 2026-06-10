@@ -1,112 +1,97 @@
-# https://github.com/rogerlew/weppcloud-wbt
+# weppcloud-wbt
 
-This is a fork of John Lindsay's WhiteBoxTools. 
+**weppcloud-wbt** is an actively maintained Rust geospatial toolkit for WEPP watershed preprocessing. It provides the terrain parameterization, channel-network construction, outlet discovery, and DEM conditioning tools used operationally by [WEPPcloud](https://github.com/rogerlew/wepppy) — a published online interface for the Water Erosion Prediction Project (WEPP) model.
 
-This fork diverges from the upstream WhiteboxTools distribution in the following ways (all used operationally within WEPPcloud workflows):
+The software is built on the foundation of John Lindsay's [WhiteboxTools](https://github.com/jblindsay/whitebox-tools). We are grateful for the substantial body of work Lindsay contributed to open-source geospatial analysis. That repository is [officially marked as legacy](https://github.com/jblindsay/whitebox-tools) and has received no commits since February 2025, as development moved to a separate commercial and open-source successor. **weppcloud-wbt is the actively maintained branch of the WhiteboxTools codebase for WEPP and WEPPcloud workflows.**
 
-- `HillslopesTopaz` (hydro_analysis/hillslopes_topaz.rs)
-  - Implements Garbrecht & Martz TOPAZ-style stream and hillslope identifiers for a single watershed, emitting channel metadata tables (`netw.tsv`, `netw_props.tsv`) and left/right/top hillslope rasters needed by WEPPcloud.
-  - Includes numerous performance optimizations (e.g., combined flood-fill phases, cached upstream areas) and additional output attributes such as `areaup` for each link.
-- `FindOutlet` (hydro_analysis/find_outlet.rs)
-  - Derives a single stream outlet pour point GeoJSON by tracing D8 flow from interior candidates, embedding diagnostics needed by downstream WEPPcloud steps.
-  - Supports optional watershed masks and requested start locations (`--requested_outlet_lng_lat`, `--requested_outlet_row_col`) so interactive callers can walk downhill from arbitrary picks without bespoke Python search code.
-- `StreamJunctionIdentifier` (stream_network_analysis/stream_junctions.rs)
-  - Counts inflowing tributaries for every stream pixel, producing junction maps that WEPPcloud uses to locate confluences, outlets, and pseudo-gauges.
-- `PruneStrahlerStreamOrder` (stream_network_analysis/prune_strahler_order.rs)
-  - Drops first-order (Strahler order = 1) links from an existing order grid, subtracts one from downstream orders, and optionally preserves zero-valued background cells.
-  - Exposed through new Python bindings (`whitebox_tools.py` and `WBT/whitebox_tools.py`).
-- `ClipRasterToRaster` (gis_analysis/clip_raster_to_raster.rs) adds raster-on-raster clipping with a corresponding Python wrapper.
-- `RemoveShortStreams` enhancement (stream_network_analysis/remove_short_streams.rs)
-  - Adds `--max_junctions` pruning with iterative branch deletion so no junction retains more than the requested inflows; Python API updated with the new argument.
-- `IterativeFirstOrderLinkPrune` (stream_network_analysis/iterative_first_order_link_prune.rs)
-  - Implements two-stage stream qualification/pruning with local threshold support (`--threshold_code_raster` + `--threshold_table`) and deterministic first-order-link pruning behavior used for TopAZ parity workflows.
-  - Exposed through Python bindings (`whitebox_tools.py` and `WBT/whitebox_tools.py`) and documented in [docs/iterative-first-order-link-prune/specification.md](docs/iterative-first-order-link-prune/specification.md).
-- `Slope` tool modification (terrain_analysis/slope.rs) introducing ratio units and recording the chosen unit in output metadata; banner text updated to reflect maintenance through 2025.
-- `FVSlope` (hydro_analysis/fvslope.rs)
-  - Computes slope in the D8 flow direction (with ESRI pointer support, z-factor, and unit controls) to mirror TOPAZ-style flow-vector slopes used by WEPP channel hydraulics.
-- `Watershed` tool update (hydro_analysis/watershed.rs)
-  - Accepts GeoJSON pour-point inputs (Point/MultiPoint) in addition to shapefiles and rasters, pulling in the `geojson` crate and documenting the extended behavior.
-- `RaiseRoads` (hydro_analysis/raise_roads.rs)
-  - Raises road embankments in DEMs with `constant`, `profile_relative`, and `cross_section` strategies, while enforcing a no-lowering guarantee (`output >= input` on valid cells).
-  - Includes width/parameter fallback hierarchy, GeoJSON attribute overrides for cross-section parameters, and conservative unpaved-road fallback behavior.
-  - Adds CRS-aware road ingestion, including source EPSG inference and automatic reprojection to DEM CRS when needed; exposed through Python bindings (`whitebox_tools.py` and `WBT/whitebox_tools.py`).
-- `UnnestBasins` tool update (hydro_analysis/unnest_basins.rs)
-  - Writes a `<output_stem>_hierarchy.csv` sidecar with parent/child outlet relationships, nesting order, hierarchy level, and outlet grid coordinates.
-  - Replaces per-order full-grid flowpath retracing with a one-pass outlet assignment plus per-order ancestor remapping; includes regression tests for mapping parity.
-- CLI/runtime updates
-  - Command-line entry point now propagates errors (`main.rs` returns `Result`), enabling backtraces from scripted environments.
-  - Python wrapper enhancements provide optional `raise_on_error` semantics, custom exceptions, environment propagation, and richer error reporting for all tools.
-- VRT support (read-only, single SimpleSource)
-  - Adds `.vrt` detection, a minimal VRT parser, and a windowed GeoTIFF read path to avoid full in-memory loads for cropped inputs.
-  - Supports full-size VRTs without SrcRect/DstRect when dimensions match the source; includes fixtures, tests, and performance notes for WEPPcloud workflows.
-- General code cleanup by CODEX ( gpt-5-codex high unprompted :| )
-  - Tightened tool documentation, aligned specs/readmes with new diagnostics, and refreshed error messaging to keep automated workflows resilient.
+---
 
+## Tools added in this fork
 
-Developers extending this fork can follow the guidelines in [DEVELOPING_TOOLS.md](DEVELOPING_TOOLS.md).
+All tools below are used operationally within WEPPcloud. Python bindings are included in `whitebox_tools.py` and `WBT/whitebox_tools.py` unless noted.
 
-Release build/install procedure (required for WEPPpy cutovers):
-[docs/release-build-install.md](docs/release-build-install.md)
+### Hydrology / terrain
 
+- **`HillslopesTopaz`** (`hydro_analysis/hillslopes_topaz.rs`)
+  Implements Garbrecht & Martz TOPAZ-style stream and hillslope identifiers for a single watershed. Emits channel metadata tables (`netw.tsv`, `netw_props.tsv`) and left/right/top hillslope rasters consumed by WEPPcloud. Includes combined flood-fill phases, cached upstream areas, and per-link `areaup` attributes.
 
-**This repository tracks the generated `WBT` build compiled on Linux (Ubuntu 24.04) so the deployment artifacts remain versioned alongside the code.**
+- **`FindOutlet`** (`hydro_analysis/find_outlet.rs`)
+  Derives a single-stream outlet pour-point GeoJSON by tracing D8 flow from interior candidates. Supports optional watershed masks and requested start locations (`--requested_outlet_lng_lat`, `--requested_outlet_row_col`) for interactive callers.
 
+- **`FVSlope`** (`hydro_analysis/fvslope.rs`)
+  Computes slope in the D8 flow direction with ESRI pointer support, z-factor, and unit controls (ratio, degrees, percent, radians). Mirrors TOPAZ-style flow-vector slopes used by WEPP channel hydraulics. Output unit is recorded in raster metadata.
 
-![](./img/WhiteboxToolsLogoBlue.png)
+- **`RaiseRoads`** (`hydro_analysis/raise_roads.rs`)
+  Conditions DEMs for road embankments using `constant`, `profile_relative`, or `cross_section` strategies while enforcing a no-lowering guarantee (`output ≥ input` on all valid cells). Supports GeoJSON attribute overrides for cross-section parameters, width/parameter fallback hierarchy, conservative unpaved-road behavior, and automatic reprojection of road vectors to DEM CRS.
 
+- **`Watershed`** update (`hydro_analysis/watershed.rs`)
+  Extended to accept GeoJSON pour-point inputs (Point and MultiPoint features) in addition to shapefiles and rasters.
 
-> Note: Compiled WhiteboxTools binaries for Windows, macOS, and Linux can be found at: https://www.whiteboxgeo.com/download-whiteboxtools/
+- **`UnnestBasins`** update (`hydro_analysis/unnest_basins.rs`)
+  Writes a `<output_stem>_hierarchy.csv` sidecar encoding parent/child outlet relationships, nesting order, hierarchy level, and outlet grid coordinates. Replaces per-order full-grid flowpath retracing with a one-pass outlet assignment plus per-order ancestor remapping.
 
-*This page is related to the stand-alone command-line program and Python scripting API for geospatial analysis, **WhiteboxTools**.
+### Stream network
 
-The official WhiteboxTools User Manual can be found [at this link](https://whiteboxgeo.com/manual/wbt_book/preface.html).
+- **`StreamJunctionIdentifier`** (`stream_network_analysis/stream_junctions.rs`)
+  Counts inflowing tributaries for every stream pixel, producing junction maps WEPPcloud uses to locate confluences, outlets, and pseudo-gauges.
 
-**Contents**
+- **`PruneStrahlerStreamOrder`** (`stream_network_analysis/prune_strahler_order.rs`)
+  Drops first-order (Strahler order = 1) links from an existing order grid, subtracts one from remaining orders, and optionally preserves zero-valued background cells or collapses retained links to a binary mask.
 
-1. [Description](#1-description)
-2. [Getting Help](#2-getting-help)
-3. [Downloads and Installation](#3-pre-compiled-binaries)
-4. [Building From Source Code](#4-building-from-source-code)
+- **`IterativeFirstOrderLinkPrune`** (`stream_network_analysis/iterative_first_order_link_prune.rs`)
+  Two-stage stream qualification and pruning with local threshold support (`--threshold_code_raster` + `--threshold_table`) and deterministic first-order-link pruning behavior for TOPAZ-parity workflows. Specification: [docs/iterative-first-order-link-prune/specification.md](docs/iterative-first-order-link-prune/specification.md).
 
-## 1 Description
+- **`RemoveShortStreams`** enhancement (`stream_network_analysis/remove_short_streams.rs`)
+  Adds `--max_junctions` pruning with iterative branch deletion so no junction retains more than the requested number of inflows.
 
-**WhiteboxTools** is an advanced geospatial data analysis platform developed by Prof. John Lindsay ([webpage](http://www.uoguelph.ca/~hydrogeo/index.html); [jblindsay](https://github.com/jblindsay)) at the [University of Guelph's](http://www.uoguelph.ca) [*Geomorphometry and Hydrogeomatics Research Group*](http://www.uoguelph.ca/~hydrogeo/index.html). *WhiteboxTools* can be used to perform common geographical information systems (GIS) analysis operations, such as cost-distance analysis, distance buffering, and raster reclassification. Remote sensing and image processing tasks include image enhancement (e.g. panchromatic sharpening, contrast adjustments), image mosaicing, numerous filtering operations, classification, and common image transformations. *WhiteboxTools* also contains advanced tooling for spatial hydrological analysis (e.g. flow-accumulation, watershed delineation, stream network analysis, sink removal), terrain analysis (e.g. common terrain indices such as slope, curvatures, wetness index, hillshading; hypsometric analysis; multi-scale topographic position analysis), and LiDAR data processing. LiDAR point clouds can be interrogated (LidarInfo, LidarHistogram), segmented, tiled and joined, analyized for outliers, interpolated to rasters (DEMs, intensity images), and ground-points can be classified or filtered. *WhiteboxTools* is not a cartographic or spatial data visualization package; instead it is meant to serve as an analytical backend for other data visualization software, mainly GIS.
+### GIS
 
-## 2 Getting help
+- **`ClipRasterToRaster`** (`gis_analysis/clip_raster_to_raster.rs`)
+  Cell-wise raster masking: passes input values where the mask is valid and non-zero, writes nodata elsewhere. Reduces full-raster reads in cloud preprocessing steps.
 
-WhiteboxToos possesses extensive help documentation. Users are referred to the [User Manual](https://www.whiteboxgeo.com/manual/wbt_book/) located on www.whiteboxgeo.com.
+### Raster I/O
 
-## 3 Pre-compiled binaries
+- **VRT support** (read-only, single `SimpleSource`)
+  Adds `.vrt` detection, a minimal VRT XML parser, and a windowed GeoTIFF read path to avoid full in-memory loads for cropped inputs. Supports full-size VRTs without `SrcRect`/`DstRect` when dimensions match the source.
 
-*WhiteboxTools* is a stand-alone executable command-line program with no actual installation. If you intend to use the Python programming interface for *WhiteboxTools* you will need to have Python 3 (or higher) installed. Pre-compiled binaries can be downloaded from the [*Whitebox Geospatial Inc. website*](https://www.whiteboxgeo.com/download-whiteboxtools/) with support for various operating systems.
+### Runtime and Python API
 
-## 4 Building from source code
+- **CLI error propagation** — `main.rs` returns `Result`, enabling backtraces from scripted environments.
+- **Python wrapper enhancements** — `raise_on_error` semantics, custom exceptions, environment propagation, and richer error reporting across all tools.
+- **`Slope` unit extension** — ratio units added; chosen unit recorded in output metadata.
 
-It is likely that *WhiteboxTools* will work on a wider variety of operating systems and architectures than the distributed binary files. If you do not find your operating system/architecture in the list of available *WhiteboxTool* binaries, then compilation from source code will be necessary. WhiteboxTools can be compiled from the source code with the following steps:
+---
 
-1. Install the Rust compiler; Rustup is recommended for this purpose. Further instruction can be found at this [link](https://www.rust-lang.org/en-US/install.html).
+## Building from source
 
-2. Download the *WhiteboxTools* from this GitHub repo.
+This fork targets Linux (Ubuntu 24.04) for WEPPcloud deployment. The compiled `WBT/` directory is tracked in the repository so deployment artifacts stay versioned alongside the code.
+
+```bash
+# Install Rust (if not already installed)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Clone this repository
+git clone https://github.com/rogerlew/weppcloud-wbt.git
+cd weppcloud-wbt
+
+# Release build
+cargo build --release -p whitebox-tools-app
+
+# Run tests
+cargo test -p whitebox_raster --tests
+cargo test -p whitebox-tools-app
 ```
 
-3. Decompress the zipped download file.
+Full release build and WEPPcloud deployment procedure: [docs/release-build-install.md](docs/release-build-install.md).
 
-4. Open a terminal (command prompt) window and change the working directory to the `whitebox-tools` folder:
+---
 
-```
->> cd /path/to/folder/whitebox-tools/
-```
+## Developer guide
 
-5. Finally, use the Python build.py script to compile the code:
+[DEVELOPING_TOOLS.md](DEVELOPING_TOOLS.md) covers tool structure, test fixture conventions, Python binding patterns, and the integration test requirements expected for new tools.
 
-```
->> python build.py
-```
+---
 
-Read the notes in the `build.py` file for detailed information about customizing the build. In particular, the `do_clean`,
-`exclude_runner` and `zip` arguments can be used to add or remove functionality during the build process. Running the build
-script requires a Python environment. (Note, WhiteboxTools itself is pure Rust code.)
+## Acknowledgements
 
-Depending on your system, the compilation may take several minutes. Also depending on your system, it may be necessary to use the `python3` command instead. When completed, the script will have created a new `WBT` folder within `whitebox-tools`. This folder will contain all of the files needed to run the program, including the main Whitebox executable file (whitebox_tools.exe), the Whitebox Runner GUI application, and the various plugins.
-
-Be sure to follow the instructions for installing Rust carefully. In particular, if you are installing on MS Windows, you must have a linker installed prior to installing the Rust compiler (rustc). The Rust webpage recommends either the **MS Visual C++ 2015 Build Tools** or the GNU equivalent and offers details for each installation approach. You should also consider using **RustUp** to install the Rust compiler.
+This project is built on [WhiteboxTools](https://github.com/jblindsay/whitebox-tools) by John Lindsay at the University of Guelph. Lindsay's work established the Rust geospatial analysis framework, hydrologic toolchain, raster I/O layer, and Python API that make this fork possible. The TOPAZ algorithms implemented here draw on the foundational work of Jurgen Garbrecht and Lawrence Martz. We are grateful to both for their contributions to open-source hydrologic terrain analysis.
