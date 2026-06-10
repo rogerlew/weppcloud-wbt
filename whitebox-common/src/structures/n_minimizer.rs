@@ -11,16 +11,20 @@ License: MIT
 /// efficient and small memory solution.
 ///
 /// ## Example
-///     let mut lows = NMinimizer::new(4);
+/// ```rust
+/// use whitebox_common::structures::NMinimizer;
 ///
-///     let data = vec![4.0, 3.0, -2.0, 9.0, 3.0, 2.0, 1.0, 8.0, 5.0];
-///     for val in data {
-///         lows.insert(val);
-///     }
-///     
-///     for i in 0..4 {
-///         println!("{}", lows.get(i).unwrap());
-///     }
+/// let mut lows = NMinimizer::new(4);
+///
+/// let data = vec![4.0, 3.0, -2.0, 9.0, 3.0, 2.0, 1.0, 8.0, 5.0];
+/// for val in data {
+///     lows.insert(val);
+/// }
+///
+/// for i in 0..4 {
+///     println!("{}", lows.get(i).unwrap());
+/// }
+/// ```
 pub struct NMinimizer<T: Copy + PartialOrd + PartialEq> {
     values: Vec<T>,
     n: usize,

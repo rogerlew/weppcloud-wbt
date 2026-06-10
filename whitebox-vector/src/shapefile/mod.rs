@@ -83,12 +83,15 @@ m_max: {}",
 ///
 /// Examples:
 ///
-/// ```
+/// ```no_run
+/// use whitebox_vector::Shapefile;
+/// use whitebox_vector::{ShapeType, AttributeField, FieldDataType};
+///
 /// // Read a Shapefile from a file.
-/// let input = Shapefile::read(&input_file)?;
+/// let input = Shapefile::read(&"input.shp".to_string()).unwrap();
 ///
 /// // Create a new output Shapefile
-/// let mut output = Shapefile::initialize_using_file(&output_file, &input, ShapeType::PolyLine, true)?;
+/// let mut output = Shapefile::initialize_using_file(&"output.shp".to_string(), &input, ShapeType::PolyLine, true).unwrap();
 ///
 /// // add attributes
 /// let fid = AttributeField::new("FID", FieldDataType::Int, 2u8, 0u8);

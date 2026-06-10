@@ -17,19 +17,19 @@ A triangle edge may be shared with another triangle. Instead of thinking about e
 
 Half-edges e are the indices into both of delaunator’s outputs:
 
-    delaunay.triangles[e] returns the point id where the half-edge starts
-    delaunay.halfedges[e] returns the opposite half-edge in the adjacent triangle, or -1 if there is no adjacent triangle
+delaunay.triangles[e] returns the point id where the half-edge starts
+delaunay.halfedges[e] returns the opposite half-edge in the adjacent triangle, or -1 if there is no adjacent triangle
 
 Triangle ids and half-edge ids are related.
 
-    The half-edges of triangle t are 3*t, 3*t + 1, and 3*t + 2.
-    The triangle of half-edge id e is floor(e/3
+The half-edges of triangle t are 3*t, 3*t + 1, and 3*t + 2.
+The triangle of half-edge id e is floor(e/3).
 
 # Example
 
 ```rust
-use delaunator::triangulate;
-use structures::Point2D
+use whitebox_common::algorithms::triangulate;
+use whitebox_common::structures::Point2D;
 
 let points = vec![
     Point2D { x: 0., y: 0. },

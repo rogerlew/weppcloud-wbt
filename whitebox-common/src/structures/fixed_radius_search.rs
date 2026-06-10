@@ -31,18 +31,22 @@ struct FixedRadiusSearchEntry2D<T: Copy> {
 /// A simple 2D hash-based fixed radius search data structure.
 ///
 /// ## Example
-///     let mut frs = FixedRadiusSearch2D::new(5.0, DistanceMetric::SquaredEuclidean);
-///     frs.insert(45.3, 32.5, 1i32);
-///     frs.insert(25.3, 65.5, 2i32);
-///     frs.insert(42.3, 35.5, 3i32);
-///     frs.insert(40.3, 31.5, 4i32);
-///     frs.insert(24.3, 68.5, 5i32);
+/// ```rust
+/// use whitebox_common::structures::{FixedRadiusSearch2D, DistanceMetric};
 ///
-///     let s1 = frs.search(41.4, 31.4);
-///     println!("{:?}", s1);
+/// let mut frs = FixedRadiusSearch2D::new(5.0, DistanceMetric::SquaredEuclidean);
+/// frs.insert(45.3, 32.5, 1i32);
+/// frs.insert(25.3, 65.5, 2i32);
+/// frs.insert(42.3, 35.5, 3i32);
+/// frs.insert(40.3, 31.5, 4i32);
+/// frs.insert(24.3, 68.5, 5i32);
 ///
-///     let s2 = frs.knn_search(22.4, 69.4, 2);
-///     println!("{:?}", s2);
+/// let s1 = frs.search(41.4, 31.4);
+/// println!("{:?}", s1);
+///
+/// let s2 = frs.knn_search(22.4, 69.4, 2);
+/// println!("{:?}", s2);
+/// ```
 pub struct FixedRadiusSearch2D<T: Copy> {
     inv_r: f64,
     r_sqr: f64,
@@ -249,18 +253,22 @@ struct FixedRadiusSearchEntry3D<T: Copy> {
 /// A simple 3D hash-based fixed radius search data structure.
 ///
 /// ## Example
-///     let mut frs = FixedRadiusSearch3D::new(5.0, DistanceMetric::SquaredEuclidean);
-///     frs.insert(45.3, 32.5, 6.1, 1i32);
-///     frs.insert(25.3, 65.5, 21.5, 2i32);
-///     frs.insert(42.3, 35.5, 43.9, 3i32);
-///     frs.insert(40.3, 31.5, 3.6, 4i32);
-///     frs.insert(24.3, 68.5, 12.4, 5i32);
+/// ```rust
+/// use whitebox_common::structures::{FixedRadiusSearch3D, DistanceMetric};
 ///
-///     let s1 = frs.search(41.4, 31.4, 12.3);
-///     println!("{:?}", s1);
+/// let mut frs = FixedRadiusSearch3D::new(5.0, DistanceMetric::SquaredEuclidean);
+/// frs.insert(45.3, 32.5, 6.1, 1i32);
+/// frs.insert(25.3, 65.5, 21.5, 2i32);
+/// frs.insert(42.3, 35.5, 43.9, 3i32);
+/// frs.insert(40.3, 31.5, 3.6, 4i32);
+/// frs.insert(24.3, 68.5, 12.4, 5i32);
 ///
-///     let s2 = frs.knn_search(22.4, 69.4, 10.5, 2);
-///     println!("{:?}", s2);
+/// let s1 = frs.search(41.4, 31.4, 12.3);
+/// println!("{:?}", s1);
+///
+/// let s2 = frs.knn_search(22.4, 69.4, 10.5, 2);
+/// println!("{:?}", s2);
+/// ```
 pub struct FixedRadiusSearch3D<T: Copy> {
     inv_r: f64,
     r_sqr: f64,

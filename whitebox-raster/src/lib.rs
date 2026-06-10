@@ -61,13 +61,15 @@ use whitebox_common::utils::*;
 ///
 /// Examples:
 ///
-/// ```
+/// ```no_run
+/// use whitebox_raster::Raster;
+///
 /// // Read an existing raster file
-/// let input = Raster::new(&input_file, "r")?;
+/// let input = Raster::new(&"input.tif".to_string(), "r").unwrap();
 ///
 /// // Create a new raster file with the dimensions
 /// // and location of an existing file.
-/// let mut output = Raster::initialize_using_file(&output_file, &input);
+/// let mut output = Raster::initialize_using_file(&"output.tif".to_string(), &input);
 /// ```
 #[derive(Default, Clone)]
 pub struct Raster {
