@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Hardened PyPI workflow tool-presence validation to check normalized `list_tools()` keys (snake_case/CamelCase tolerant) and print targeted diagnostics when required tools are missing.
 - Added a packaged top-level `whitebox_tools` shim package under `python/whitebox_tools/` so `from whitebox_tools import WhiteboxTools` works from installed wheels.
 - Fixed wheel packaging metadata to include the top-level `whitebox_tools` compatibility module so installed-wheel imports work across Linux/macOS/Windows.
 - Added `.github/workflows/pypi-publish.yml` to build platform wheels in a Linux/macOS/Windows matrix, run installed-wheel import/tool smoke checks, aggregate all wheel artifacts, and publish tagged releases to PyPI via trusted publishing.
