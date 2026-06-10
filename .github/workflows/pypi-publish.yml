@@ -43,7 +43,7 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           sudo apt-get update
-          sudo apt-get install -y libproj-dev libsqlite3-dev libtiff-dev pkg-config cmake
+          sudo apt-get install -y libproj-dev libsqlite3-dev libtiff-dev pkg-config cmake patchelf
 
       - name: Install macOS native dependencies
         if: startsWith(matrix.os, 'macos')

@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Updated `setup.py` distribution metadata to mark wheels as binary distributions (`has_ext_modules=True`) so packaged native executables are emitted in platlib-compatible paths and can be processed by `auditwheel`.
+- Added `patchelf` to Ubuntu CI dependencies so the Linux `auditwheel repair` step can run successfully.
 - Added a Linux `auditwheel repair` step in the PyPI workflow so Linux wheels are retagged from unsupported `linux_x86_64` to PyPI-accepted `manylinux` platform tags before publish.
 - Upgraded GitHub Actions in the PyPI workflow to current majors (`actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`, `actions/download-artifact@v5`) and removed the temporary `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` override.
 - Reduced macOS Homebrew warning noise in the PyPI workflow by avoiding `brew update` during CI dependency install.
