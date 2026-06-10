@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## [2.3.0.post2] - 2026-06-10
 - Bumped the PyPI package version to `2.3.0.post2` for a Windows wheel repair release.
 - Fixed Windows PyPI wheel assembly to bundle vcpkg runtime DLLs, including `proj_9.dll`, and bundled PROJ data (`proj.db`) with the packaged `whitebox_tools.exe`.
 - Added Windows wheel payload inspection to fail CI before publishing when required runtime DLLs or PROJ data are missing.
@@ -27,6 +27,9 @@
 - Fixed the `LICENSE.txt` "ammendments" typo.
 
 ## Backfilled history (since fork date)
+
+### 2025-06-07
+- [f0b6c07](https://github.com/rogerlew/weppcloud-wbt/commit/f0b6c07): StreamJunctionIdentifier
 
 ### 2025-12-05
 - [113c3f1](https://github.com/rogerlew/weppcloud-wbt/commit/113c3f1): fvslope
