@@ -2,8 +2,8 @@
 
 ## Unreleased
 - Added a Linux `auditwheel repair` step in the PyPI workflow so Linux wheels are retagged from unsupported `linux_x86_64` to PyPI-accepted `manylinux` platform tags before publish.
-- Set `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` in the PyPI workflow to proactively migrate JavaScript actions off deprecated Node.js 20 runners.
-- Reduced macOS Homebrew warning noise in the PyPI workflow by removing `brew update` and untapping unused untrusted taps (`aws/tap`, `azure/bicep`, `hashicorp/tap`) before dependency install.
+- Upgraded GitHub Actions in the PyPI workflow to current majors (`actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`, `actions/download-artifact@v5`) and removed the temporary `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` override.
+- Reduced macOS Homebrew warning noise in the PyPI workflow by avoiding `brew update` during CI dependency install.
 - Updated PyPI workflow publish gating: tag pushes (`v*`) still auto-publish, and manual `workflow_dispatch` runs can now publish when the new `publish` input is set to true.
 - Updated Windows PyPI workflow dependency setup to export vcpkg `LIB`/`INCLUDE`/`RUSTFLAGS` plus SQLite-specific env vars and a preflight `sqlite3.lib` presence check to prevent `LNK1181` at link time.
 - Added a Windows-safe fallback in the PyPI workflow installed-wheel validation: when `list_tools()` returns zero parsed entries, CI now verifies required tools via `tool_help()` instead of failing on parser-specific output differences.
