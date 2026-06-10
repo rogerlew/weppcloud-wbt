@@ -12,41 +12,41 @@ All tools below are used operationally within WEPPcloud. Python bindings are inc
 
 ### Hydrology / terrain
 
-- **`HillslopesTopaz`** (`hydro_analysis/hillslopes_topaz.rs`) — [spec](whitebox-tools-app/src/tools/hydro_analysis/hillslopes_topaz.spec.md)
+- **`HillslopesTopaz`** (`hydro_analysis/hillslopes_topaz.rs`) — [spec](whitebox-tools-app/src/tools/hydro_analysis/hillslopes_topaz.spec.md) · [end-user guide](docs/hillslopes_topaz.ENDUSER.md)
   Implements Garbrecht & Martz TOPAZ-style stream and hillslope identifiers for a single watershed. Emits channel metadata tables (`netw.tsv`, `netw_props.tsv`) and left/right/top hillslope rasters consumed by WEPPcloud. Includes combined flood-fill phases, cached upstream areas, and per-link `areaup` attributes.
 
-- **`FindOutlet`** (`hydro_analysis/find_outlet.rs`) — [spec](whitebox-tools-app/src/tools/hydro_analysis/find_outlet.spec.md)
+- **`FindOutlet`** (`hydro_analysis/find_outlet.rs`) — [spec](whitebox-tools-app/src/tools/hydro_analysis/find_outlet.spec.md) · [end-user guide](docs/find_outlet.ENDUSER.md)
   Derives a single-stream outlet pour-point GeoJSON by tracing D8 flow from interior candidates. Supports optional watershed masks and requested start locations (`--requested_outlet_lng_lat`, `--requested_outlet_row_col`) for interactive callers.
 
-- **`FVSlope`** (`hydro_analysis/fvslope.rs`)
+- **`FVSlope`** (`hydro_analysis/fvslope.rs`) — [end-user guide](docs/fvslope.ENDUSER.md)
   Computes slope in the D8 flow direction with ESRI pointer support, z-factor, and unit controls (ratio, degrees, percent, radians). Mirrors TOPAZ-style flow-vector slopes used by WEPP channel hydraulics. Output unit is recorded in raster metadata.
 
-- **`RaiseRoads`** (`hydro_analysis/raise_roads.rs`)
+- **`RaiseRoads`** (`hydro_analysis/raise_roads.rs`) — [end-user guide](docs/raise_roads.ENDUSER.md)
   Conditions DEMs for road embankments using `constant`, `profile_relative`, or `cross_section` strategies while enforcing a no-lowering guarantee (`output ≥ input` on all valid cells). Supports GeoJSON attribute overrides for cross-section parameters, width/parameter fallback hierarchy, conservative unpaved-road behavior, and automatic reprojection of road vectors to DEM CRS.
 
-- **`Watershed`** update (`hydro_analysis/watershed.rs`)
+- **`Watershed`** update (`hydro_analysis/watershed.rs`) — [end-user guide](docs/watershed_geojson.ENDUSER.md)
   Extended to accept GeoJSON pour-point inputs (Point and MultiPoint features) in addition to shapefiles and rasters.
 
-- **`UnnestBasins`** update (`hydro_analysis/unnest_basins.rs`)
+- **`UnnestBasins`** update (`hydro_analysis/unnest_basins.rs`) — [end-user guide](docs/unnest_basins.ENDUSER.md)
   Writes a `<output_stem>_hierarchy.csv` sidecar encoding parent/child outlet relationships, nesting order, hierarchy level, and outlet grid coordinates. Replaces per-order full-grid flowpath retracing with a one-pass outlet assignment plus per-order ancestor remapping.
 
 ### Stream network
 
-- **`StreamJunctionIdentifier`** (`stream_network_analysis/stream_junctions.rs`)
+- **`StreamJunctionIdentifier`** (`stream_network_analysis/stream_junctions.rs`) — [end-user guide](docs/stream_junction_identifier.ENDUSER.md)
   Counts inflowing tributaries for every stream pixel, producing junction maps WEPPcloud uses to locate confluences, outlets, and pseudo-gauges.
 
-- **`PruneStrahlerStreamOrder`** (`stream_network_analysis/prune_strahler_order.rs`)
+- **`PruneStrahlerStreamOrder`** (`stream_network_analysis/prune_strahler_order.rs`) — [end-user guide](docs/prune_strahler_order.ENDUSER.md)
   Drops first-order (Strahler order = 1) links from an existing order grid, subtracts one from remaining orders, and optionally preserves zero-valued background cells or collapses retained links to a binary mask.
 
-- **`IterativeFirstOrderLinkPrune`** (`stream_network_analysis/iterative_first_order_link_prune.rs`)
-  Two-stage stream qualification and pruning with local threshold support (`--threshold_code_raster` + `--threshold_table`) and deterministic first-order-link pruning behavior for TOPAZ-parity workflows. Specification: [docs/iterative-first-order-link-prune/specification.md](docs/iterative-first-order-link-prune/specification.md).
+- **`IterativeFirstOrderLinkPrune`** (`stream_network_analysis/iterative_first_order_link_prune.rs`) — [spec](docs/iterative-first-order-link-prune/specification.md) · [end-user guide](docs/iterative_first_order_link_prune.ENDUSER.md)
+  Two-stage stream qualification and pruning with local threshold support (`--threshold_code_raster` + `--threshold_table`) and deterministic first-order-link pruning behavior for TOPAZ-parity workflows.
 
-- **`RemoveShortStreams`** enhancement (`stream_network_analysis/remove_short_streams.rs`)
+- **`RemoveShortStreams`** enhancement (`stream_network_analysis/remove_short_streams.rs`) — [end-user guide](docs/remove_short_streams.ENDUSER.md)
   Adds `--max_junctions` pruning with iterative branch deletion so no junction retains more than the requested number of inflows.
 
 ### GIS
 
-- **`ClipRasterToRaster`** (`gis_analysis/clip_raster_to_raster.rs`)
+- **`ClipRasterToRaster`** (`gis_analysis/clip_raster_to_raster.rs`) — [end-user guide](docs/clip_raster_to_raster.ENDUSER.md)
   Cell-wise raster masking: passes input values where the mask is valid and non-zero, writes nodata elsewhere. Reduces full-raster reads in cloud preprocessing steps.
 
 ### Raster I/O
