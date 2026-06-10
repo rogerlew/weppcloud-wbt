@@ -4,6 +4,7 @@ Review target: `paper/paper.md` in `/workdir/weppcloud-wbt`
 Review date: 2026-06-09 America/Los_Angeles  
 Reviewer stance: adversarial verification pass after first-round fixes, not a rewrite.  
 Baseline reviewed commit: `c4c1818 docs(paper): resolve pre-submission review findings`  
+Current refreshed state: `d4c52c45946e14b5918694057b85dd8fa2a5dab7`, synchronized with `origin/master`
 Prior review artifact: `paper/_validation/pre-submisison-review.md`
 
 Important assumption honored: a release archive and Zenodo DOI will be minted before actual submission. The absence of a current release/DOI is not treated as a blocker by itself because `docs/release-build-install.md` gives a release procedure. It remains a final submission action.
@@ -14,6 +15,8 @@ Important assumption honored: a release archive and Zenodo DOI will be minted be
 - The MIT license is present in plain text at `LICENSE.txt`, with upstream and fork copyright notices.
 - The paper builds with `pandoc --citeproc`, all cited keys resolve, and the manuscript is within the expected JOSS word range at 1527 words by `pandoc -t plain | wc -w`.
 - The first-round functional evidence fixes mostly landed: `RemoveShortStreams --max_junctions` now has source metadata and a direct regression test; IFOLP evidence is now listed in `paper/claims-test-matrix.md`; the paper correctly scopes `WhiteboxToolsTopazEmulator` to the companion WEPPpy repository.
+- The current public `origin/master` matches local `HEAD`, so the reviewed repository state is now published.
+- The tracked `WBT/whitebox_tools` runtime binary has been rebuilt and now advertises `RemoveShortStreams --max_junctions`.
 - Full local CI-equivalent testing passed: `cargo test --workspace --lib --tests --bins --quiet`, `cargo test -p whitebox_raster --tests`, targeted IFOLP and `RemoveShortStreams` selections, and the Python wrapper smoke test all passed.
 
 ## Resolved Since Round 1
@@ -23,17 +26,15 @@ Important assumption honored: a release archive and Zenodo DOI will be minted be
 | Stale package id `whitebox_tools` in main release/install docs | Resolved in `AGENTS.md` and `docs/release-build-install.md`; both now use `whitebox-tools-app`. |
 | Claims matrix omitted current IFOLP coverage | Resolved; `paper/claims-test-matrix.md` lists parser, phase, topology, real-fixture, and wrapper tests. |
 | `RemoveShortStreams --max_junctions` lacked direct regression evidence | Resolved in source/tests; `cargo test -p whitebox-tools-app remove_short_streams_integration -- --nocapture` passes `1 passed`. |
-| `RemoveShortStreams --max_junctions` not advertised in tool metadata | Resolved in source metadata and freshly built binary output; not resolved in the checked-in `WBT/whitebox_tools` binary, see blocker below. |
+| `RemoveShortStreams --max_junctions` not advertised in tool metadata | Resolved in source metadata and the checked-in `WBT/whitebox_tools` binary; `WBT/whitebox_tools --toolhelp=RemoveShortStreams` lists `--max_junctions`. |
 | `WhiteboxToolsTopazEmulator` appeared to live in this repo | Resolved in paper text and claims matrix; it is now explicitly in companion WEPPpy. |
 | License typo `ammendments` | Resolved in `LICENSE.txt`. |
+| Reviewed state was not published at the repository URL | Resolved after push; local `HEAD` and `origin/master` both resolve to `d4c52c45946e14b5918694057b85dd8fa2a5dab7`. |
+| Tracked runtime binary was stale | Resolved after release rebuild; the tracked binary now exposes `--max_junctions`. |
 
 ## Remaining Blockers
 
-1. **Reviewed state is not published at the repository URL.**  
-   `git status -sb` reports `master...origin/master [ahead 9]`. `git ls-remote https://github.com/rogerlew/weppcloud-wbt.git HEAD` reports remote HEAD `ebc4104c75cc487c363f88daa524df8497f0c8e3`, while the reviewed local HEAD is `c4c1818cc6f7fe01af9daab43c5305404152bb32`. The source URL is public, but it currently does not expose the paper, documentation, and test fixes reviewed here. Push the local commits or submit from a branch/tag that contains them.
-
-2. **The tracked runtime binary is stale relative to the first-round `RemoveShortStreams` source fix.**  
-   `WBT/whitebox_tools --toolhelp=RemoveShortStreams` does not list `--max_junctions`. After `cargo build -p whitebox-tools-app`, `target/debug/whitebox_tools --toolhelp=RemoveShortStreams` does list `--max_junctions`. Source builds are correct, but the repository advertises the tracked `WBT/` artifact as the deployment/runtime binary. Before submission/release, rebuild and commit `WBT/whitebox_tools` per `docs/release-build-install.md`, or make clear reviewers should ignore the tracked binary and build from source.
+None identified in the refreshed repository state, excluding the intentionally deferred release archive and Zenodo DOI step.
 
 ## Non-Blocking Risks
 
@@ -55,8 +56,9 @@ Local commands run from `/workdir/weppcloud-wbt` unless noted:
 | `find /workdir/weppcloud-wbt -name AGENTS.md -print` | Found only repo-local `AGENTS.md`; no nested paper instructions. |
 | `git show --stat --oneline c4c1818` | Confirmed first-round fix commit touched paper, claims matrix, release docs, license, changelog, and `RemoveShortStreams` test/metadata files. |
 | `git status --short` before artifact | Clean. |
-| `git status -sb` | `## master...origin/master [ahead 9]`. |
-| `git ls-remote https://github.com/rogerlew/weppcloud-wbt.git HEAD refs/tags/*` | Public repo reachable; remote HEAD `ebc4104c...`; no tags returned. |
+| `git status -sb` after refresh | `## master...origin/master`; only local untracked work outside this review may appear. |
+| `git rev-parse HEAD` / `git ls-remote origin refs/heads/master HEAD` after refresh | Local `HEAD`, remote `HEAD`, and `refs/heads/master` all resolve to `d4c52c45946e14b5918694057b85dd8fa2a5dab7`. |
+| `git ls-remote https://github.com/rogerlew/weppcloud-wbt.git HEAD refs/tags/*` before refresh | Public repo reachable; at first review time the remote was behind and no tags were returned. |
 | GitHub API for `rogerlew/weppcloud-wbt` | Public repo, MIT license, issues enabled, default branch `master`, releases endpoint returned `[]`. |
 | `git shortlog -sne --all` | `85 Roger Lew <rogerlew@gmail.com>`; local visible fork-specific work is overwhelmingly by `@rogerlew`. |
 | GitHub commit page and API for `jblindsay/whitebox-tools` | Upstream master includes February 7, 2025 typo-fix commits, then May 26, 2026 README-only legacy-marker commits (`e4d6c32`, merged as `3d7c73c`). No substantive code/tool update was found after February 2025 in the checked history. |
@@ -72,8 +74,9 @@ Local commands run from `/workdir/weppcloud-wbt` unless noted:
 | `python -m pytest -q tests/test_ifolp_wrapper_smoke.py` | Pass: `1 passed, 2 subtests passed`. |
 | `cargo fmt --check` | Fail due existing formatting drift/trailing whitespace; not caused by this review artifact. |
 | `git diff --check` | Pass before artifact creation. |
-| `WBT/whitebox_tools --toolhelp=RemoveShortStreams` | Stale tracked binary; no `--max_junctions` parameter shown. |
-| `target/debug/whitebox_tools --toolhelp=RemoveShortStreams` after `cargo build` | Current source binary shows `--max_junctions` parameter. |
+| `WBT/whitebox_tools --toolhelp=RemoveShortStreams` before release rebuild | Stale tracked binary; no `--max_junctions` parameter shown. |
+| `WBT/whitebox_tools --toolhelp=RemoveShortStreams` after release rebuild | Pass; checked-in runtime binary lists `--max_junctions`. |
+| `target/debug/whitebox_tools --toolhelp=RemoveShortStreams` after `cargo build` | Source-built binary shows `--max_junctions` parameter. |
 
 ## Checklist Status
 
@@ -81,7 +84,7 @@ Local commands run from `/workdir/weppcloud-wbt` unless noted:
 
 | Item | Status | Notes |
 |---|---|---|
-| Repository: source available at repository URL | Pass with caveat | URL is public and reachable, but the reviewed local state is not pushed; this is a blocker before submission. |
+| Repository: source available at repository URL | Pass | URL is public and reachable; refreshed local `HEAD` matches `origin/master`. |
 | License: plain-text OSI-approved license | Pass | `LICENSE.txt` contains MIT License text; GitHub API also reports MIT. |
 | Contribution and authorship | Pass with caveat | Local commit history strongly supports `@rogerlew` as the major fork contributor. Single-author paper is defensible for the fork-specific WEPPcloud/TOPAZ layer. Upstream WhiteboxTools authorship is acknowledged; be prepared to explain why John Lindsay is acknowledged rather than included as author. |
 
@@ -89,7 +92,7 @@ Local commands run from `/workdir/weppcloud-wbt` unless noted:
 
 | Item | Status | Notes |
 |---|---|---|
-| Installation proceeds as documented | Pass with caveat | README and release runbook source build commands work. Stale package id remains in `docs/vrt-support/vrt-performance-notes.md`, and the tracked runtime binary is stale until release rebuild. |
+| Installation proceeds as documented | Pass with caveat | README and release runbook source build commands work. The tracked runtime binary has been rebuilt. Stale package id remains in `docs/vrt-support/vrt-performance-notes.md`. |
 | Functional claims confirmed | Pass with caveat | Full and targeted tests passed. Remaining caveat is direct Python-layer error propagation coverage and companion WEPPpy adapter evidence living outside this repo. |
 | Performance claims confirmed | Pass with caveat | Paper makes no numeric performance claim. It makes qualitative I/O reduction claims backed by VRT/window tests. Existing VRT performance notes are single-run warm-cache evidence only; avoid quantified claims in the paper. |
 
@@ -98,7 +101,7 @@ Local commands run from `/workdir/weppcloud-wbt` unless noted:
 | Item | Status | Notes |
 |---|---|---|
 | Statement of need | Pass | Paper clearly identifies WEPP watershed preprocessing and target users. |
-| Installation instructions | Pass with caveat | Dependencies and cargo commands are clear. The stale tracked binary and stale VRT performance build command should be fixed before submission artifacts are finalized. |
+| Installation instructions | Pass with caveat | Dependencies and cargo commands are clear. The stale VRT performance build command should be fixed before submission artifacts are finalized. |
 | Example usage | Pass | End-user guides under `docs/*.ENDUSER.md` provide command examples for the WEPPcloud-specific tools. |
 | Functionality documentation | Pass with caveat | README, end-user guides, specs, and claims matrix are strong. Minor wrapper docstring drift for `remove_short_streams max_junctions`. |
 | Automated tests or manual verification steps | Pass | CI workflow and local test commands exist; broad and targeted tests passed locally. |
@@ -116,16 +119,14 @@ Local commands run from `/workdir/weppcloud-wbt` unless noted:
 
 ## Recommended Actions Before Submission
 
-1. Push the nine local commits, or create the submission branch/tag from `c4c1818` or later, so the public repository URL matches the reviewed state.
-2. Rebuild and commit the tracked `WBT/whitebox_tools` runtime binary during the release step, then verify `WBT/whitebox_tools --toolhelp=RemoveShortStreams` lists `--max_junctions`.
-3. Narrow the upstream WhiteboxTools wording in `paper/paper.md` and `README.md` to avoid implying there were no README/status commits after February 2025.
-4. Mint the planned release and Zenodo DOI, then add the weppcloud-wbt archive citation/DOI to the paper metadata or references as required by the target journal.
-5. Fix or explicitly waive `cargo fmt --check` drift before submission if any CI/reviewer gate will enforce formatting.
-6. Correct stale docs: `docs/vrt-support/vrt-performance-notes.md` package id and the `remove_short_streams max_junctions` Python wrapper docstrings.
-7. Add direct issue tracker links to `CONTRIBUTING.md` and `SUPPORT.md` for reviewer convenience.
+1. Narrow the upstream WhiteboxTools wording in `paper/paper.md` and `README.md` to avoid implying there were no README/status commits after February 2025.
+2. Mint the planned release and Zenodo DOI, then add the weppcloud-wbt archive citation/DOI to the paper metadata or references as required by the target journal.
+3. Fix or explicitly waive `cargo fmt --check` drift before submission if any CI/reviewer gate will enforce formatting.
+4. Correct stale docs: `docs/vrt-support/vrt-performance-notes.md` package id and the `remove_short_streams max_junctions` Python wrapper docstrings.
+5. Add direct issue tracker links to `CONTRIBUTING.md` and `SUPPORT.md` for reviewer convenience.
 
 ## Submission Readiness Judgment
 
-Current state: **not ready to submit**.
+Current state: **near submission-ready, pending final release/DOI and polish items**.
 
-The first-round fixes substantially improved test evidence and paper/repository alignment, but the public repository mismatch is a hard blocker for submission. The stale tracked runtime binary is also a release-readiness blocker if the repository continues to present `WBT/whitebox_tools` as the versioned runtime artifact. The upstream WhiteboxTools date wording should be narrowed, but it is no longer classified as a hard blocker after checking the commit list and distinguishing code/tool updates from README-only legacy-marker commits. After those are corrected and the planned release/Zenodo DOI is minted, the package should be close to submission-ready.
+The first-round fixes substantially improved test evidence and paper/repository alignment. The previously noted public repository mismatch and stale tracked runtime binary have been resolved in the refreshed state. The upstream WhiteboxTools date wording should still be narrowed, but it is not classified as a hard blocker after checking the commit list and distinguishing code/tool updates from README-only legacy-marker commits. After the planned release/Zenodo DOI is minted and the remaining polish items are addressed or intentionally waived, the package should be submission-ready.
