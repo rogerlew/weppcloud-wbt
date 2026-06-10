@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Fixed wheel packaging metadata to include the top-level `whitebox_tools` compatibility module so installed-wheel imports work across Linux/macOS/Windows.
 - Added `.github/workflows/pypi-publish.yml` to build platform wheels in a Linux/macOS/Windows matrix, run installed-wheel import/tool smoke checks, aggregate all wheel artifacts, and publish tagged releases to PyPI via trusted publishing.
 - Added initial Python packaging scaffold for wheel builds: `pyproject.toml`, `setup.py`, `python/whitebox_tools.py`, and `python/weppcloud_wbt/{__init__.py,_paths.py,whitebox_tools.py,bin/.gitkeep}`.
 - Revised `docs/pypi-spec.md` to add explicit matrix artifact fan-in for publish, installed-wheel import-origin isolation checks, Linux strategy decision gates, stricter `WHITEBOX_TOOLS_EXE` validation, and full fork-tool acceptance assertions.

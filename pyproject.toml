@@ -37,6 +37,7 @@ Documentation = "https://github.com/rogerlew/weppcloud-wbt/tree/master/docs"
 
 [tool.setuptools]
 package-dir = {"" = "python"}
+py-modules = ["whitebox_tools"]
 
 [tool.setuptools.packages.find]
 where = ["python"]
