@@ -1,5 +1,5 @@
 ---
-title: 'weppcloud-wbt: TOPAZ-style watershed parameterization tools for WEPP workflows in WhiteboxTools'
+title: 'weppcloud-wbt: TOPAZ-style watershed parameterization tools for WEPPcloud workflows in WhiteboxTools'
 tags:
   - hydrology
   - geomorphometry
