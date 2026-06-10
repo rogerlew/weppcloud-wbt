@@ -51,6 +51,33 @@ Maps verifiable technical claims in `paper.md` to the tests that cover them. Int
 
 ---
 
+## IterativeFirstOrderLinkPrune
+
+**Paper claim** (Summary and Software Design §4): *"stream-network pruning"* and *"iterative first-order-link pruning with local thresholds (`IterativeFirstOrderLinkPrune`)."*
+
+| Test | File | Coverage |
+|------|------|----------|
+| `iterative_first_order_link_prune_run_integration_writes_binary_stream_output` | `whitebox-tools-app/src/tools/stream_network_analysis/iterative_first_order_link_prune_parser_tests.rs` | integration/property — runs the tool end-to-end on synthetic aligned D8/upstream-area rasters and asserts the emitted stream raster is binary with retained stream cells |
+| `iterative_first_order_link_prune_run_integration_caps_receiver_inflow_for_strained_gown_fixture` | same | integration/property — runs the tool on the `strained_gown` real-data fixture with `--max_junctions=3` and asserts receiver inflow count never exceeds 3 |
+| `iterative_first_order_link_prune_parser_accepts_threshold_pair_with_space_and_comments` | same | parser/property — local threshold table support accepts whitespace and comments while mapping threshold codes to `csa_ha`/`mscl_m` |
+| `iterative_first_order_link_prune_prepare_phase_inputs_rejects_unmapped_threshold_code` | same | error — active stream cells with threshold codes missing from the table are rejected |
+| `iterative_first_order_link_prune_phase_a_*` | `whitebox-tools-app/src/tools/stream_network_analysis/iterative_first_order_link_prune_phase_a_tests.rs` | property — phase-A stream qualification semantics, local thresholds, and ESRI/Whitebox pointer handling |
+| `iterative_first_order_link_prune_phase_b_*` | `whitebox-tools-app/src/tools/stream_network_analysis/iterative_first_order_link_prune_phase_b_tests.rs` | property — phase-B first-order-link pruning semantics, deterministic selection, cycle rejection, and `max_junctions` pruning |
+| `iterative_first_order_link_prune_topology_*` | `whitebox-tools-app/src/tools/stream_network_analysis/iterative_first_order_link_prune_topology_tests.rs` | property/error — topology kernel pointer decoding, inflow counts, stale-candidate rejection, tie-breaks, and threaded error propagation |
+| `test_ifolp_wrapper_contract_for_both_python_surfaces` | `tests/test_ifolp_wrapper_smoke.py` | wrapper/property — both Python wrapper surfaces expose the IFOLP call contract and validate paired local-threshold arguments |
+
+---
+
+## RemoveShortStreams — maximum-junction pruning
+
+**Paper claim** (Software Design §4): *"enhanced short-stream pruning with a maximum-junction constraint."*
+
+| Test | File | Coverage |
+|------|------|----------|
+| `max_junctions_three_prunes_one_branch_from_four_way_junction` | `whitebox-tools-app/src/tools/stream_network_analysis/remove_short_streams_integration_tests.rs` | property — synthetic four-inflow stream network is pruned with `--max_junctions=3`; output receiver inflow count is capped at 3 while retaining stream cells |
+
+---
+
 ## FVSlope
 
 **Paper claim** (Software Design §4): *"FVSlope computes slope in the D8 flow direction to match TOPAZ-style flow-vector slopes used by WEPP channel hydraulics where `Slope` produces biased estimates for channels. The modified `FVSlope` tool adds ratio units and records the selected unit in output metadata."*
@@ -172,10 +199,8 @@ The following claims from the paper describe properties or behaviours that are n
 
 | Claim | Location | Notes |
 |-------|----------|-------|
-| `IterativeFirstOrderLinkPrune` exists and prunes first-order links iteratively with local thresholds | Summary | Tool is referenced but has no integration test file |
-| Enhanced short-stream pruning with a maximum-junction constraint | Software Design §4 | No integration test |
 | Structured Rust error propagation to Python callers (`raise_on_error`) | Software Design §4, State of the Field | Requires Python-layer test; not covered in Rust test suite |
-| Python wrapper enhancements (`WhiteboxToolsTopazEmulator`) | Software Design §4 | No test in this repository; coverage depends on wepppy test suite |
+| `WhiteboxToolsTopazEmulator` orchestrates WEPPcloud preprocessing | Software Design §4 | Adapter coverage lives in the companion WEPPpy repository: `/workdir/wepppy/tests/topo/test_terrain_processor_wbt_integration.py` covers IFOLP/RemoveShortStreams routing and real-WBT flow-stack generation |
 | Build-time environment variable removal preventing stacktrace leakage | State of the Field | Security property; not unit-testable in the conventional sense |
 
 ---
@@ -192,6 +217,8 @@ cargo test -p whitebox-tools-app find_outlet_integration
 cargo test -p whitebox-tools-app fvslope_integration
 cargo test -p whitebox-tools-app stream_junctions_integration
 cargo test -p whitebox-tools-app prune_strahler_order_integration
+cargo test -p whitebox-tools-app iterative_first_order_link_prune
+cargo test -p whitebox-tools-app remove_short_streams_integration
 cargo test -p whitebox-tools-app raise_roads_integration
 cargo test -p whitebox-tools-app clip_raster_to_raster_integration
 cargo test -p whitebox-tools-app watershed_integration

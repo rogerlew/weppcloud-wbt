@@ -7,13 +7,14 @@ Important assumption: a tagged software release and Zenodo DOI will be minted af
 
 ## Bottom Line
 
-Do not submit yet. The paper and repository are close, but there are several pre-submission risks that a reviewer could reasonably flag:
+Follow-up status: the actionable evidence/documentation issues identified below have been addressed after this review, except for the intentionally deferred release/Zenodo DOI step. Do not submit until that final archive step is complete.
 
-1. `docs/release-build-install.md` and `AGENTS.md` still use the stale package id `whitebox_tools`; the actual package id is `whitebox-tools-app`. The linked release/install runbook therefore fails at step 1 as written.
-2. The reviewer-facing `paper/claims-test-matrix.md` is stale for `IterativeFirstOrderLinkPrune`; it says no direct integration coverage exists, but the current CI gate includes IFOLP parser/run/topology/phase tests. This undercuts reviewer confidence because the evidence matrix contradicts the repository.
-3. The paper claims the `WhiteboxToolsTopazEmulator` adapter exposes the pipeline to WEPPcloud workflows, but the direct test evidence for that adapter lives in `/workdir/wepppy`, not this repository, and should be cross-referenced explicitly if the claim remains in the paper.
-4. There is no current release or Zenodo DOI for this repository. Per author instruction this is expected, but it remains a hard final-submission prerequisite.
-5. The paper cites `wepppy` via the WEPPpy Zenodo concept DOI, but does not yet cite a `weppcloud-wbt` archive DOI. Add this after release minting.
+1. Resolved: `docs/release-build-install.md` and `AGENTS.md` now use the package id `whitebox-tools-app`.
+2. Resolved: `paper/claims-test-matrix.md` now reflects current `IterativeFirstOrderLinkPrune` coverage.
+3. Resolved: `RemoveShortStreams --max_junctions` now has a direct regression test and advertised tool metadata.
+4. Resolved: the paper now identifies `WhiteboxToolsTopazEmulator` as living in the companion WEPPpy codebase, and the claims matrix cross-references the WEPPpy adapter tests.
+5. Pending by plan: there is no current release or Zenodo DOI for this repository. Per author instruction this is expected, but it remains a hard final-submission prerequisite.
+6. Pending by plan: the paper cites `wepppy` via the WEPPpy Zenodo concept DOI, but does not yet cite a `weppcloud-wbt` archive DOI. Add this after release minting.
 
 ## Evidence Collected
 
@@ -24,13 +25,14 @@ Local commands run from `/workdir/weppcloud-wbt` unless noted:
 | `git status --short` before review artifact | Clean |
 | Public repository URL check | `https://github.com/rogerlew/weppcloud-wbt` is reachable and public; GitHub shows repo files, MIT license, tests, and no releases yet |
 | `git shortlog -sne --all` | `83 Roger Lew <rogerlew@gmail.com>` in this clone |
-| `cargo check -p whitebox_tools` | Fails: package ID does not match any package |
 | `cargo check -p whitebox-tools-app` | Passes, warnings only |
+| `cargo test -p whitebox-tools-app remove_short_streams_integration -- --nocapture` | Passes: `1 passed` |
 | `python -m py_compile whitebox_tools.py WBT/whitebox_tools.py` | Passes |
 | `python -m pytest -q tests/test_ifolp_wrapper_smoke.py` | Passes: `1 passed, 2 subtests passed` |
-| `cargo test --workspace --lib --tests --bins` | Passes; notable groups include `whitebox-tools-app` 124 tests, `whitebox_common` 39 tests, and `whitebox-raster` VRT/geotiff tests 42 tests |
+| `cargo test --workspace --lib --tests --bins` | Passes; notable groups include `whitebox-tools-app` 125 tests, `whitebox_common` 39 tests, and `whitebox-raster` VRT/geotiff tests 42 tests |
 | `pandoc paper.md --citeproc -o /tmp/weppcloud-wbt-paper.html` from `paper/` | Passes |
-| `pandoc paper.md -t plain | wc -w` from `paper/` | 1522 words |
+| `pandoc paper.md -t plain | wc -w` from `paper/` | 1527 words |
+| `cargo fmt --check` | Blocked by pre-existing rustfmt/trailing-whitespace failures in unrelated files; targeted `rustfmt` was run on the changed Rust files |
 
 ## General Checks
 
@@ -48,7 +50,7 @@ Status: pass.
 
 The repository contains `LICENSE.txt` with the MIT License text. MIT is OSI-approved. `WBT/LICENSE.txt` is also tracked.
 
-Minor issue: `LICENSE.txt` says "code ammendments"; fix the typo to "amendments" before submission because license files receive reviewer attention.
+Resolved: `LICENSE.txt` now says "code amendments".
 
 ### Contribution and Authorship
 
@@ -62,7 +64,7 @@ Adversarial caveat: because this is a fork of WhiteboxTools with substantial ups
 
 ### Installation
 
-Status: fail until documentation is corrected.
+Status: pass.
 
 The README's source build command is valid:
 
@@ -70,19 +72,18 @@ The README's source build command is valid:
 cargo build --release -p whitebox-tools-app
 ```
 
-However, the linked release/install runbook says:
+The linked release/install runbook also now uses the same package id:
 
 ```bash
-cargo build -p whitebox_tools --release
+cargo build -p whitebox-tools-app --release
 ```
 
-and `AGENTS.md` also lists `cargo check -p whitebox_tools` / `cargo test -p whitebox_tools`. This is a real defect: `cargo check -p whitebox_tools` fails because the actual package name in `whitebox-tools-app/Cargo.toml` is `whitebox-tools-app`; `whitebox_tools` is only the binary name.
+The original review found stale `whitebox_tools` package-id references. Those have been corrected; `whitebox_tools` remains only the binary name.
 
-Minimum fix before submission:
+Recommended reviewer commands:
 
-- Update `docs/release-build-install.md` step 1 to `cargo build -p whitebox-tools-app --release`.
-- Update `AGENTS.md` validation commands to use `whitebox-tools-app`.
-- Consider adding `cargo test --workspace --lib --tests --bins` as the canonical reviewer command, matching `.github/workflows/ci-tests.yml`.
+- `cargo check -p whitebox-tools-app`
+- `cargo test --workspace --lib --tests --bins`
 
 ### Functionality
 
@@ -98,9 +99,8 @@ The repository has substantial committed test coverage and the CI-style local ga
 
 Adversarial caveats:
 
-- `paper/claims-test-matrix.md` is stale for IFOLP. It lists IFOLP as having no integration test coverage, but current tests include IFOLP parser/run integration tests such as `iterative_first_order_link_prune_run_integration_writes_binary_stream_output` and `iterative_first_order_link_prune_run_integration_caps_receiver_inflow_for_strained_gown_fixture`.
-- `RemoveShortStreams --max_junctions` appears to have WEPPpy adapter tests and implementation, but no direct `remove_short_streams` integration test file was found in `weppcloud-wbt`. The paper mentions the enhanced short-stream pruning; either add a focused test or make the paper less dependent on that claim.
-- `WhiteboxToolsTopazEmulator` evidence is in `/workdir/wepppy/tests/topo/test_terrain_processor_wbt_integration.py`, not in this repository. Cross-reference that test or avoid presenting the adapter as if it is tested here.
+- `WhiteboxToolsTopazEmulator` evidence is still in `/workdir/wepppy/tests/topo/test_terrain_processor_wbt_integration.py`, not in this repository. The paper and claims matrix now make that boundary explicit.
+- Structured Python error propagation still needs a direct Python-layer regression test if the paper leans harder on `raise_on_error` behavior.
 
 ### Performance
 
@@ -120,11 +120,11 @@ The paper clearly states that the software solves watershed terrain/network prep
 
 ### Installation Instructions
 
-Status: partial.
+Status: pass.
 
 README lists Rust/rustup, clone, build, and tests. `CONTRIBUTING.md` lists Rust stable and Python 3.11+. The automated package story is reasonable for a Rust workspace.
 
-Blocking issue: the linked release/install runbook has the stale package id described above.
+The linked release/install runbook has been corrected to use the package id `whitebox-tools-app`.
 
 ### Example Usage
 
@@ -148,7 +148,7 @@ The end-user docs under `docs/*.ENDUSER.md` include command examples and workflo
 
 Status: pass.
 
-The core functionality is documented at three levels: README summary, end-user guides, and tool/spec docs. `DEVELOPING_TOOLS.md` covers contributor-facing tool conventions. `paper/claims-test-matrix.md` is a strong reviewer-facing asset once the stale IFOLP entries are fixed.
+The core functionality is documented at three levels: README summary, end-user guides, and tool/spec docs. `DEVELOPING_TOOLS.md` covers contributor-facing tool conventions. `paper/claims-test-matrix.md` is a strong reviewer-facing asset and now reflects current IFOLP and `RemoveShortStreams` coverage.
 
 ### Automated Tests
 
@@ -197,7 +197,7 @@ The manuscript is well structured and within the likely JOSS word budget at 1522
 
 Minor polish:
 
-- "The modified `FVSlope` tool adds ratio units" may be confusing because `FVSlope` is described as an added fork tool; consider "The fork's `FVSlope` implementation adds ratio units..." or similar.
+- Resolved: the `FVSlope` wording now says "The fork's `FVSlope` implementation..." rather than "The modified `FVSlope` tool..."
 - The legacy `Hillslopes` defect paragraph is valuable but long. It is defensible because it distinguishes the contribution, but it is the densest section for non-specialists.
 
 ### References
@@ -213,12 +213,12 @@ Final-submission caveat:
 
 ## Required Fixes Before Submission
 
-1. Fix package id references in `docs/release-build-install.md` and `AGENTS.md`.
-2. Update `paper/claims-test-matrix.md` so it reflects current IFOLP and `max_junctions` coverage.
-3. Add either direct `RemoveShortStreams --max_junctions` integration coverage or soften that paper claim.
-4. Cross-reference WEPPpy adapter tests for `WhiteboxToolsTopazEmulator`, or narrow the paper's adapter claim to integration usage rather than local repository test evidence.
-5. Fix the `LICENSE.txt` typo: `ammendments` -> `amendments`.
-6. Immediately before submission, mint the release archive and Zenodo DOI, then add the citation/DOI to the paper metadata or references as required by the journal.
+1. Resolved: package id references in `docs/release-build-install.md` and `AGENTS.md` now use `whitebox-tools-app`.
+2. Resolved: `paper/claims-test-matrix.md` reflects current IFOLP and `max_junctions` coverage.
+3. Resolved: `RemoveShortStreams --max_junctions` has direct integration coverage.
+4. Resolved: the paper and claims matrix identify `WhiteboxToolsTopazEmulator` evidence as companion WEPPpy coverage.
+5. Resolved: `LICENSE.txt` typo fixed (`ammendments` -> `amendments`).
+6. Pending by plan: immediately before submission, mint the release archive and Zenodo DOI, then add the citation/DOI to the paper metadata or references as required by the journal.
 
 ## Recommended Non-Blocking Polish
 
@@ -230,6 +230,6 @@ Final-submission caveat:
 
 ## Submission Readiness Judgment
 
-Current state: not ready for submission, but close.
+Current state: evidence fixes complete; final archive DOI still pending by plan.
 
-After the required fixes and planned release/Zenodo DOI are complete, the repository should satisfy the checklist. The strongest remaining reviewer risk is not missing functionality; it is evidence consistency. The paper, README, release docs, and claims matrix need to tell the same story as the actual tests and cargo package layout.
+After the planned release/Zenodo DOI is complete, the repository should satisfy the checklist. The strongest remaining reviewer risk is no longer missing functionality evidence; it is ensuring the final archived release, DOI, paper references, and GitHub state all match.

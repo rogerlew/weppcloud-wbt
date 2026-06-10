@@ -17,7 +17,7 @@ Run from `/workdir/weppcloud-wbt` unless noted.
 1. Build the release binary.
 
 ```bash
-cargo build -p whitebox_tools --release
+cargo build -p whitebox-tools-app --release
 ```
 
 2. Install the binary into the tracked runtime artifact path.

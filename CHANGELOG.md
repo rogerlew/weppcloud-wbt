@@ -1,7 +1,9 @@
 # Changelog
 
 ## Unreleased
-- No unreleased entries yet.
+- Corrected pre-submission paper/release documentation evidence: package id references now use `whitebox-tools-app`, claims matrix reflects current IFOLP coverage, and `WhiteboxToolsTopazEmulator` evidence is scoped to the companion WEPPpy repository.
+- Added direct `RemoveShortStreams --max_junctions=3` regression coverage and advertised the argument in tool parameter metadata.
+- Fixed the `LICENSE.txt` "ammendments" typo.
 
 ## Backfilled history (since fork date)
 

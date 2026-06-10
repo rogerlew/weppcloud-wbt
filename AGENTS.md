@@ -31,8 +31,8 @@
 
 ## Validation Baseline
 - Build/check:
-  - `cargo check -p whitebox_tools`
-  - `cargo test -p whitebox_tools`
+  - `cargo check -p whitebox-tools-app`
+  - `cargo test -p whitebox-tools-app`
 - Python wrapper sanity:
   - `python -m py_compile whitebox_tools.py WBT/whitebox_tools.py`
 - Real-data smoke test inputs for RaiseRoads:

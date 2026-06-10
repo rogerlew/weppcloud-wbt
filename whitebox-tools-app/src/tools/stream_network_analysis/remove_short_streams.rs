@@ -81,6 +81,15 @@ impl RemoveShortStreams {
         });
 
         parameters.push(ToolParameter {
+            name: "Maximum Inflowing Links Per Junction".to_owned(),
+            flags: vec!["--max_junctions".to_owned()],
+            description: "Maximum number of inflowing links retained at a junction.".to_owned(),
+            parameter_type: ParameterType::Integer,
+            default_value: Some("3".to_owned()),
+            optional: true,
+        });
+
+        parameters.push(ToolParameter {
             name: "Does the pointer file use the ESRI pointer scheme?".to_owned(),
             flags: vec!["--esri_pntr".to_owned()],
             description: "D8 pointer uses the ESRI style scheme.".to_owned(),
@@ -623,3 +632,7 @@ impl WhiteboxTool for RemoveShortStreams {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "remove_short_streams_integration_tests.rs"]
+mod remove_short_streams_integration_tests;
