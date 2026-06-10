@@ -31,6 +31,70 @@
 ### 2025-06-07
 - [f0b6c07](https://github.com/rogerlew/weppcloud-wbt/commit/f0b6c07): StreamJunctionIdentifier
 
+### 2025-06-08
+- [833ab07](https://github.com/rogerlew/weppcloud-wbt/commit/833ab07): hydro_analysis watershed geojson support for pourpts file
+
+### 2025-06-09
+- [a9f4dca](https://github.com/rogerlew/weppcloud-wbt/commit/a9f4dca): update watershed.rs documentation with geojson support
+- [48d3a77](https://github.com/rogerlew/weppcloud-wbt/commit/48d3a77): gis_analysis ClipRasterToRaster
+
+### 2025-06-10
+- [14fedc3](https://github.com/rogerlew/weppcloud-wbt/commit/14fedc3): HillslopesTopaz wip
+
+### 2025-06-13
+- [5ba1373](https://github.com/rogerlew/weppcloud-wbt/commit/5ba1373): hillslopes_topaz wip
+- [6124126](https://github.com/rogerlew/weppcloud-wbt/commit/6124126): replicated topaz subwta
+- [b1e63a8](https://github.com/rogerlew/weppcloud-wbt/commit/b1e63a8): refactor d8_pntr map validation to beginning of file
+- [88fb05c](https://github.com/rogerlew/weppcloud-wbt/commit/88fb05c): hillslopes_topaz clean-up and comments
+- [2a33db8](https://github.com/rogerlew/weppcloud-wbt/commit/2a33db8): hillslope_topaz 3 inflows wip
+- [8fab9e9](https://github.com/rogerlew/weppcloud-wbt/commit/8fab9e9): hillslope_topaz combine phase 7 and 8 for left/right hillslope identification and flood-fill; fix bug with 3-inflow identification
+- [1292190](https://github.com/rogerlew/weppcloud-wbt/commit/1292190): hillslopes_topaz optimize top hillslope fill by checking for channel cells
+- [409d654](https://github.com/rogerlew/weppcloud-wbt/commit/409d654): hillslopes_topaz profile timers, combine all hillslope flooding for top and side catchments
+- [1248924](https://github.com/rogerlew/weppcloud-wbt/commit/1248924): hillslopes_topaz set low value as f64::MIN
+
+### 2025-06-14
+- [69bc49c](https://github.com/rogerlew/weppcloud-wbt/commit/69bc49c): revise main() to propagate errors instead of panicking; add raise_on_error to Python WhiteboxTools runner
+
+### 2025-06-16
+- [10152b0](https://github.com/rogerlew/weppcloud-wbt/commit/10152b0): areaup property for netw.tsv
+- [bd8d0a0](https://github.com/rogerlew/weppcloud-wbt/commit/bd8d0a0): hillslopes_topaz export areaup in netw.tsv
+
+### 2025-06-17
+- [7a70244](https://github.com/rogerlew/weppcloud-wbt/commit/7a70244): hillslopes_topaz build subwta_counts during flood-fill to avoid second-pass upstream area iteration
+
+### 2025-07-30
+- [3db6f34](https://github.com/rogerlew/weppcloud-wbt/commit/3db6f34): update RemoveShortStreams tool with max_junctions
+
+### 2025-08-05
+- [e944144](https://github.com/rogerlew/weppcloud-wbt/commit/e944144): HillslopesTopaz use upstream cell to determine channel order
+- [5efe249](https://github.com/rogerlew/weppcloud-wbt/commit/5efe249): Slope tool ratio units output
+
+### 2025-09-29
+- [b93384a](https://github.com/rogerlew/weppcloud-wbt/commit/b93384a): prune_strahler_order.rs tool setup, no geospatial processing
+- [12b60b3](https://github.com/rogerlew/weppcloud-wbt/commit/12b60b3): Add PruneStrahlerStreamOrder tool and bindings
+
+### 2025-09-30
+- [895d88d](https://github.com/rogerlew/weppcloud-wbt/commit/895d88d): update README
+- [40ab024](https://github.com/rogerlew/weppcloud-wbt/commit/40ab024): Add guidelines for developing new WhiteboxTools commands
+- [543714e](https://github.com/rogerlew/weppcloud-wbt/commit/543714e): update main README
+- [fc9a605](https://github.com/rogerlew/weppcloud-wbt/commit/fc9a605): FindOutlet spec
+- [f466813](https://github.com/rogerlew/weppcloud-wbt/commit/f466813): FindOutlet implementation
+- [093d83d](https://github.com/rogerlew/weppcloud-wbt/commit/093d83d): FindOutlet cleanup
+
+### 2025-10-03
+- [65e530a](https://github.com/rogerlew/weppcloud-wbt/commit/65e530a): FindOutlet walk past watershed boundary to find channel; continue downstream past junction cells
+
+### 2025-10-05
+- [847d53b](https://github.com/rogerlew/weppcloud-wbt/commit/847d53b): build.py move example to within first 10 lines for head; make clean alias for do_clean
+- [db6f15e](https://github.com/rogerlew/weppcloud-wbt/commit/db6f15e): feat: add requested-start mode to FindOutlet and Python wrapper
+
+### 2025-10-15
+- [e6dd7ff](https://github.com/rogerlew/weppcloud-wbt/commit/e6dd7ff): track WBT binary for deploy
+- [d70b18e](https://github.com/rogerlew/weppcloud-wbt/commit/d70b18e): rev README.md
+
+### 2025-10-17
+- [290e644](https://github.com/rogerlew/weppcloud-wbt/commit/290e644): update tracking info in README
+
 ### 2025-12-05
 - [113c3f1](https://github.com/rogerlew/weppcloud-wbt/commit/113c3f1): fvslope
 
