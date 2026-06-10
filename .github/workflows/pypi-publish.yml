@@ -1,5 +1,8 @@
 name: PyPI Publish
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   workflow_dispatch:
     inputs:
@@ -50,7 +53,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          brew update
+          export HOMEBREW_NO_AUTO_UPDATE=1
+          brew untap aws/tap azure/bicep hashicorp/tap || true
           brew install proj sqlite libtiff pkg-config cmake
           echo "PKG_CONFIG_PATH=$(brew --prefix proj)/lib/pkgconfig:$(brew --prefix sqlite)/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig" >> "$GITHUB_ENV"
 
