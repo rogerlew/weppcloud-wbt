@@ -5,7 +5,7 @@ Primary goal: make `pip install weppcloud-wbt` install the Python wrapper and a 
 
 ## Purpose
 
-`weppcloud-wbt` is currently distributed to WEPPcloud by building the Rust CLI and committing the runtime artifact under `WBT/`. That works for the controlled WEPPcloud deployment path, but it is not the right default install story for Python, and GIS. Those users should not need a Rust toolchain for normal installation.
+`weppcloud-wbt` is currently distributed to WEPPcloud by building the Rust CLI and committing the runtime artifact under `WBT/`. That works for the controlled WEPPcloud deployment path, but it is not the right default install story for Python and GIS users. Those users should not need a Rust toolchain for normal installation.
 
 The PyPI package must therefore ship prebuilt wheels:
 
@@ -157,7 +157,7 @@ The existing top-level `whitebox_tools.py` and `WBT/whitebox_tools.py` remain so
 
 The package wrapper must resolve the executable deterministically:
 
-1. If `WHITEBOX_TOOLS_EXE` is set, use that exact path.
+1. If `WHITEBOX_TOOLS_EXE` is set, use that exact path only if it exists.
 2. Otherwise use `weppcloud_wbt/bin/whitebox_tools(.exe)` inside the installed package.
 3. If neither exists, fail with a clear `FileNotFoundError`.
 
@@ -178,7 +178,12 @@ def whitebox_tools_exe() -> str:
 
     env_path = os.environ.get("WHITEBOX_TOOLS_EXE")
     if env_path:
-        return env_path
+        env_candidate = Path(env_path).expanduser()
+        if env_candidate.exists():
+            return str(env_candidate)
+        raise FileNotFoundError(
+            f"WHITEBOX_TOOLS_EXE is set to '{env_path}', but that path does not exist."
+        )
 
     packaged = Path(__file__).resolve().parent / "bin" / exe_name
     if packaged.exists():
@@ -291,7 +296,8 @@ build Rust CLI in release mode
 copy executable into python/weppcloud_wbt/bin/
 build a platform-tagged wheel
 test the installed wheel
-upload wheel artifact
+upload wheel artifact (per matrix job)
+final publish job downloads all wheel artifacts into dist/
 publish from a final job through PyPI trusted publishing
 ```
 
@@ -304,6 +310,10 @@ permissions:
 ```
 
 Use `pypa/gh-action-pypi-publish` without username/password when publishing through the trusted publisher.
+
+The final publish job must publish from one assembled `dist/` directory that
+contains all expected matrix wheels. The workflow must fail if any required
+platform wheel artifact is missing.
 
 ## Suggested Manual Matrix
 
@@ -349,6 +359,13 @@ This is a release risk. A wheel built on GitHub's Ubuntu runner may fail on user
 
 Preference: make the Linux wheel self-contained enough that ordinary Python users do not need to install PROJ manually.
 
+Decision gate for initial implementation:
+
+- Choose one Linux strategy (1, 2, or 3 above) before first release.
+- Encode that strategy in CI as explicit steps/checks.
+- Do not publish a Linux wheel until its selected strategy passes CI on an
+  installed-wheel smoke test.
+
 ## Test Requirements
 
 Each wheel build must install the produced wheel into a clean environment and verify:
@@ -359,6 +376,23 @@ python -c "from whitebox_tools import WhiteboxTools; print(WhiteboxTools().versi
 python -m pytest -q tests/test_ifolp_wrapper_smoke.py
 ```
 
+Installed-wheel tests must run outside the repository root (for example a
+temporary directory) so imports cannot accidentally resolve to checkout files.
+Validate import origin explicitly:
+
+```bash
+python - <<'PY'
+from pathlib import Path
+
+import whitebox_tools
+import weppcloud_wbt.whitebox_tools as ns_mod
+
+for mod in (whitebox_tools, ns_mod):
+    p = Path(mod.__file__).resolve()
+    assert any(part in ("site-packages", "dist-packages") for part in p.parts), p
+PY
+```
+
 Also verify executable tool metadata from the installed package:
 
 ```bash
@@ -367,6 +401,9 @@ from weppcloud_wbt.whitebox_tools import WhiteboxTools
 
 wbt = WhiteboxTools()
 tools = wbt.list_tools()
+assert "HillslopesTopaz" in tools
+assert "FVSlope" in tools
+assert "RaiseRoads" in tools
 assert "IterativeFirstOrderLinkPrune" in tools
 assert "RemoveShortStreams" in tools
 PY
@@ -384,8 +421,11 @@ The PyPI packaging implementation is complete when:
 - The namespace import works: `from weppcloud_wbt.whitebox_tools import WhiteboxTools`.
 - `WHITEBOX_TOOLS_EXE` can override the packaged executable for developer/debug workflows.
 - Without `WHITEBOX_TOOLS_EXE`, the wrapper uses the packaged executable.
+- If `WHITEBOX_TOOLS_EXE` is set to a nonexistent path, initialization fails with a clear `FileNotFoundError`.
 - Installed-wheel tests confirm the fork-specific tools are present, including `HillslopesTopaz`, `FVSlope`, `RaiseRoads`, `IterativeFirstOrderLinkPrune`, and `RemoveShortStreams`.
-- Linux dependency handling is explicitly validated with `ldd` and installed-wheel smoke tests.
+- Installed-wheel tests run from outside repo checkout paths and prove both imports resolve from `site-packages`/`dist-packages`.
+- Linux dependency handling strategy (self-contained binary, `auditwheel`/`cibuildwheel`, or documented system prerequisites) is selected explicitly and validated in CI with `ldd` plus installed-wheel smoke tests.
+- The final publish job publishes one assembled wheel set from all required matrix artifacts and fails if any target artifact is missing.
 - Publishing uses PyPI trusted publishing through `.github/workflows/pypi-publish.yml`.
 - A release tag, GitHub release, and PyPI version all refer to the same source commit.
 

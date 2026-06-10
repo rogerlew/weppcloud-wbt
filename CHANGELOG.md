@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Revised `docs/pypi-spec.md` to add explicit matrix artifact fan-in for publish, installed-wheel import-origin isolation checks, Linux strategy decision gates, stricter `WHITEBOX_TOOLS_EXE` validation, and full fork-tool acceptance assertions.
 - Corrected pre-submission paper/release documentation evidence: package id references now use `whitebox-tools-app`, claims matrix reflects current IFOLP coverage, and `WhiteboxToolsTopazEmulator` evidence is scoped to the companion WEPPpy repository.
 - Added direct `RemoveShortStreams --max_junctions=3` regression coverage and advertised the argument in tool parameter metadata.
 - Fixed the `LICENSE.txt` "ammendments" typo.
