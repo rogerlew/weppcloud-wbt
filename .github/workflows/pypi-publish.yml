@@ -93,6 +93,41 @@ jobs:
           print(name)
           PY
 
+      - name: Inspect wheel contents for compatibility shim
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+
+          wheel = next(Path("dist").glob("*.whl"))
+          print("Inspecting", wheel.name)
+          with zipfile.ZipFile(wheel) as zf:
+              names = sorted(zf.namelist())
+
+          relevant = [
+              n
+              for n in names
+              if n.endswith("whitebox_tools.py")
+              or "whitebox_tools/__init__.py" in n
+              or "weppcloud_wbt/whitebox_tools.py" in n
+          ]
+          for n in relevant:
+              print(n)
+
+          has_compat = any(
+              n.endswith("whitebox_tools.py") or "whitebox_tools/__init__.py" in n
+              for n in names
+          )
+          has_ns = any("weppcloud_wbt/whitebox_tools.py" in n for n in names)
+          if not has_compat or not has_ns:
+              raise SystemExit(
+                  "Wheel missing required wrapper files: "
+                  f"has_compat={has_compat}, has_ns={has_ns}"
+              )
+          PY
+
       - name: Install wheel and run installed-wheel checks
         shell: bash
         run: |
@@ -101,6 +136,38 @@ jobs:
           cp dist/*.whl "$temp_dir/"
           cd "$temp_dir"
           python -m pip install --force-reinstall --no-deps ./*.whl
+          python -m pip show -f weppcloud-wbt || true
+          python - <<'PY'
+          import importlib.metadata as md
+          import importlib.util
+          import site
+          import sys
+
+          print("python:", sys.version)
+          print("cwd:", __import__("os").getcwd())
+          print("site-packages:", site.getsitepackages())
+          print("sys.path:")
+          for p in sys.path:
+            print("  -", p)
+
+          try:
+            dist = md.distribution("weppcloud-wbt")
+            print("distribution location:", dist.locate_file("."))
+            print("top_level.txt:", dist.read_text("top_level.txt"))
+            files = [str(f) for f in (dist.files or [])]
+            interesting = [
+              f for f in files if "whitebox" in f or "weppcloud_wbt" in f
+            ]
+            print("installed files (filtered):")
+            for f in interesting[:200]:
+              print("  *", f)
+          except Exception as exc:
+            print("distribution metadata unavailable:", repr(exc))
+
+          for mod in ("whitebox_tools", "weppcloud_wbt", "weppcloud_wbt.whitebox_tools"):
+            spec = importlib.util.find_spec(mod)
+            print(f"find_spec({mod!r}) =>", None if spec is None else spec.origin)
+          PY
           python - <<'PY'
           from pathlib import Path
 
