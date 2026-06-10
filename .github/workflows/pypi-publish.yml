@@ -200,6 +200,14 @@ jobs:
           if not isinstance(tools, dict):
               raise SystemExit(f"Unexpected list_tools() result type: {type(tools)}")
 
+          required = {
+              "HillslopesTopaz": "hillslopes_topaz",
+              "FVSlope": "fv_slope",
+              "RaiseRoads": "raise_roads",
+              "IterativeFirstOrderLinkPrune": "iterative_first_order_link_prune",
+              "RemoveShortStreams": "remove_short_streams",
+          }
+
           key_set = set(tools.keys())
           normalized = {k.replace("_", "").lower(): k for k in key_set}
 
@@ -213,13 +221,20 @@ jobs:
           for k in sample[:80]:
               print("  -", k)
 
-          required = {
-              "HillslopesTopaz": "hillslopes_topaz",
-              "FVSlope": "fv_slope",
-              "RaiseRoads": "raise_roads",
-              "IterativeFirstOrderLinkPrune": "iterative_first_order_link_prune",
-              "RemoveShortStreams": "remove_short_streams",
-          }
+          if len(key_set) == 0:
+              print("list_tools() returned no parsed keys; falling back to tool_help() checks")
+              missing_help = []
+              for label in required:
+                help_text = str(wbt.tool_help(label))
+                if "Error" in help_text or "not recognized" in help_text.lower():
+                  missing_help.append(label)
+              if missing_help:
+                print("Missing required tools (tool_help fallback):")
+                for label in missing_help:
+                  print(f"  - {label}")
+                raise SystemExit(1)
+              print("tool_help fallback passed for all required tools")
+              raise SystemExit(0)
 
           missing = []
           for label, snake in required.items():
