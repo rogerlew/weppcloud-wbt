@@ -21,7 +21,7 @@ bibliography: paper.bib
 
 # Summary
 
-`weppcloud-wbt` (https://github.com/rogerlew/weppcloud-wbt) is a research software fork of WhiteboxTools that provides the watershed-topology and terrain-processing tools used by WEPPcloud, a published online interface for the Water Erosion Prediction Project (WEPP) model [@lew_etal_2022_weppcloud_part_i]. WEPP is a process-based soil erosion and sediment-delivery model used to simulate runoff, erosion, deposition, and sediment yield from hillslopes and small watersheds [@flanagan_nearing_1995_wepp]. WEPPcloud makes these simulations accessible by automatically assembling model inputs from public geospatial and climate datasets and by storing model runs remotely for later review, comparison, and reuse [@lew_etal_2022_weppcloud_part_i].
+`weppcloud-wbt` (https://github.com/rogerlew/weppcloud-wbt) [@lew_2026_weppcloud_wbt] is a research software fork of WhiteboxTools that provides the watershed-topology and terrain-processing tools used by WEPPcloud, a published online interface for the Water Erosion Prediction Project (WEPP) model [@lew_etal_2022_weppcloud_part_i]. WEPP is a process-based soil erosion and sediment-delivery model used to simulate runoff, erosion, deposition, and sediment yield from hillslopes and small watersheds [@flanagan_nearing_1995_wepp]. WEPPcloud makes these simulations accessible by automatically assembling model inputs from public geospatial and climate datasets and by storing model runs remotely for later review, comparison, and reuse [@lew_etal_2022_weppcloud_part_i].
 
 The software is distributed on PyPI as `weppcloud-wbt` with platform wheels for macOS, Windows, and Linux.
 
