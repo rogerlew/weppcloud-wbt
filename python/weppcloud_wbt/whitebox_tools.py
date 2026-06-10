@@ -83,6 +83,10 @@ class WhiteboxTools(object):
         exe = whitebox_tools_exe()
         self.exe_path = path.dirname(exe)
         self.exe_name = path.basename(exe)
+        bundled_proj_data = path.join(self.exe_path, "proj")
+        if path.isdir(bundled_proj_data):
+            os.environ.setdefault("PROJ_DATA", bundled_proj_data)
+            os.environ.setdefault("PROJ_LIB", bundled_proj_data)
 
         self.work_dir = ""
         if verbose is None:

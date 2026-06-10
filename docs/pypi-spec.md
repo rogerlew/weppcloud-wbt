@@ -61,6 +61,12 @@ Packaged executable:     weppcloud_wbt/bin/whitebox_tools(.exe)
 Compatibility shim:      whitebox_tools.py
 ```
 
+Windows wheels also ship the runtime DLLs needed by the vcpkg-built
+executable in `weppcloud_wbt/bin/`, including `proj_9.dll`, and PROJ data
+files under `weppcloud_wbt/bin/proj/`. The Python wrapper must point
+`PROJ_DATA`/`PROJ_LIB` at the bundled data directory when it exists, without
+overriding user-provided environment values.
+
 Supported imports:
 
 ```python
@@ -371,8 +377,8 @@ Decision gate for initial implementation:
 Each wheel build must install the produced wheel into a clean environment and verify:
 
 ```bash
-python -c "from weppcloud_wbt.whitebox_tools import WhiteboxTools; print(WhiteboxTools().version())"
-python -c "from whitebox_tools import WhiteboxTools; print(WhiteboxTools().version())"
+python -c "from weppcloud_wbt.whitebox_tools import WhiteboxTools; assert WhiteboxTools().version().strip()"
+python -c "from whitebox_tools import WhiteboxTools; assert WhiteboxTools().version().strip()"
 python -m pytest -q tests/test_ifolp_wrapper_smoke.py
 ```
 
@@ -425,6 +431,7 @@ The PyPI packaging implementation is complete when:
 - Installed-wheel tests confirm the fork-specific tools are present, including `HillslopesTopaz`, `FVSlope`, `RaiseRoads`, `IterativeFirstOrderLinkPrune`, and `RemoveShortStreams`.
 - Installed-wheel tests run from outside repo checkout paths and prove both imports resolve from `site-packages`/`dist-packages`.
 - Linux dependency handling strategy (self-contained binary, `auditwheel`/`cibuildwheel`, or documented system prerequisites) is selected explicitly and validated in CI with `ldd` plus installed-wheel smoke tests.
+- Windows wheels include required runtime DLLs and `proj/proj.db`; CI inspects wheel contents before upload.
 - The final publish job publishes one assembled wheel set from all required matrix artifacts and fails if any target artifact is missing.
 - Publishing uses PyPI trusted publishing through `.github/workflows/pypi-publish.yml`.
 - A release tag, GitHub release, and PyPI version all refer to the same source commit.

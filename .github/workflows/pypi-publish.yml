@@ -96,6 +96,30 @@ jobs:
           mkdir -p python/weppcloud_wbt/bin
           cp "target/release/${{ matrix.exe }}" "python/weppcloud_wbt/bin/${{ matrix.exe }}"
 
+      - name: Stage Windows runtime dependencies
+        if: startsWith(matrix.os, 'windows')
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tripletRoot = "$env:VCPKG_ROOT\installed\x64-windows"
+          $pkgBin = "python\weppcloud_wbt\bin"
+          $projData = "$pkgBin\proj"
+
+          if (-not (Test-Path "$tripletRoot\bin\proj_9.dll")) {
+            Write-Host "Expected proj_9.dll not found in $tripletRoot\bin"
+            Get-ChildItem -Path "$tripletRoot\bin" -Name | Sort-Object | Select-Object -First 200
+            throw "proj_9.dll missing after vcpkg install"
+          }
+          if (-not (Test-Path "$tripletRoot\share\proj\proj.db")) {
+            Write-Host "Expected proj.db not found in $tripletRoot\share\proj"
+            Get-ChildItem -Path "$tripletRoot\share" -Recurse -Name | Sort-Object | Select-Object -First 200
+            throw "proj.db missing after vcpkg install"
+          }
+
+          Copy-Item "$tripletRoot\bin\*.dll" $pkgBin
+          New-Item -ItemType Directory -Force $projData | Out-Null
+          Copy-Item "$tripletRoot\share\proj\*" $projData -Recurse -Force
+
       - name: Build platform wheel
         run: python -m pip wheel . --no-deps --wheel-dir dist
 
@@ -160,6 +184,38 @@ jobs:
               )
           PY
 
+      - name: Inspect Windows wheel runtime payload
+        if: startsWith(matrix.os, 'windows')
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+
+          wheel = next(Path("dist").glob("*.whl"))
+          print("Inspecting Windows runtime payload in", wheel.name)
+          with zipfile.ZipFile(wheel) as zf:
+              names = set(zf.namelist())
+
+          required = {
+              "weppcloud_wbt/bin/whitebox_tools.exe",
+              "weppcloud_wbt/bin/proj_9.dll",
+              "weppcloud_wbt/bin/proj/proj.db",
+          }
+          missing = sorted(required - names)
+          if missing:
+              print("Missing Windows runtime payload:")
+              for name in missing:
+                  print(f"  - {name}")
+              raise SystemExit(1)
+
+          dlls = sorted(n for n in names if n.startswith("weppcloud_wbt/bin/") and n.endswith(".dll"))
+          print("packaged DLLs:")
+          for name in dlls:
+              print(f"  - {name}")
+          PY
+
       - name: Install wheel and run installed-wheel checks
         shell: bash
         run: |
@@ -210,8 +266,19 @@ jobs:
               p = Path(mod.__file__).resolve()
               assert any(part in ("site-packages", "dist-packages") for part in p.parts), p
           PY
-          python -c "from weppcloud_wbt.whitebox_tools import WhiteboxTools; print(WhiteboxTools().version())"
-          python -c "from whitebox_tools import WhiteboxTools; print(WhiteboxTools().version())"
+          python - <<'PY'
+          from weppcloud_wbt.whitebox_tools import WhiteboxTools as NamespacedWhiteboxTools
+          from whitebox_tools import WhiteboxTools as CompatWhiteboxTools
+
+          for label, cls in (
+              ("weppcloud_wbt.whitebox_tools", NamespacedWhiteboxTools),
+              ("whitebox_tools", CompatWhiteboxTools),
+          ):
+              version = cls().version().strip()
+              print(f"{label}: {version}")
+              if not version:
+                  raise SystemExit(f"{label} returned an empty WhiteboxTools version")
+          PY
           python - <<'PY'
           import os
           import subprocess
@@ -258,7 +325,11 @@ jobs:
               missing_help = []
               for label in required:
                 help_text = str(wbt.tool_help(label))
-                if "Error" in help_text or "not recognized" in help_text.lower():
+                if (
+                  not help_text.strip()
+                  or "Error" in help_text
+                  or "not recognized" in help_text.lower()
+                ):
                   missing_help.append(label)
               if missing_help:
                 print("Missing required tools (tool_help fallback):")

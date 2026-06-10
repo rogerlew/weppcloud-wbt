@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- Bumped the PyPI package version to `2.3.0.post2` for a Windows wheel repair release.
+- Fixed Windows PyPI wheel assembly to bundle vcpkg runtime DLLs, including `proj_9.dll`, and bundled PROJ data (`proj.db`) with the packaged `whitebox_tools.exe`.
+- Added Windows wheel payload inspection to fail CI before publishing when required runtime DLLs or PROJ data are missing.
+- Hardened installed-wheel validation so empty `WhiteboxTools().version()` and empty `tool_help()` output fail the PyPI workflow instead of being printed as apparent successes.
+- Updated the Python wrapper to set `PROJ_DATA`/`PROJ_LIB` to bundled PROJ data when present, while preserving user-provided environment overrides.
 - Added PyPI installation instructions to `README.md`, including `pip install weppcloud-wbt`, a version smoke test, and import examples for both wrapper entry points.
 - Updated `paper/paper.md` to explicitly state PyPI availability as `weppcloud-wbt` for macOS, Windows, and Linux.
 - Updated `setup.py` distribution metadata to mark wheels as binary distributions (`has_ext_modules=True`) so packaged native executables are emitted in platlib-compatible paths and can be processed by `auditwheel`.

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "weppcloud-wbt"
-version = "2.3.0.post1"
+version = "2.3.0.post2"
 description = "WEPPcloud WhiteboxTools fork with TOPAZ-style watershed preprocessing tools"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -44,5 +44,8 @@ where = ["python"]
 [tool.setuptools.package-data]
 weppcloud_wbt = [
   "bin/whitebox_tools",
-  "bin/whitebox_tools.exe"
+  "bin/whitebox_tools.exe",
+  "bin/*.dll",
+  "bin/proj/*",
+  "bin/proj/**/*"
 ]
