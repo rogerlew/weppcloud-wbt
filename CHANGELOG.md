@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Updated Windows PyPI workflow dependency setup to export vcpkg `LIB`/`INCLUDE`/`RUSTFLAGS` plus SQLite-specific env vars and a preflight `sqlite3.lib` presence check to prevent `LNK1181` at link time.
 - Added a Windows-safe fallback in the PyPI workflow installed-wheel validation: when `list_tools()` returns zero parsed entries, CI now verifies required tools via `tool_help()` instead of failing on parser-specific output differences.
 - Hardened PyPI workflow tool-presence validation to check normalized `list_tools()` keys (snake_case/CamelCase tolerant) and print targeted diagnostics when required tools are missing.
 - Added a packaged top-level `whitebox_tools` shim package under `python/whitebox_tools/` so `from whitebox_tools import WhiteboxTools` works from installed wheels.
