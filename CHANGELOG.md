@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Added PyPI installation instructions to `README.md`, including `pip install weppcloud-wbt`, a version smoke test, and import examples for both wrapper entry points.
+- Updated `paper/paper.md` to explicitly state PyPI availability as `weppcloud-wbt` for macOS, Windows, and Linux.
 - Updated `setup.py` distribution metadata to mark wheels as binary distributions (`has_ext_modules=True`) so packaged native executables are emitted in platlib-compatible paths and can be processed by `auditwheel`.
 - Added `patchelf` to Ubuntu CI dependencies so the Linux `auditwheel repair` step can run successfully.
 - Added a Linux `auditwheel repair` step in the PyPI workflow so Linux wheels are retagged from unsupported `linux_x86_64` to PyPI-accepted `manylinux` platform tags before publish.

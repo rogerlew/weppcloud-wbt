@@ -6,6 +6,30 @@ The software is built on the foundation of John Lindsay's [WhiteboxTools](https:
 
 ---
 
+## Installation (PyPI)
+
+`weppcloud-wbt` is published on PyPI for **Linux**, **macOS**, and **Windows** as platform wheels that bundle the `whitebox_tools` executable.
+
+```bash
+python -m pip install --upgrade weppcloud-wbt
+```
+
+Quick smoke test:
+
+```bash
+python -c "from whitebox_tools import WhiteboxTools; print(WhiteboxTools().version())"
+```
+
+You can import either compatibility surface:
+
+```python
+from whitebox_tools import WhiteboxTools
+# or
+from weppcloud_wbt.whitebox_tools import WhiteboxTools
+```
+
+---
+
 ## Tools added in this fork
 
 All tools below are used operationally within WEPPcloud. Python bindings are included in `whitebox_tools.py` and `WBT/whitebox_tools.py` unless noted.
