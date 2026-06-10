@@ -12,10 +12,10 @@ All tools below are used operationally within WEPPcloud. Python bindings are inc
 
 ### Hydrology / terrain
 
-- **`HillslopesTopaz`** (`hydro_analysis/hillslopes_topaz.rs`)
+- **`HillslopesTopaz`** (`hydro_analysis/hillslopes_topaz.rs`) — [spec](whitebox-tools-app/src/tools/hydro_analysis/hillslopes_topaz.spec.md)
   Implements Garbrecht & Martz TOPAZ-style stream and hillslope identifiers for a single watershed. Emits channel metadata tables (`netw.tsv`, `netw_props.tsv`) and left/right/top hillslope rasters consumed by WEPPcloud. Includes combined flood-fill phases, cached upstream areas, and per-link `areaup` attributes.
 
-- **`FindOutlet`** (`hydro_analysis/find_outlet.rs`)
+- **`FindOutlet`** (`hydro_analysis/find_outlet.rs`) — [spec](whitebox-tools-app/src/tools/hydro_analysis/find_outlet.spec.md)
   Derives a single-stream outlet pour-point GeoJSON by tracing D8 flow from interior candidates. Supports optional watershed masks and requested start locations (`--requested_outlet_lng_lat`, `--requested_outlet_row_col`) for interactive callers.
 
 - **`FVSlope`** (`hydro_analysis/fvslope.rs`)
@@ -51,7 +51,7 @@ All tools below are used operationally within WEPPcloud. Python bindings are inc
 
 ### Raster I/O
 
-- **VRT support** (read-only, single `SimpleSource`)
+- **VRT support** (read-only, single `SimpleSource`) — [spec](docs/vrt-support/vrt-support-spec.md)
   Adds `.vrt` detection, a minimal VRT XML parser, and a windowed GeoTIFF read path to avoid full in-memory loads for cropped inputs. Supports full-size VRTs without `SrcRect`/`DstRect` when dimensions match the source.
 
 ### Runtime and Python API
