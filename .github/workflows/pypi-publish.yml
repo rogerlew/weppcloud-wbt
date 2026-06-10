@@ -197,37 +197,41 @@ jobs:
 
           wbt = WhiteboxTools()
           tools = wbt.list_tools()
-            if not isinstance(tools, dict):
-              raise SystemExit(f"Unexpected list_tools() result type: {type(tools)}")
+          if not isinstance(tools, dict):
+            raise SystemExit(f"Unexpected list_tools() result type: {type(tools)}")
 
-            key_set = set(tools.keys())
-            normalized = {k.replace("_", "").lower(): k for k in key_set}
+          key_set = set(tools.keys())
+          normalized = {k.replace("_", "").lower(): k for k in key_set}
 
-            print(f"tool_count={len(key_set)}")
-            sample = sorted(k for k in key_set if "topaz" in k or "slope" in k or "road" in k or "prune" in k or "stream" in k)
-            print("relevant_keys:")
-            for k in sample[:80]:
-              print("  -", k)
+          print(f"tool_count={len(key_set)}")
+          sample = sorted(
+            k
+            for k in key_set
+            if "topaz" in k or "slope" in k or "road" in k or "prune" in k or "stream" in k
+          )
+          print("relevant_keys:")
+          for k in sample[:80]:
+            print("  -", k)
 
-            required = {
-              "HillslopesTopaz": "hillslopes_topaz",
-              "FVSlope": "fv_slope",
-              "RaiseRoads": "raise_roads",
-              "IterativeFirstOrderLinkPrune": "iterative_first_order_link_prune",
-              "RemoveShortStreams": "remove_short_streams",
-            }
+          required = {
+            "HillslopesTopaz": "hillslopes_topaz",
+            "FVSlope": "fv_slope",
+            "RaiseRoads": "raise_roads",
+            "IterativeFirstOrderLinkPrune": "iterative_first_order_link_prune",
+            "RemoveShortStreams": "remove_short_streams",
+          }
 
-            missing = []
-            for label, snake in required.items():
-              token = snake.replace("_", "")
-              if token not in normalized:
-                missing.append((label, snake))
+          missing = []
+          for label, snake in required.items():
+            token = snake.replace("_", "")
+            if token not in normalized:
+              missing.append((label, snake))
 
-            if missing:
-              print("Missing required tools:")
-              for label, snake in missing:
-                print(f"  - {label} (expected key like '{snake}')")
-              raise SystemExit(1)
+          if missing:
+            print("Missing required tools:")
+            for label, snake in missing:
+              print(f"  - {label} (expected key like '{snake}')")
+            raise SystemExit(1)
           PY
 
       - name: Linux shared dependency inspection
