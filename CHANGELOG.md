@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Added a Linux `auditwheel repair` step in the PyPI workflow so Linux wheels are retagged from unsupported `linux_x86_64` to PyPI-accepted `manylinux` platform tags before publish.
 - Set `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` in the PyPI workflow to proactively migrate JavaScript actions off deprecated Node.js 20 runners.
 - Reduced macOS Homebrew warning noise in the PyPI workflow by removing `brew update` and untapping unused untrusted taps (`aws/tap`, `azure/bicep`, `hashicorp/tap`) before dependency install.
 - Updated PyPI workflow publish gating: tag pushes (`v*`) still auto-publish, and manual `workflow_dispatch` runs can now publish when the new `publish` input is set to true.
