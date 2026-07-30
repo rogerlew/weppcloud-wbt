@@ -412,7 +412,28 @@ class WhiteboxTools(object):
                     self._terminate_process_tree(proc)
                     raise WhiteboxAppError(item.strip())
 
-            return_code = proc.wait()
+            while proc.poll() is None:
+                if self.cancel_op:
+                    self.cancel_op = False
+                    self._terminate_process_tree(proc)
+                    return 2
+
+                wait_seconds = 0.1
+                if deadline is not None:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        self._terminate_process_tree(proc)
+                        raise TimeoutError(
+                            f"WhiteboxTools process timed out after {timeout} seconds"
+                        )
+                    wait_seconds = min(wait_seconds, remaining)
+
+                try:
+                    proc.wait(timeout=wait_seconds)
+                except TimeoutExpired:
+                    continue
+
+            return_code = proc.returncode
             if return_code != 0:
                 raise CalledProcessError(return_code, proc.args)
             return 0

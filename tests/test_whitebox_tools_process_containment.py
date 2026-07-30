@@ -44,6 +44,10 @@ def write_fake_whitebox_tools(directory: Path) -> None:
                 [sys.executable, "-c", "import time; time.sleep(60)"]
             )
             Path(os.environ["FAKE_WBT_CHILD_PID"]).write_text(str(child.pid))
+            if mode == "closed_output_timeout":
+                os.close(sys.stdout.fileno())
+                os.close(sys.stderr.fileno())
+                time.sleep(60)
             print("child started", flush=True)
             time.sleep(60)
             """
@@ -96,11 +100,17 @@ class WhiteboxToolsProcessContainmentTests(unittest.TestCase):
         self.assertEqual(status, 1)
         self.assertTrue(any("exit status 7" in message for message in messages))
 
-    def assert_timeout_kills_process_group(self, module, executable_dir: Path) -> None:
+    def assert_timeout_kills_process_group(
+        self,
+        module,
+        executable_dir: Path,
+        *,
+        mode: str,
+    ) -> None:
         child_pid_path = executable_dir / "child.pid"
         messages = []
         env = {
-            "FAKE_WBT_MODE": "timeout",
+            "FAKE_WBT_MODE": mode,
             "FAKE_WBT_CHILD_PID": str(child_pid_path),
         }
         with patch.dict(os.environ, env):
@@ -135,6 +145,12 @@ class WhiteboxToolsProcessContainmentTests(unittest.TestCase):
                         self.assert_timeout_kills_process_group(
                             module,
                             executable_dir,
+                            mode="timeout",
+                        )
+                        self.assert_timeout_kills_process_group(
+                            module,
+                            executable_dir,
+                            mode="closed_output_timeout",
                         )
         finally:
             os.chdir(original_cwd)

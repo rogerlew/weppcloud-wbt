@@ -52,6 +52,8 @@
   seven-case harness twice, byte-identical report comparison, wrong-hash
   control, and diff checks; published evidence and closed the package
   (2026-07-30 01:14 UTC).
+- [x] Closed the post-review early-output-EOF timeout bypass in both Python
+  wrappers and added descendant-cleanup regression coverage (2026-07-30).
 
 ## Decisions
 
@@ -129,3 +131,10 @@ and added bounded per-call wrapper timeout/process-group cleanup plus direct
 nonzero/timeout tests. The local WEPPpy container discovered and executed
 `TopazConditionDem` against the repository fixture before integration was
 enabled.
+
+Independent operations review then reproduced an early-output-EOF timeout
+bypass: the wrapper left the bounded streaming loop and waited indefinitely
+for process exit. Both wrapper copies now keep the original deadline and
+cancellation contract through final process exit. The regression closes both
+output file descriptors before hanging and confirms that the descendant
+process group is terminated.
