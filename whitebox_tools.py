@@ -5249,6 +5249,24 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         return self.run_tool('fill_single_cell_pits', args, callback)  # returns 1 if error
 
+    def topaz_condition_dem(self, dem, output, max_obstruction_width=2, delta=None, diagnostics=None, callback=None):
+        """Conditions a DEM using TOPAZ-compatible FILDEP and RELIEF methods.
+
+        dem -- Input raster DEM file.
+        output -- Output conditioned DEM.
+        max_obstruction_width -- Depression obstruction adjustment width (0, 1, or 2 cells).
+        delta -- Optional signed conditioned-minus-input raster.
+        diagnostics -- Optional JSON diagnostics file.
+        callback -- Custom function for handling tool text outputs.
+        """
+        args = []
+        args.append("--dem='{}'".format(dem))
+        args.append("--output='{}'".format(output))
+        args.append("--max_obstruction_width='{}'".format(max_obstruction_width))
+        if delta is not None: args.append("--delta='{}'".format(delta))
+        if diagnostics is not None: args.append("--diagnostics='{}'".format(diagnostics))
+        return self.run_tool('topaz_condition_dem', args, callback)  # returns 1 if error
+
     def find_no_flow_cells(self, dem, output, callback=None):
         """Finds grid cells with no downslope neighbours.
 

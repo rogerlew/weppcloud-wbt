@@ -6,7 +6,8 @@
 - Keep instructions concise; put task-specific detail in `prompts/*.md` exec plans.
 
 ## Active ExecPlan
-- `none` (most recently completed: `prompts/RAISE_ROADS_EXECPLAN.md`)
+- None. Most recently completed:
+  `prompts/TOPAZ_CONDITION_DEM_EXECPLAN.md`.
 
 ## Required Workflow for Active ExecPlan Work
 1. Read this `AGENTS.md` first.
@@ -35,11 +36,12 @@
   - `cargo test -p whitebox-tools-app`
 - Python wrapper sanity:
   - `python -m py_compile whitebox_tools.py WBT/whitebox_tools.py`
-- Real-data smoke test inputs for RaiseRoads:
-  - DEM: `/wc1/runs/sh/shaven-lane/dem/dem.tif`
-  - Roads: `/wc1/runs/sh/shaven-lane/roads/UM1_roads_info.geojson`
+- Real-data smoke test input for TopazConditionDem:
+  - DEM: `/wc1/runs/sr/srivas42-reconciled-turf/dem/dem.tif`
 
-## Deliverables for RaiseRoads Work
-- Code changes implementing tool + registration + wrappers.
-- Validation evidence (commands and key outputs).
-- Updated exec plan sections with final outcomes.
+## Deliverables for TopazConditionDem Work
+- Faithful Rust implementation of TOPAZ FILDEP and RELIEF conditioning.
+- Exact-input and synthetic golden parity fixtures.
+- Registered CLI tool and both Python wrapper methods.
+- Cut/fill diagnostics, metadata, tests, and algorithm documentation.
+- Production validation evidence and a WEPPpy integration handoff.

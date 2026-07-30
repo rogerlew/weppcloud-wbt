@@ -1,5 +1,25 @@
 # Changelog
 
+## [Unreleased]
+
+### Planning
+
+- Added the active `TopazConditionDem` ExecPlan for a source-faithful TOPAZ
+  FILDEP/RELIEF conditioning tool, exact-input parity evidence, diagnostics,
+  Python wrappers, and a WEPPpy integration handoff.
+
+### Added
+
+- Added the registered `TopazConditionDem` Rust tool with TOPAZ decimetre
+  quantization, FILDEP-style depression and narrow-obstruction conditioning,
+  RELIEF flat resolution, optional signed delta raster, and JSON diagnostics.
+- Added `topaz_condition_dem` to both Python wrappers.
+- Added algorithm, exact-input validation, fixture-materialization, and WEPPpy
+  handoff documentation, including zero-mismatch production parity, downstream
+  D8/watershed equivalence, determinism, and performance evidence.
+- Added the exact checksummed 430-by-447 production-representative DEM under
+  `test_fixtures/topaz_condition_dem/` for reproducible parity tests.
+
 ## [2.3.0.post2] - 2026-06-10
 - Bumped the PyPI package version to `2.3.0.post2` for a Windows wheel repair release.
 - Fixed Windows PyPI wheel assembly to bundle vcpkg runtime DLLs, including `proj_9.dll`, and bundled PROJ data (`proj.db`) with the packaged `whitebox_tools.exe`.

@@ -207,6 +207,7 @@ impl ToolManager {
         tool_names.push("StrahlerOrderBasins".to_string());
         tool_names.push("Subbasins".to_string());
         tool_names.push("TraceDownslopeFlowpaths".to_string());
+        tool_names.push("TopazConditionDem".to_string());
         tool_names.push("UnnestBasins".to_string());
         tool_names.push("UpslopeDepressionStorage".to_string());
         tool_names.push("Watershed".to_string());
@@ -764,6 +765,7 @@ impl ToolManager {
             "tracedownslopeflowpaths" => {
                 Some(Box::new(hydro_analysis::TraceDownslopeFlowpaths::new()))
             }
+            "topazconditiondem" => Some(Box::new(hydro_analysis::TopazConditionDem::new())),
             "unnestbasins" => Some(Box::new(hydro_analysis::UnnestBasins::new())),
             "upslopedepressionstorage" => {
                 Some(Box::new(hydro_analysis::UpslopeDepressionStorage::new()))
