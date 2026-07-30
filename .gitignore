@@ -9,6 +9,7 @@
 !.vscode/extensions.json
 *.pyc
 *.zip
+*.aux.xml
 /.idea
 /WBT/
 /WBT/__pycache__/

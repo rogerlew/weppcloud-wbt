@@ -28,7 +28,19 @@ chmod 755 WBT/whitebox_tools.new
 mv -f WBT/whitebox_tools.new WBT/whitebox_tools
 ```
 
-3. Verify tool availability from the installed binary.
+3. Optionally create a local runtime configuration.
+
+```bash
+cp settings.example.json WBT/settings.json
+```
+
+`settings.example.json` mirrors the compiled defaults. Keep
+`working_directory` empty unless the installation needs a persistent default
+directory. `WBT/settings.json` is runtime state: WhiteboxTools reads and may
+rewrite it beside the executable, so it is intentionally ignored and must not
+be committed.
+
+4. Verify tool availability from the installed binary.
 
 ```bash
 cd WBT
@@ -37,7 +49,7 @@ cd WBT
 ./whitebox_tools --toolhelp=TopazConditionDem | sed -n '1,30p'
 ```
 
-4. Verify wrapper surfaces compile.
+5. Verify wrapper surfaces compile.
 
 ```bash
 cd /workdir/weppcloud-wbt
@@ -45,7 +57,7 @@ python -m py_compile whitebox_tools.py WBT/whitebox_tools.py
 python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-5. Record provenance and verify the installed artifact matches the locked
+6. Record provenance and verify the installed artifact matches the locked
    build.
 
 ```bash
@@ -55,7 +67,7 @@ sha256sum Cargo.lock target/release/whitebox_tools WBT/whitebox_tools
 
 Preserve the pre-install binary hash in the release evidence before step 2.
 
-6. Verify discovery and one real execution from the WEPPpy container runtime
+7. Verify discovery and one real execution from the WEPPpy container runtime
    (required for cutover confidence).
 
 ```bash
@@ -67,7 +79,7 @@ For a fleet deployment, complete discovery and a disposable execution on every
 worker host before enabling a WEPPpy configuration that depends on the new
 tool. Do not treat a wrapper-only check as binary execution evidence.
 
-7. Commit and push release artifacts.
+8. Commit and push release artifacts.
 
 ```bash
 cd /workdir/weppcloud-wbt
@@ -95,5 +107,5 @@ Symptom in WEPPpy worker logs:
 Immediate fix:
 
 1. Re-run this runbook.
-2. Confirm step 5 passes from container runtime.
+2. Confirm step 6 passes from container runtime.
 3. Retry failed RQ job.

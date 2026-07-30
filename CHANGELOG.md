@@ -35,6 +35,9 @@
   burned-out-harmonic fixture masking 25,541 NLCD class-11 water cells.
 - Added repository-local work-package scaffolding and completed parity
   hardening evidence.
+- Added a compiled-default `settings.example.json`; mutable
+  `WBT/settings.json` and generated GDAL `.aux.xml` sidecars are no longer
+  tracked.
 
 ### Fixed
 
