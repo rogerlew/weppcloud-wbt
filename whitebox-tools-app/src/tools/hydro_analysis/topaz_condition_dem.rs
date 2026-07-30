@@ -10,8 +10,7 @@ J. Garbrecht and L. Martz are the authors of the original TOPAZ methods.
 use crate::tools::*;
 use serde_json::json;
 use std::env;
-use std::fs::File;
-use std::io::{BufWriter, Error, ErrorKind, Write};
+use std::io::{Error, ErrorKind};
 use std::path;
 use std::time::Instant;
 use whitebox_raster::*;
@@ -765,6 +764,7 @@ impl WhiteboxTool for TopazConditionDem {
         let mut fildep_file = String::new();
         let mut delta_file = String::new();
         let mut diagnostics_file = String::new();
+        let mut diagnostics_id = String::new();
         let mut max_width = 2u8;
         let mut i = 0;
         while i < args.len() {
@@ -793,6 +793,7 @@ impl WhiteboxTool for TopazConditionDem {
                 }
                 "-delta" => delta_file = value,
                 "-diagnostics" => diagnostics_file = value,
+                "-diagnostics_id" => diagnostics_id = value,
                 _ => {}
             }
             i += 1;
@@ -820,6 +821,9 @@ impl WhiteboxTool for TopazConditionDem {
             if !filename.is_empty() && !filename.contains(&sep) && !filename.contains('/') {
                 *filename = format!("{}{}", working_directory, filename);
             }
+        }
+        if !diagnostics_file.is_empty() {
+            super::conditioning_diagnostics::validate_operation_id(&diagnostics_id)?;
         }
 
         let input = Raster::new(&dem, "r")?;
@@ -905,47 +909,28 @@ impl WhiteboxTool for TopazConditionDem {
             delta.write()?;
         }
 
-        if !diagnostics_file.is_empty() {
-            let cell_area = input.configs.resolution_x.abs() * input.configs.resolution_y.abs();
-            let diagnostics = json!({
-                "schema_version": 1,
-                "tool": self.name,
-                "source_revision": SOURCE_REVISION,
-                "input": dem,
-                "output": output_file,
-                "fildep_output": if fildep_file.is_empty() { None } else { Some(&fildep_file) },
-                "parameters": {"max_obstruction_width": max_width},
-                "raster": {"rows": rows, "columns": cols, "nodata": nodata},
-                "counts": {
-                    "depressions": stats.depressions,
-                    "flats": stats.flats,
-                    "filled_cells": stats.filled_cells,
-                    "lowered_cells": stats.lowered_cells,
-                    "synthetic_relief_cells": stats.relief_cells,
-                    "obstruction_adjustments_width_1": stats.obstruction_width_1,
-                    "obstruction_adjustments_width_2": stats.obstruction_width_2
-                },
-                "delta_z_units": {
-                    "maximum_fill": stats.max_fill as f64 / SCALE,
-                    "maximum_cut": stats.max_cut as f64 / SCALE,
-                    "maximum_synthetic_relief": stats.max_relief as f64 / SCALE
-                },
-                "volume_cubic_z_horizontal_units": {
-                    "fill": stats.fill_sum as f64 / SCALE * cell_area,
-                    "cut": stats.cut_sum as f64 / SCALE * cell_area,
-                    "qualification": "Computed from projected raster cell area; caller must confirm compatible horizontal and vertical units."
-                },
-                "stage_counts": {
-                    "fildep_values": fildep.len(),
-                    "relief_values": conditioned.z.len()
-                }
-            });
-            let file = File::create(&diagnostics_file)?;
-            let mut writer = BufWriter::new(file);
-            serde_json::to_writer_pretty(&mut writer, &diagnostics)
-                .map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?;
-            writer.write_all(b"\n")?;
-        }
+        super::conditioning_diagnostics::write(
+            &diagnostics_file,
+            &diagnostics_id,
+            &self.name,
+            &dem,
+            &output_file,
+            &input,
+            &output,
+            json!({
+                "depression_count": stats.depressions,
+                "flat_count": stats.flats,
+                "filled_cell_count": stats.filled_cells,
+                "lowered_cell_count": stats.lowered_cells,
+                "synthetic_relief_cell_count": stats.relief_cells,
+                "obstruction_adjustments_width_1": stats.obstruction_width_1,
+                "obstruction_adjustments_width_2": stats.obstruction_width_2,
+                "maximum_fildep_fill": stats.max_fill as f64 / SCALE,
+                "maximum_fildep_cut": stats.max_cut as f64 / SCALE,
+                "maximum_synthetic_relief": stats.max_relief as f64 / SCALE
+            }),
+            json!({"max_obstruction_width": max_width}),
+        )?;
         if verbose {
             println!("Elapsed Time (excluding I/O): {}", elapsed);
         }

@@ -5,6 +5,7 @@ mod basins;
 mod breach_depressions;
 mod breach_depressions_least_cost;
 mod breach_pits;
+mod conditioning_diagnostics;
 mod burn_streams_at_roads;
 mod d8_flow_accum;
 mod d8_mass_flux;

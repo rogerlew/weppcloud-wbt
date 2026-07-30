@@ -4880,7 +4880,7 @@ Okay, that's it for now.
         if esri_pntr: args.append("--esri_pntr")
         return self.run_tool('basins', args, callback)  # returns 1 if error
 
-    def breach_depressions(self, dem, output, max_depth=None, max_length=None, flat_increment=None, fill_pits=False, callback=None):
+    def breach_depressions(self, dem, output, max_depth=None, max_length=None, flat_increment=None, fill_pits=False, diagnostics=None, diagnostics_id=None, callback=None):
         """Breaches all of the depressions in a DEM using Lindsay's (2016) algorithm. This should be preferred over depression filling in most cases.
 
         Keyword arguments:
@@ -4900,9 +4900,11 @@ Okay, that's it for now.
         if max_length is not None: args.append("--max_length='{}'".format(max_length))
         if flat_increment is not None: args.append("--flat_increment='{}'".format(flat_increment))
         if fill_pits: args.append("--fill_pits")
+        if diagnostics is not None: args.append("--diagnostics='{}'".format(diagnostics))
+        if diagnostics_id is not None: args.append("--diagnostics_id='{}'".format(diagnostics_id))
         return self.run_tool('breach_depressions', args, callback)  # returns 1 if error
 
-    def breach_depressions_least_cost(self, dem, output, dist, max_cost=None, min_dist=True, flat_increment=None, fill=True, fail_on_unresolved=False, callback=None):
+    def breach_depressions_least_cost(self, dem, output, dist, max_cost=None, min_dist=True, flat_increment=None, fill=True, fail_on_unresolved=False, diagnostics=None, diagnostics_id=None, callback=None):
         """Breaches the depressions in a DEM using a least-cost pathway method.
 
         Keyword arguments:
@@ -4926,6 +4928,8 @@ Okay, that's it for now.
         if flat_increment is not None: args.append("--flat_increment='{}'".format(flat_increment))
         if fill: args.append("--fill")
         if fail_on_unresolved: args.append("--fail_on_unresolved")
+        if diagnostics is not None: args.append("--diagnostics='{}'".format(diagnostics))
+        if diagnostics_id is not None: args.append("--diagnostics_id='{}'".format(diagnostics_id))
         return self.run_tool('breach_depressions_least_cost', args, callback)  # returns 1 if error
 
     def breach_single_cell_pits(self, dem, output, callback=None):
@@ -5283,7 +5287,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         return self.run_tool('fill_burn', args, callback)  # returns 1 if error
 
-    def fill_depressions(self, dem, output, fix_flats=True, flat_increment=None, max_depth=None, callback=None):
+    def fill_depressions(self, dem, output, fix_flats=True, flat_increment=None, max_depth=None, diagnostics=None, diagnostics_id=None, callback=None):
         """Fills all of the depressions in a DEM. Depression breaching should be preferred in most cases.
 
         Keyword arguments:
@@ -5301,6 +5305,8 @@ Okay, that's it for now.
         if fix_flats: args.append("--fix_flats")
         if flat_increment is not None: args.append("--flat_increment='{}'".format(flat_increment))
         if max_depth is not None: args.append("--max_depth='{}'".format(max_depth))
+        if diagnostics is not None: args.append("--diagnostics='{}'".format(diagnostics))
+        if diagnostics_id is not None: args.append("--diagnostics_id='{}'".format(diagnostics_id))
         return self.run_tool('fill_depressions', args, callback)  # returns 1 if error
 
     def fill_depressions_planchon_and_darboux(self, dem, output, fix_flats=True, flat_increment=None, callback=None):
@@ -5353,7 +5359,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         return self.run_tool('fill_single_cell_pits', args, callback)  # returns 1 if error
 
-    def topaz_condition_dem(self, dem, output, max_obstruction_width=2, delta=None, diagnostics=None, callback=None, fildep=None, timeout=None):
+    def topaz_condition_dem(self, dem, output, max_obstruction_width=2, delta=None, diagnostics=None, diagnostics_id=None, callback=None, fildep=None, timeout=None):
         """Conditions a DEM using TOPAZ-compatible FILDEP and RELIEF methods.
 
         dem -- Input raster DEM file.
@@ -5371,6 +5377,7 @@ Okay, that's it for now.
         args.append("--max_obstruction_width='{}'".format(max_obstruction_width))
         if delta is not None: args.append("--delta='{}'".format(delta))
         if diagnostics is not None: args.append("--diagnostics='{}'".format(diagnostics))
+        if diagnostics_id is not None: args.append("--diagnostics_id='{}'".format(diagnostics_id))
         if fildep is not None: args.append("--fildep='{}'".format(fildep))
         return self.run_tool('topaz_condition_dem', args, callback, timeout=timeout)  # returns 1 if error
 

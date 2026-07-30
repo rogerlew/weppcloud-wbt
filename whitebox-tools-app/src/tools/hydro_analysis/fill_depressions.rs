@@ -7,6 +7,7 @@ License: MIT
 */
 
 use crate::tools::*;
+use serde_json::json;
 use std::cmp::Ordering;
 use std::cmp::Ordering::Equal;
 use std::collections::{BinaryHeap, VecDeque};
@@ -187,6 +188,8 @@ impl WhiteboxTool for FillDepressions {
         let mut fix_flats = false;
         let mut flat_increment = f64::NAN;
         let mut max_depth = f64::INFINITY;
+        let mut diagnostics_file = String::new();
+        let mut diagnostics_id = String::new();
 
         if args.len() == 0 {
             return Err(Error::new(
@@ -244,6 +247,10 @@ impl WhiteboxTool for FillDepressions {
                         .parse::<f64>()
                         .expect(&format!("Error parsing {}", flag_val))
                 };
+            } else if flag_val == "-diagnostics" {
+                diagnostics_file = if keyval { vec[1].to_string() } else { args[i + 1].to_string() };
+            } else if flag_val == "-diagnostics_id" {
+                diagnostics_id = if keyval { vec[1].to_string() } else { args[i + 1].to_string() };
             }
         }
 
@@ -275,6 +282,12 @@ impl WhiteboxTool for FillDepressions {
         }
         if !output_file.contains(&sep) && !output_file.contains("/") {
             output_file = format!("{}{}", working_directory, output_file);
+        }
+        if !diagnostics_file.is_empty() && !diagnostics_file.contains(&sep) && !diagnostics_file.contains("/") {
+            diagnostics_file = format!("{}{}", working_directory, diagnostics_file);
+        }
+        if !diagnostics_file.is_empty() {
+            super::conditioning_diagnostics::validate_operation_id(&diagnostics_id)?;
         }
 
         if verbose {
@@ -392,6 +405,7 @@ impl WhiteboxTool for FillDepressions {
         let mut outlet_found: bool;
         let mut outlet_z: f64;
         let mut queue = VecDeque::new();
+        let mut filled_depression_count = 0usize;
 
         while let Some(cell) = undefined_flow_cells.pop() {
             row = cell.0;
@@ -488,6 +502,7 @@ impl WhiteboxTool for FillDepressions {
                 }
 
                 if outlet_found {
+                    filled_depression_count += 1;
                     // Now that we have the outlets, raise the interior of the depression.
                     // Start from the outlets.
                     while let Some(cell2) = queue.pop_front() {
@@ -751,6 +766,26 @@ impl WhiteboxTool for FillDepressions {
             }
             Err(e) => return Err(e),
         };
+        super::conditioning_diagnostics::write(
+            &diagnostics_file,
+            &diagnostics_id,
+            &self.name,
+            &input_file,
+            &output_file,
+            &input,
+            &output,
+            json!({
+                "detected_low_point_count": num_deps,
+                "filled_depression_count": filled_depression_count,
+                "skipped_depression_count": num_deps.saturating_sub(filled_depression_count),
+                "flat_gradient_applied": fix_flats
+            }),
+            json!({
+                "fix_flats": fix_flats,
+                "flat_increment": small_num,
+                "max_depth": if max_depth.is_finite() { Some(max_depth) } else { None }
+            }),
+        )?;
         if verbose {
             println!(
                 "{}",

@@ -7,6 +7,7 @@ License: MIT
 */
 
 use crate::tools::*;
+use serde_json::json;
 use std::cmp::Ordering;
 use std::cmp::Ordering::Equal;
 use std::collections::{BinaryHeap, VecDeque};
@@ -257,6 +258,8 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
         let mut flat_increment = f64::NAN;
         let mut fill_deps = false;
         let mut fail_on_unresolved = false;
+        let mut diagnostics_file = String::new();
+        let mut diagnostics_id = String::new();
         let mut minimize_dist = false;
 
         if args.len() == 0 {
@@ -329,6 +332,10 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
                 if vec.len() == 1 || !vec[1].to_string().to_lowercase().contains("false") {
                     fail_on_unresolved = true;
                 }
+            } else if flag_val == "-diagnostics" {
+                diagnostics_file = if keyval { vec[1].to_string() } else { args[i + 1].to_string() };
+            } else if flag_val == "-diagnostics_id" {
+                diagnostics_id = if keyval { vec[1].to_string() } else { args[i + 1].to_string() };
             }
         }
 
@@ -360,6 +367,12 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
         }
         if !output_file.contains(&sep) && !output_file.contains("/") {
             output_file = format!("{}{}", working_directory, output_file);
+        }
+        if !diagnostics_file.is_empty() && !diagnostics_file.contains(&sep) && !diagnostics_file.contains("/") {
+            diagnostics_file = format!("{}{}", working_directory, diagnostics_file);
+        }
+        if !diagnostics_file.is_empty() {
+            super::conditioning_diagnostics::validate_operation_id(&diagnostics_id)?;
         }
 
         if verbose {
@@ -498,6 +511,7 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
         let max_length = max_dist as i16;
         let filter_size = ((max_dist * 2 + 1) * (max_dist * 2 + 1)) as usize;
         let mut minheap = BinaryHeap::with_capacity(filter_size);
+        let mut longest_breach_path_cells = 0usize;
         while let Some(cell) = undefined_flow_cells.pop() {
             row = cell.0;
             col = cell.1;
@@ -569,6 +583,8 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
                                 }
                             } else if zn <= zout || zn == nodata {
                                 // We're at a cell that we can breach to
+                                longest_breach_path_cells =
+                                    longest_breach_path_cells.max(length_n as usize);
                                 while flag {
                                     // Find which cell to go to from here
                                     if backlink.get_value(rn, cn) > -1i8 {
@@ -963,6 +979,39 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
             }
             Err(e) => return Err(e),
         };
+        let cell_size = input
+            .configs
+            .resolution_x
+            .abs()
+            .hypot(input.configs.resolution_y.abs())
+            / 2f64.sqrt();
+        super::conditioning_diagnostics::write(
+            &diagnostics_file,
+            &diagnostics_id,
+            &self.name,
+            &input_file,
+            &output_file,
+            &input,
+            &output,
+            json!({
+                "detected_low_point_count": num_deps,
+                "resolved_low_point_count": num_solved,
+                "unresolved_low_point_count": num_unsolved,
+                "longest_breach_path_cells": longest_breach_path_cells,
+                "longest_breach_path": longest_breach_path_cells as f64 * cell_size,
+                "fallback_fill_used": fill_deps && num_unsolved > 0,
+                "fallback_filled_low_point_count": if fill_deps { num_unsolved } else { 0 }
+            }),
+            json!({
+                "search_distance_cells": max_dist,
+                "search_distance": max_dist as f64 * cell_size,
+                "max_cost": if max_cost.is_finite() { Some(max_cost) } else { None },
+                "minimize_distance": minimize_dist,
+                "flat_increment": small_num,
+                "fill": fill_deps,
+                "fail_on_unresolved": fail_on_unresolved
+            }),
+        )?;
         if verbose {
             println!(
                 "{}",

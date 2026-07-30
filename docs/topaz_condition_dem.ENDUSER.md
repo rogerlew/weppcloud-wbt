@@ -44,7 +44,10 @@ Optional outputs:
 - `--fildep` — intermediate DEM after FILDEP and before RELIEF
 - `--delta` — signed difference between the final conditioned DEM and the
   TOPAZ-rounded input
-- `--diagnostics` — JSON summary of conditioning counts, extrema, and volumes
+- `--diagnostics` — versioned JSON summary shared by the four DEM-conditioning
+  tools; see [DEM Conditioning Diagnostics](conditioning_diagnostics.ENDUSER.md)
+- `--diagnostics_id` — required 32-character lowercase hexadecimal attempt
+  identifier whenever diagnostics are requested
 
 The input must contain finite elevations in valid cells. NoData geometry and
 the input raster's georeferencing are preserved.

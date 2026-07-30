@@ -7,6 +7,7 @@ License: MIT
 */
 
 use crate::tools::*;
+use serde_json::json;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::collections::VecDeque;
@@ -197,6 +198,8 @@ impl WhiteboxTool for BreachDepressions {
         let mut constrained_mode = false;
         let mut flat_increment = f64::NAN;
         let mut fill_pits = false;
+        let mut diagnostics_file = String::new();
+        let mut diagnostics_id = String::new();
 
         if args.len() == 0 {
             return Err(Error::new(
@@ -268,6 +271,10 @@ impl WhiteboxTool for BreachDepressions {
                 if vec.len() == 1 || !vec[1].to_string().to_lowercase().contains("false") {
                     fill_pits = true;
                 }
+            } else if flag_val == "-diagnostics" {
+                diagnostics_file = if keyval { vec[1].to_string() } else { args[i + 1].to_string() };
+            } else if flag_val == "-diagnostics_id" {
+                diagnostics_id = if keyval { vec[1].to_string() } else { args[i + 1].to_string() };
             }
         }
 
@@ -299,6 +306,12 @@ impl WhiteboxTool for BreachDepressions {
         }
         if !output_file.contains(&sep) && !output_file.contains("/") {
             output_file = format!("{}{}", working_directory, output_file);
+        }
+        if !diagnostics_file.is_empty() && !diagnostics_file.contains(&sep) && !diagnostics_file.contains("/") {
+            diagnostics_file = format!("{}{}", working_directory, diagnostics_file);
+        }
+        if !diagnostics_file.is_empty() {
+            super::conditioning_diagnostics::validate_operation_id(&diagnostics_id)?;
         }
 
         if verbose {
@@ -332,6 +345,7 @@ impl WhiteboxTool for BreachDepressions {
         let mut z_n: f64;
         let dx = [1, 1, 1, 0, -1, -1, -1, 0];
         let dy = [-1, 0, 1, 1, 1, 0, -1, -1];
+        let mut single_cell_pits_filled = 0usize;
         if fill_pits {
             // Fill the single-cell pits before breaching. This can prevent the creation of
             // very deep breach trenches.
@@ -355,6 +369,7 @@ impl WhiteboxTool for BreachDepressions {
                         }
                         if flag {
                             input.set_value(row, col, min_zn - small_num);
+                            single_cell_pits_filled += 1;
                         }
                     }
                 }
@@ -455,6 +470,9 @@ impl WhiteboxTool for BreachDepressions {
         let mut z_target: f64;
         let mut dir: i8;
         let mut flag: bool;
+        let mut breached_depression_count = 0usize;
+        let mut longest_breach_path_cells = 0usize;
+        let mut residual_fill_used = false;
 
         if !constrained_mode {
             while !minheap.is_empty() {
@@ -477,17 +495,20 @@ impl WhiteboxTool for BreachDepressions {
                                 priority: zin_n,
                             });
                             if zin_n < (zout + small_num) {
+                                breached_depression_count += 1;
                                 // Trace the flowpath back to a lower cell, if it exists.
                                 x = col_n;
                                 y = row_n;
                                 z_target = output.get_value(row_n, col_n);
                                 flag = true;
+                                let mut breach_path_cells = 0usize;
                                 while flag {
                                     dir = flow_dir[(y, x)];
                                     if dir >= 0 {
                                         y += dy[dir as usize];
                                         x += dx[dir as usize];
                                         z_target -= small_num;
+                                        breach_path_cells += 1;
                                         if output.get_value(y, x) > z_target {
                                             output.set_value(y, x, z_target);
                                         } else {
@@ -497,6 +518,8 @@ impl WhiteboxTool for BreachDepressions {
                                         flag = false;
                                     }
                                 }
+                                longest_breach_path_cells =
+                                    longest_breach_path_cells.max(breach_path_cells);
                             }
                         } else {
                             // Interior nodata cells are still treated as nodata and are not filled.
@@ -592,6 +615,9 @@ impl WhiteboxTool for BreachDepressions {
                                 }
                                 if channel_depth < max_depth && channel_length < max_length {
                                     // It's okay to breach it.
+                                    breached_depression_count += 1;
+                                    longest_breach_path_cells = longest_breach_path_cells
+                                        .max(channel_length as usize);
                                     x = col_n;
                                     y = row_n;
                                     z_target = output.get_value(row_n, col_n);
@@ -748,6 +774,7 @@ impl WhiteboxTool for BreachDepressions {
             //     println!("There were unbreached depressions. The result should be filled to remove additional depressions.");
             // }
             if unresolved_pits {
+                residual_fill_used = true;
                 // Fill the DEM.
                 num_solved_cells = 0;
                 let num_valid_cells = floodorder.len();
@@ -808,6 +835,36 @@ impl WhiteboxTool for BreachDepressions {
             }
             Err(e) => return Err(e),
         };
+        let diagnostics_input = Raster::new(&input_file, "r")?;
+        let cell_size = diagnostics_input
+            .configs
+            .resolution_x
+            .abs()
+            .hypot(diagnostics_input.configs.resolution_y.abs())
+            / 2f64.sqrt();
+        super::conditioning_diagnostics::write(
+            &diagnostics_file,
+            &diagnostics_id,
+            &self.name,
+            &input_file,
+            &output_file,
+            &diagnostics_input,
+            &output,
+            json!({
+                "breached_depression_count": breached_depression_count,
+                "longest_breach_path_cells": longest_breach_path_cells,
+                "longest_breach_path": longest_breach_path_cells as f64 * cell_size,
+                "single_cell_pits_filled": single_cell_pits_filled,
+                "residual_fill_used": residual_fill_used,
+                "residual_depression_count": if residual_fill_used { 1 } else { 0 }
+            }),
+            json!({
+                "fill_pits": fill_pits,
+                "flat_increment": small_num,
+                "max_depth": if max_depth.is_finite() { Some(max_depth) } else { None },
+                "max_length_cells": if max_length.is_finite() { Some(max_length) } else { None }
+            }),
+        )?;
         if verbose {
             println!(
                 "{}",
