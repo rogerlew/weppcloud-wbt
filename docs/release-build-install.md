@@ -17,7 +17,7 @@ Run from `/workdir/weppcloud-wbt` unless noted.
 1. Build the release binary.
 
 ```bash
-cargo build -p whitebox-tools-app --release
+cargo build --locked -p whitebox-tools-app --release
 ```
 
 2. Install the binary into the tracked runtime artifact path.
@@ -32,8 +32,9 @@ mv -f WBT/whitebox_tools.new WBT/whitebox_tools
 
 ```bash
 cd WBT
-./whitebox_tools --listtools | grep -E "IterativeFirstOrderLinkPrune|RemoveShortStreams|RaiseRoads"
+./whitebox_tools --listtools | grep -E "IterativeFirstOrderLinkPrune|RemoveShortStreams|RaiseRoads|TopazConditionDem"
 ./whitebox_tools --toolhelp=IterativeFirstOrderLinkPrune | sed -n '1,30p'
+./whitebox_tools --toolhelp=TopazConditionDem | sed -n '1,30p'
 ```
 
 4. Verify wrapper surfaces compile.
@@ -41,16 +42,32 @@ cd WBT
 ```bash
 cd /workdir/weppcloud-wbt
 python -m py_compile whitebox_tools.py WBT/whitebox_tools.py
+python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-5. Verify from WEPPpy container runtime (required for cutover confidence).
+5. Record provenance and verify the installed artifact matches the locked
+   build.
+
+```bash
+git rev-parse HEAD
+sha256sum Cargo.lock target/release/whitebox_tools WBT/whitebox_tools
+```
+
+Preserve the pre-install binary hash in the release evidence before step 2.
+
+6. Verify discovery and one real execution from the WEPPpy container runtime
+   (required for cutover confidence).
 
 ```bash
 cd /workdir/wepppy
-wctl exec weppcloud bash -lc 'cd /workdir/weppcloud-wbt/WBT && ./whitebox_tools --listtools | grep -E "IterativeFirstOrderLinkPrune|RemoveShortStreams"'
+wctl exec weppcloud bash -lc 'cd /workdir/weppcloud-wbt/WBT && ./whitebox_tools --listtools | grep -E "IterativeFirstOrderLinkPrune|RemoveShortStreams|TopazConditionDem"'
 ```
 
-6. Commit and push release artifacts.
+For a fleet deployment, complete discovery and a disposable execution on every
+worker host before enabling a WEPPpy configuration that depends on the new
+tool. Do not treat a wrapper-only check as binary execution evidence.
+
+7. Commit and push release artifacts.
 
 ```bash
 cd /workdir/weppcloud-wbt
@@ -66,6 +83,8 @@ git push
   - `whitebox_tools.py`
   - `WBT/whitebox_tools.py`
 - Any tool implementation or registration changes in `whitebox-tools-app/...`
+- Release evidence containing source, lockfile, prior-binary, built-binary, and
+  installed-binary hashes
 
 ## Failure Pattern + Immediate Triage
 

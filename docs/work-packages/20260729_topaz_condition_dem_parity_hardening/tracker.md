@@ -120,3 +120,12 @@ reports were byte-identical with SHA-256
 The negative control exited 1 on the intentionally wrong RELIEF hash. Cargo
 check, the 132-test Rust suite, Python compilation, and `git diff --check`
 passed. Production data and TOPAZ sources remain unmodified.
+
+### 2026-07-30 post-close release handoff
+
+The WEPPpy DOM-05A integration release rebuilt the tracked binary with
+`cargo build --locked`, retained exact parity across all seven canonical cases,
+and added bounded per-call wrapper timeout/process-group cleanup plus direct
+nonzero/timeout tests. The local WEPPpy container discovered and executed
+`TopazConditionDem` against the repository fixture before integration was
+enabled.

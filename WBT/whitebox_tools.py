@@ -17,10 +17,14 @@ import os
 from os import path
 import sys
 import platform
+import queue
 import re
 import json
+import signal
+import threading
+import time
 # import shutil
-from subprocess import CalledProcessError, Popen, PIPE, STDOUT
+from subprocess import CalledProcessError, Popen, PIPE, STDOUT, TimeoutExpired
 
 running_windows = platform.system() == 'Windows'
 
@@ -329,7 +333,96 @@ class WhiteboxTools(object):
     def get_max_procs(self):
         return self.__max_procs
     
-    def run_tool(self, tool_name, args, callback=None):
+    def _terminate_process_tree(self, proc, grace_seconds=5.0):
+        """Terminate and reap a WhiteboxTools process and its descendants."""
+        if running_windows:
+            if proc.poll() is not None:
+                proc.wait()
+                return
+            proc.terminate()
+            try:
+                proc.wait(timeout=grace_seconds)
+                return
+            except TimeoutExpired:
+                pass
+            proc.kill()
+            proc.wait()
+            return
+
+        process_group_id = proc.pid
+        try:
+            os.killpg(process_group_id, signal.SIGTERM)
+        except ProcessLookupError:
+            proc.wait()
+            return
+
+        try:
+            proc.wait(timeout=grace_seconds)
+        except TimeoutExpired:
+            pass
+        try:
+            os.killpg(process_group_id, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        proc.wait()
+
+    def _read_process_output(self, proc, callback, timeout):
+        """Stream output while enforcing cancellation and an optional timeout."""
+        output_queue = queue.Queue()
+        stream_complete = object()
+
+        def read_stdout():
+            try:
+                for line in iter(proc.stdout.readline, ''):
+                    output_queue.put(line)
+            finally:
+                output_queue.put(stream_complete)
+
+        reader = threading.Thread(target=read_stdout, daemon=True)
+        reader.start()
+        deadline = None if timeout is None else time.monotonic() + float(timeout)
+
+        try:
+            while True:
+                if self.cancel_op:
+                    self.cancel_op = False
+                    self._terminate_process_tree(proc)
+                    return 2
+
+                wait_seconds = 0.1
+                if deadline is not None:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        self._terminate_process_tree(proc)
+                        raise TimeoutError(
+                            f"WhiteboxTools process timed out after {timeout} seconds"
+                        )
+                    wait_seconds = min(wait_seconds, remaining)
+
+                try:
+                    item = output_queue.get(timeout=wait_seconds)
+                except queue.Empty:
+                    continue
+
+                if item is stream_complete:
+                    break
+                if self.verbose:
+                    callback(item.strip())
+                if self.__raise_on_error and item.startswith('Error:'):
+                    self._terminate_process_tree(proc)
+                    raise WhiteboxAppError(item.strip())
+
+            return_code = proc.wait()
+            if return_code != 0:
+                raise CalledProcessError(return_code, proc.args)
+            return 0
+        finally:
+            if proc.poll() is None:
+                self._terminate_process_tree(proc)
+            reader.join(timeout=1.0)
+            proc.stdout.close()
+
+    def run_tool(self, tool_name, args, callback=None, timeout=None):
         ''' 
         Runs a tool and specifies tool arguments.
         Returns 0 if completes without error.
@@ -383,27 +476,11 @@ class WhiteboxTools(object):
                 proc = Popen(args2, shell=False, stdout=PIPE,
                             stderr=STDOUT, bufsize=1, universal_newlines=True,
                             encoding="utf-8", errors="replace",
-                            env=self._build_process_env())
+                            env=self._build_process_env(),
+                            start_new_session=not running_windows)
 
-            while proc is not None:
-                line = proc.stdout.readline()
-
-                sys.stdout.flush()
-                if line != '':
-                    if not self.cancel_op:
-                        if self.verbose:
-                            callback(line.strip())
-                    else:
-                        self.cancel_op = False
-                        proc.terminate()
-                        return 2
-                    if self.__raise_on_error and line.startswith('Error:'):
-                        raise WhiteboxAppError(line.strip())
-                else:
-                    break
-
-            return 0
-        except (OSError, ValueError, CalledProcessError) as err:
+            return self._read_process_output(proc, callback, timeout)
+        except (OSError, ValueError, CalledProcessError, TimeoutError, TimeoutExpired) as err:
             if self.__raise_on_error:
                 if proc is None:
                     raise WhiteboxToolsRunningError(f"An error occurred while running the tool '{tool_name}'. {str(err)}")
@@ -5253,7 +5330,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         return self.run_tool('fill_single_cell_pits', args, callback)  # returns 1 if error
 
-    def topaz_condition_dem(self, dem, output, max_obstruction_width=2, delta=None, diagnostics=None, callback=None, fildep=None):
+    def topaz_condition_dem(self, dem, output, max_obstruction_width=2, delta=None, diagnostics=None, callback=None, fildep=None, timeout=None):
         """Conditions a DEM using TOPAZ-compatible FILDEP and RELIEF methods.
 
         dem -- Input raster DEM file.
@@ -5263,6 +5340,7 @@ Okay, that's it for now.
         diagnostics -- Optional JSON diagnostics file.
         callback -- Custom function for handling tool text outputs.
         fildep -- Optional post-FILDEP, pre-RELIEF stage raster.
+        timeout -- Optional maximum runtime in seconds before process-tree termination.
         """
         args = []
         args.append("--dem='{}'".format(dem))
@@ -5271,7 +5349,7 @@ Okay, that's it for now.
         if delta is not None: args.append("--delta='{}'".format(delta))
         if diagnostics is not None: args.append("--diagnostics='{}'".format(diagnostics))
         if fildep is not None: args.append("--fildep='{}'".format(fildep))
-        return self.run_tool('topaz_condition_dem', args, callback)  # returns 1 if error
+        return self.run_tool('topaz_condition_dem', args, callback, timeout=timeout)  # returns 1 if error
 
     def find_no_flow_cells(self, dem, output, callback=None):
         """Finds grid cells with no downslope neighbours.

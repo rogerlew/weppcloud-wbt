@@ -31,6 +31,15 @@
 
 ### Fixed
 
+- Added optional per-call native-tool timeouts to both Python wrappers. Timed
+  out or cancelled POSIX tools now run in their own session, receive
+  process-group termination, are reaped, and report failure explicitly;
+  nonzero exits no longer return apparent success.
+- Added direct wrapper regressions for timeout descendant cleanup, nonzero exit
+  handling, and `TopazConditionDem` timeout forwarding.
+- Rebuilt the tracked runtime binary from the locked source so the installed
+  artifact exposes the parity-hardened `TopazConditionDem`.
+- Corrected the Portland parity fixture's accidental executable file mode.
 - Replaced unbounded FILDEP region growth with TOPAZ's normative expanding
   search-window state machine. The correction preserves exact parity on the
   original fixture and removes 137 and 2,082 mismatches respectively on the
