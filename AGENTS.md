@@ -9,7 +9,7 @@
 - None.
 
 ## Most Recent Completed ExecPlan
-- `docs/work-packages/20260729_topaz_condition_dem_parity_hardening/prompts/completed/topaz_condition_dem_parity_hardening_execplan.md`
+- `docs/work-packages/20260730_fill_depressions_edge_outlet/prompts/completed/fill_depressions_edge_outlet_execplan.md`
 
 ## Required Workflow for Active ExecPlan Work
 1. Read this `AGENTS.md` first.

@@ -45,6 +45,12 @@ use whitebox_raster::*;
 /// the road embankment at the likely site of a culvert. However, the flat-fixing method of `FillDepressions` does mean
 /// that this common occurrence in LiDAR DEMs is less problematic.
 ///
+/// Valid cells on any of the four outer raster edges are treated as open drainage outlets at their existing
+/// elevations. As a result, a valid low region connected to an outer edge is not raised to a higher internal spill.
+/// NoData cells remain NoData. Consistent with the established implementation, valid cells adjacent to any NoData
+/// region are excluded from initial pit detection, but NoData is not accepted as an outlet during region growth.
+/// Therefore, an interior NoData hole does not become an outlet for a depression region discovered from another pit.
+///
 /// The `BreachDepressionsLeastCost`, while slightly less efficient than either other hydrological preprocessing methods,
 /// often provides a lower impact solution to topographic depressions and should be preferred in most applications. In comparison
 /// with the `BreachDepressionsLeastCost` tool, the depression filling method often provides a less satisfactory, higher impact
@@ -428,6 +434,17 @@ impl WhiteboxTool for FillDepressions {
                 }
                 while let Some(cell2) = minheap.pop() {
                     z = cell2.priority;
+                    if !outlet_found && is_outer_edge(cell2.row, cell2.column, rows, columns) {
+                        outlet_found = true;
+                        outlet_z = z;
+                    }
+                    if outlet_found
+                        && z == outlet_z
+                        && is_outer_edge(cell2.row, cell2.column, rows, columns)
+                    {
+                        queue.push_back((cell2.row, cell2.column));
+                        possible_outlets.push((cell2.row, cell2.column));
+                    }
                     if outlet_found && z > outlet_z {
                         break;
                     }
@@ -560,14 +577,16 @@ impl WhiteboxTool for FillDepressions {
             minheap.clear();
             while let Some(cell) = possible_outlets.pop() {
                 z = output.get_value(cell.0, cell.1);
-                flag = false;
-                for n in 0..8 {
-                    rn = cell.0 + dy[n];
-                    cn = cell.1 + dx[n];
-                    zn = output.get_value(rn, cn);
-                    if zn < z && zn != nodata {
-                        flag = true;
-                        break;
+                flag = is_outer_edge(cell.0, cell.1, rows, columns);
+                if !flag {
+                    for n in 0..8 {
+                        rn = cell.0 + dy[n];
+                        cn = cell.1 + dx[n];
+                        zn = output.get_value(rn, cn);
+                        if zn < z && zn != nodata {
+                            flag = true;
+                            break;
+                        }
                     }
                 }
                 if flag {
@@ -797,6 +816,10 @@ impl WhiteboxTool for FillDepressions {
     }
 }
 
+fn is_outer_edge(row: isize, column: isize, rows: isize, columns: isize) -> bool {
+    row == 0 || column == 0 || row == rows - 1 || column == columns - 1
+}
+
 #[derive(PartialEq, Debug)]
 struct GridCell {
     row: isize,
@@ -817,6 +840,10 @@ impl Ord for GridCell {
         self.partial_cmp(other).unwrap()
     }
 }
+
+#[cfg(test)]
+#[path = "fill_depressions_integration_tests.rs"]
+mod fill_depressions_integration_tests;
 
 #[derive(PartialEq, Debug)]
 struct GridCell2 {

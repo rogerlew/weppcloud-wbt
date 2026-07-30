@@ -41,6 +41,13 @@
 
 ### Fixed
 
+- Corrected `FillDepressions` outlet discovery so valid low regions connected
+  to any outer raster edge retain their exterior connection elevation instead
+  of being raised to a higher internal spill. Added rotated four-edge,
+  enclosed-depression, flat-gradient, `max_depth`, interior-NoData, and
+  production-reproducer regression evidence.
+- Rebuilt the tracked WEPPpy runtime binary from the locked source with the
+  corrected `FillDepressions` implementation.
 - Added optional per-call native-tool timeouts to both Python wrappers. Timed
   out or cancelled POSIX tools now run in their own session, receive
   process-group termination, are reaped, and report failure explicitly;
