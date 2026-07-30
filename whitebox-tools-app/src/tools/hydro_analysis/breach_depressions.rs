@@ -473,6 +473,7 @@ impl WhiteboxTool for BreachDepressions {
         let mut breached_depression_count = 0usize;
         let mut longest_breach_path_cells = 0usize;
         let mut residual_fill_used = false;
+        let mut residual_depression_count = 0usize;
 
         if !constrained_mode {
             while !minheap.is_empty() {
@@ -730,6 +731,7 @@ impl WhiteboxTool for BreachDepressions {
                                     //     }
                                     // } else {
                                     unresolved_pits = true;
+                                    residual_depression_count += 1;
                                     // }
                                 }
                             }
@@ -856,7 +858,7 @@ impl WhiteboxTool for BreachDepressions {
                 "longest_breach_path": longest_breach_path_cells as f64 * cell_size,
                 "single_cell_pits_filled": single_cell_pits_filled,
                 "residual_fill_used": residual_fill_used,
-                "residual_depression_count": if residual_fill_used { 1 } else { 0 }
+                "residual_depression_count": residual_depression_count
             }),
             json!({
                 "fill_pits": fill_pits,

@@ -1,5 +1,5 @@
 use serde_json::{json, Value};
-use std::fs::{self, File};
+use std::fs::{self, OpenOptions};
 use std::io::{BufWriter, Error, ErrorKind, Write};
 use std::path::{Path, PathBuf};
 use whitebox_raster::Raster;
@@ -10,6 +10,13 @@ fn basename(path: &str) -> Result<String, Error> {
         .and_then(|value| value.to_str())
         .map(str::to_owned)
         .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "Invalid diagnostics raster basename."))
+}
+
+fn create_temp_exclusive(path: &Path) -> Result<std::fs::File, Error> {
+    OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
 }
 
 pub fn validate_operation_id(value: &str) -> Result<(), Error> {
@@ -113,7 +120,7 @@ pub fn write(
     let target = PathBuf::from(diagnostics_file);
     let parent = target.parent().unwrap_or_else(|| Path::new("."));
     let temp = parent.join(format!(".conditioning-diagnostics-{}.tmp", operation_id));
-    let file = File::create(&temp)?;
+    let file = create_temp_exclusive(&temp)?;
     let mut writer = BufWriter::new(file);
     serde_json::to_writer_pretty(&mut writer, &document)
         .map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?;
@@ -130,12 +137,25 @@ pub fn write(
 
 #[cfg(test)]
 mod tests {
-    use super::validate_operation_id;
+    use super::{create_temp_exclusive, validate_operation_id};
+    use std::fs;
 
     #[test]
     fn operation_id_requires_lowercase_hex() {
         assert!(validate_operation_id("0123456789abcdef0123456789abcdef").is_ok());
         assert!(validate_operation_id("0123456789ABCDEF0123456789ABCDEF").is_err());
         assert!(validate_operation_id("short").is_err());
+    }
+
+    #[test]
+    fn diagnostics_temp_file_must_not_already_exist() {
+        let path = std::env::temp_dir().join(format!(
+            "wbt-conditioning-diagnostics-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_file(&path);
+        fs::write(&path, b"occupied").unwrap();
+        assert!(create_temp_exclusive(&path).is_err());
+        fs::remove_file(path).unwrap();
     }
 }
