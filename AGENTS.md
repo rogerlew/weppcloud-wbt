@@ -6,8 +6,10 @@
 - Keep instructions concise; put task-specific detail in `prompts/*.md` exec plans.
 
 ## Active ExecPlan
-- None. Most recently completed:
-  `prompts/TOPAZ_CONDITION_DEM_EXECPLAN.md`.
+- None.
+
+## Most Recent Completed ExecPlan
+- `docs/work-packages/20260729_topaz_condition_dem_parity_hardening/prompts/completed/topaz_condition_dem_parity_hardening_execplan.md`
 
 ## Required Workflow for Active ExecPlan Work
 1. Read this `AGENTS.md` first.
@@ -20,6 +22,8 @@
  - `Outcomes and Retrospective`
 5. If blocked by missing external dependencies/data, record the blocker in the plan and stop.
 6. Keep `CHANGELOG.md` up to date with commit-level or grouped changes for repository work.
+7. For plans under `docs/work-packages/`, update the package tracker and
+   `PROJECT_TRACKER.md` before handoff.
 
 ## Tool Development Conventions
 - Follow `DEVELOPING_TOOLS.md` for:

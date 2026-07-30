@@ -56,6 +56,9 @@ stable interface and integration handoff so the user can add the
   release performance, and larger-raster validation.
 - [x] (2026-07-30 01:10Z) Promoted the exact checksummed production DEM into
   `test_fixtures/topaz_condition_dem/dem.tif`.
+- [x] (2026-07-30 01:35Z) Added two larger production DEM fixtures and replaced
+  unbounded FILDEP growth with the normative expanding-window state machine;
+  all 3,024,549 additional cells match TOPAZ exactly.
 
 ## Surprises & Discoveries
 
@@ -106,6 +109,17 @@ stable interface and integration handoff so the user can add the
   Evidence: tool discovery and benchmark were run with the freshly timestamped
   hashed executable.
 
+- Observation: Unbounded monotonically non-decreasing region growth is not
+  equivalent to TOPAZ FILDEP on larger terrain. It produced 137 mismatches on
+  burned-out-harmonic and 2,082 on the Portland fixture.
+  Evidence: Exact comparison against checksummed `RELIEF.OUT` arrays.
+
+- Observation: Porting TOPAZ's initial 11-by-11 window, directional five-cell
+  expansion, visitation state, and resolved-cell markers removes all of those
+  mismatches while retaining exact parity on the original fixture.
+  Evidence:
+  `test_fixtures/topaz_condition_dem/additional_parity.json`.
+
 ## Decision Log
 
 - Decision: Port TOPAZ behavior from source rather than approximate it with a
@@ -144,10 +158,10 @@ stable interface and integration handoff so the user can add the
   ready.
   Date: 2026-07-29
 
-- Decision: Preserve TOPAZ's final spill replacement comparison and check
-  candidate connectivity without crossing previously resolved cells.
-  Rationale: Temporary event traces isolated these as normative source
-  semantics and the resulting implementation achieves exact production parity.
+- Decision: Preserve TOPAZ's final spill replacement comparison and bounded
+  expanding-window state rather than use an unbounded connectivity heuristic.
+  Rationale: The larger fixtures demonstrate that the window is normative, and
+  the source-faithful state machine achieves exact parity on all three DEMs.
   Date: 2026-07-29
 
 ## Outcomes & Retrospective
@@ -162,9 +176,9 @@ The plan is complete. Confirmed outcomes:
 - All 192,210 valid output cells match TOPAZ exactly; no deviations are
   accepted or unexplained.
 - Derived WBT D8 pointer and outlet-watershed arrays are also identical.
-- Five warm release runs complete in 0.48-0.53 seconds (median 0.49 seconds)
-  with peak RSS of 27,668 KiB. A four-times-cell-count representative raster
-  completes in 3.33 seconds with 59,408 KiB peak RSS.
+- Five warm release runs complete in 0.17-0.50 seconds (median 0.18 seconds)
+  with peak RSS of 27,664 KiB after the expanding-window correction. The two
+  larger production fixtures complete in 2.51 and 2.77 seconds.
 - Exact-input TOPAZ and Rust both preserve the 533.0 m requested outlet instead
   of filling it toward approximately 910.1 m.
 - The CLI, both wrappers, diagnostic schema, metadata, fixture tooling, and
@@ -172,6 +186,8 @@ The plan is complete. Confirmed outcomes:
 - The exact 430-by-447 production DEM is committed as a durable regression
   fixture; derived TOPAZ stage rasters remain reproducibly materialized from
   the checksummed oracle outputs.
+- Two larger production DEMs totaling 3,024,549 cells are also durable
+  fixtures and match TOPAZ exactly.
 
 ## Context and Orientation
 

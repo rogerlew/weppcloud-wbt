@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "topaz_revision": "116607fc1185800ca78e387454ef1ccd3ffd73b4",
+  "parameters": {
+    "aggregation_or_resampling": 0,
+    "smoothing": 0,
+    "max_obstruction_width": 2,
+    "partial_processing": 1
+  },
+  "fixtures": {
+    "burned-out-harmonic_dem.tif": {
+      "source_path": "/geodata/wc1/runs/bu/burned-out-harmonic/dem/dem.tif",
+      "rows": 1184,
+      "columns": 1233,
+      "valid_cells": 1459872,
+      "dem_sha256": "a2535e3564f8ebc488d3af18f05f0eaf80b25d305eac22bfd59b56c8cbe9757f",
+      "topaz_stage_sha256": {
+        "INELEV.OUT": "9eadc9a7eaeafe8dcd860f60b1f715dd13e69ceabdff65f61bf50c3f93722d1d",
+        "FILDEP.OUT": "d81f9848cd8fbc786115f9a8211a9c020e49a72caa38d82882220930ab9ae266",
+        "RELIEF.OUT": "ce0164b4af0c1721ffa720daac69a21f2c0bbdbfd7fddabbfb7166c746139679"
+      },
+      "fildep": {
+        "filled_cells": 22945,
+        "lowered_cells": 1486,
+        "maximum_fill": 16.3,
+        "maximum_cut": 11.8
+      },
+      "relief": {
+        "modified_cells": 30087,
+        "maximum_increment": 0.00456
+      },
+      "rust_final_mismatches": 0
+    },
+    "portland_BRnearMultnoma_HighSevS.202009.chn_cs200_dem.tif": {
+      "source_path": "/geodata/weppcloud_runs/portland_BRnearMultnoma_HighSevS.202009.chn_cs200/dem/dem.tif",
+      "rows": 1233,
+      "columns": 1269,
+      "valid_cells": 1564677,
+      "dem_sha256": "d0e4c4f1cd32f03ba4cda6d092935a138102214c2199c4a61da5f58266626106",
+      "topaz_stage_sha256": {
+        "INELEV.OUT": "533d3b0a74e29f88d10b023fe014b0f02dab408fd8c669c2a7bbfb8085727e65",
+        "FILDEP.OUT": "5d6be2891b448473078b22caaa7484276cf2089a841d055d51062e61d4d972fb",
+        "RELIEF.OUT": "8a1117d8b934f7d01d47d4ff7c5fa7cd416e3b6a6a814dd2cd672d618d70861f"
+      },
+      "fildep": {
+        "filled_cells": 19409,
+        "lowered_cells": 2459,
+        "maximum_fill": 41.5,
+        "maximum_cut": 15.4
+      },
+      "relief": {
+        "modified_cells": 34758,
+        "maximum_increment": 0.00622
+      },
+      "rust_final_mismatches": 0
+    }
+  }
+}

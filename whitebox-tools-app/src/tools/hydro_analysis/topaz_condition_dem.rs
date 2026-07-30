@@ -9,7 +9,6 @@ J. Garbrecht and L. Martz are the authors of the original TOPAZ methods.
 
 use crate::tools::*;
 use serde_json::json;
-use std::collections::HashSet;
 use std::env;
 use std::fs::File;
 use std::io::{BufWriter, Error, ErrorKind, Write};
@@ -85,69 +84,18 @@ fn topaz_round(value: f64) -> Result<i64, Error> {
     Ok(decimetres as i64 * QUANTUM)
 }
 
-fn grow_depression(grid: &Grid, seed: usize) -> (Vec<usize>, Vec<bool>) {
-    let mut member = vec![false; grid.z.len()];
-    let mut cells = vec![seed];
-    member[seed] = true;
-    let mut cursor = 0;
-    while cursor < cells.len() {
-        let index = cells[cursor];
-        cursor += 1;
-        let row = index / grid.cols;
-        let col = index % grid.cols;
-        for (rr, cc) in grid.neighbours(row, col) {
-            let n = grid.idx(rr, cc);
-            if grid.valid[n] && !member[n] && grid.z[n] >= grid.z[index] {
-                member[n] = true;
-                cells.push(n);
-            }
-        }
-    }
-    (cells, member)
-}
-
-fn unresolved_reaches(
-    grid: &Grid,
-    seed: usize,
-    target: usize,
-    resolved: &[bool],
-    broad_member: &[bool],
-) -> bool {
-    let mut visited = HashSet::new();
-    let mut cells = vec![seed];
-    visited.insert(seed);
-    let mut cursor = 0;
-    let ceiling = grid.z[target];
-    while cursor < cells.len() {
-        let index = cells[cursor];
-        cursor += 1;
-        if index == target {
-            return true;
-        }
-        let row = index / grid.cols;
-        let col = index % grid.cols;
-        for (rr, cc) in grid.neighbours(row, col) {
-            let n = grid.idx(rr, cc);
-            if broad_member[n]
-                && !resolved[n]
-                && !visited.contains(&n)
-                && grid.z[n] >= grid.z[index]
-                && grid.z[n] <= ceiling
-            {
-                visited.insert(n);
-                cells.push(n);
-            }
-        }
-    }
-    false
+#[derive(Clone, Copy)]
+struct SearchWindow {
+    top: usize,
+    bottom: usize,
+    left: usize,
+    right: usize,
 }
 
 fn choose_obstruction(
     grid: &Grid,
-    seed: usize,
-    cells: &[usize],
-    member: &[bool],
-    resolved: &[bool],
+    state: &[i16],
+    window: SearchWindow,
     spill: i64,
     max_width: u8,
 ) -> Option<(i64, usize, Option<usize>)> {
@@ -155,115 +103,124 @@ fn choose_obstruction(
         return None;
     }
     let mut best: Option<(i64, f32, i64, usize, Option<usize>)> = None;
-    for &index in cells {
-        if resolved[index] || grid.z[index] != spill {
-            continue;
-        }
-        let row = index / grid.cols;
-        let col = index % grid.cols;
-        let mut outside_drop = 0i64;
-        let mut outside_dist = f32::INFINITY;
-        for (rr, cc) in grid.neighbours(row, col) {
-            let n = grid.idx(rr, cc);
-            if !grid.valid[n] || member[n] {
+    for row in window.top..=window.bottom {
+        for col in window.left..=window.right {
+            let index = grid.idx(row, col);
+            if state[index] < 99 || grid.z[index] != spill {
                 continue;
             }
-            let drop = spill - grid.z[n];
-            let dist = (((rr as isize - row as isize).pow(2) + (cc as isize - col as isize).pow(2))
-                as f32)
-                .sqrt();
-            if drop > outside_drop || (drop == outside_drop && dist < outside_dist) {
-                outside_drop = drop;
-                outside_dist = dist;
-            }
-        }
-        if outside_drop <= 0 {
-            continue;
-        }
-
-        let mut inside_drop = 0i64;
-        let mut inside_dist = f32::INFINITY;
-        let mut inside_cell = index;
-        for (rr, cc) in grid.neighbours(row, col) {
-            let n = grid.idx(rr, cc);
-            if !grid.valid[n] || !member[n] {
-                continue;
-            }
-            let drop = spill - grid.z[n];
-            let d1 = (((rr as isize - row as isize).pow(2) + (cc as isize - col as isize).pow(2))
-                as f32)
-                .sqrt();
-            if drop >= 0 && (drop > inside_drop || (drop == inside_drop && d1 < inside_dist)) {
-                inside_drop = drop;
-                inside_dist = d1;
-                inside_cell = n;
-            }
-            if max_width < 2 || drop < 0 {
-                continue;
-            }
-            for (r2, c2) in grid.neighbours(rr, cc) {
-                let n2 = grid.idx(r2, c2);
-                if !grid.valid[n2] || !member[n2] {
+            let mut outside_drop = 0i64;
+            let mut outside_dist = f32::INFINITY;
+            for (rr, cc) in grid.neighbours(row, col) {
+                let n = grid.idx(rr, cc);
+                if !grid.valid[n] || state[n] >= 99 {
                     continue;
                 }
-                let drop2 = spill - grid.z[n2];
-                let d2 = ((((rr as isize - row as isize).pow(2)
-                    + (cc as isize - col as isize).pow(2)) as f64)
-                    .sqrt()
-                    + (((r2 as isize - rr as isize).pow(2) + (c2 as isize - cc as isize).pow(2))
-                        as f64)
-                        .sqrt()) as f32;
-                if drop2 >= 0 && (drop2 > inside_drop || (drop2 == inside_drop && d2 < inside_dist))
-                {
-                    inside_drop = drop2;
-                    inside_dist = d2;
-                    inside_cell = n;
+                let drop = spill - grid.z[n];
+                let dist = (((rr as isize - row as isize).pow(2)
+                    + (cc as isize - col as isize).pow(2)) as f32)
+                    .sqrt();
+                if drop > outside_drop || (drop == outside_drop && dist < outside_dist) {
+                    outside_drop = drop;
+                    outside_dist = dist;
                 }
             }
-        }
-        let cut = outside_drop.min(inside_drop);
-        if cut <= 0 {
-            continue;
-        }
-        let distance = outside_dist + inside_dist;
-        let candidate = (
-            cut,
-            distance,
-            outside_drop,
-            index,
-            if max_width == 2 {
-                Some(inside_cell)
-            } else {
-                None
-            },
-        );
-        let replace = match best {
-            None => true,
-            Some((best_cut, best_distance, _, _, _)) => {
-                cut > best_cut
-                    || (cut == best_cut && distance < best_distance - 1.0e-5_f32)
-                    || (cut == best_cut
-                        && (distance - best_distance).abs() < 1.0e-5_f32
-                        && outside_drop > best_cut
-                        && unresolved_reaches(grid, seed, index, resolved, member))
+            if outside_drop <= 0 {
+                continue;
             }
-        };
-        if replace {
-            best = Some(candidate);
+
+            let mut inside_drop = 0i64;
+            let mut inside_dist = f32::INFINITY;
+            let mut inside_cell = index;
+            for (rr, cc) in grid.neighbours(row, col) {
+                let n = grid.idx(rr, cc);
+                if !grid.valid[n] || state[n] < 99 {
+                    continue;
+                }
+                let drop = spill - grid.z[n];
+                let d1 = (((rr as isize - row as isize).pow(2)
+                    + (cc as isize - col as isize).pow(2)) as f32)
+                    .sqrt();
+                if drop >= 0 && (drop > inside_drop || (drop == inside_drop && d1 < inside_dist)) {
+                    inside_drop = drop;
+                    inside_dist = d1;
+                    inside_cell = n;
+                }
+                if max_width < 2 || drop < 0 {
+                    continue;
+                }
+                for (r2, c2) in grid.neighbours(rr, cc) {
+                    let n2 = grid.idx(r2, c2);
+                    if !grid.valid[n2] || state[n2] < 99 {
+                        continue;
+                    }
+                    let drop2 = spill - grid.z[n2];
+                    let d2 =
+                        ((((rr as isize - row as isize).pow(2)
+                            + (cc as isize - col as isize).pow(2))
+                            as f64)
+                            .sqrt()
+                            + (((r2 as isize - rr as isize).pow(2)
+                                + (c2 as isize - cc as isize).pow(2))
+                                as f64)
+                                .sqrt()) as f32;
+                    if drop2 >= 0
+                        && (drop2 > inside_drop || (drop2 == inside_drop && d2 < inside_dist))
+                    {
+                        inside_drop = drop2;
+                        inside_dist = d2;
+                        inside_cell = n;
+                    }
+                }
+            }
+            let cut = outside_drop.min(inside_drop);
+            if cut <= 0 {
+                continue;
+            }
+            let distance = outside_dist + inside_dist;
+            let candidate = (
+                cut,
+                distance,
+                outside_drop,
+                index,
+                if max_width == 2 {
+                    Some(inside_cell)
+                } else {
+                    None
+                },
+            );
+            let replace = match best {
+                None => true,
+                Some((best_cut, best_distance, _, _, _)) => {
+                    cut > best_cut
+                        || (cut == best_cut && distance < best_distance - 1.0e-5_f32)
+                        || (cut == best_cut
+                            && (distance - best_distance).abs() < 1.0e-5_f32
+                            && outside_drop > best_cut)
+                }
+            };
+            if replace {
+                best = Some(candidate);
+            }
         }
     }
     best.map(|(cut, _, _, outlet, inner)| (cut, outlet, inner))
 }
 
-fn fill_depressions(grid: &mut Grid, max_width: u8, stats: &mut ConditioningStats) {
-    let mut resolved = vec![false; grid.z.len()];
+fn fill_depressions(
+    grid: &mut Grid,
+    max_width: u8,
+    stats: &mut ConditioningStats,
+) -> Result<(), Error> {
+    let mut state = vec![0i16; grid.z.len()];
+    let mut visited = vec![false; grid.z.len()];
     if grid.rows < 3 || grid.cols < 3 {
-        return;
+        return Ok(());
     }
     for row in 1..grid.rows - 1 {
         for col in 1..grid.cols - 1 {
             let seed = grid.idx(row, col);
-            if resolved[seed] || !grid.valid[seed] {
+            if state[seed] > 0 || !grid.valid[seed] {
                 continue;
             }
             let mut has_lower = false;
@@ -271,6 +228,7 @@ fn fill_depressions(grid: &mut Grid, max_width: u8, stats: &mut ConditioningStat
             for (rr, cc) in grid.neighbours(row, col) {
                 let n = grid.idx(rr, cc);
                 if !grid.valid[n] {
+                    has_lower = true;
                     continue;
                 }
                 has_lower |= grid.z[n] < grid.z[seed];
@@ -280,49 +238,200 @@ fn fill_depressions(grid: &mut Grid, max_width: u8, stats: &mut ConditioningStat
                 continue;
             }
 
-            let (cells, member) = grow_depression(grid, seed);
-            let mut spill = i64::MAX;
-            let mut minimum = i64::MAX;
-            for &index in &cells {
-                minimum = minimum.min(grid.z[index]);
-                let r = index / grid.cols;
-                let c = index % grid.cols;
-                if r == 0 || c == 0 || r + 1 == grid.rows || c + 1 == grid.cols {
-                    spill = spill.min(grid.z[index]);
+            state[seed] += 99;
+            let mut window = SearchWindow {
+                top: row.saturating_sub(5),
+                bottom: (row + 5).min(grid.rows - 1),
+                left: col.saturating_sub(5),
+                right: (col + 5).min(grid.cols - 1),
+            };
+            let mut widened_for_zero_cut = false;
+            let mut final_spill: i64;
+
+            loop {
+                loop {
+                    let mut changed = false;
+                    for r in window.top + 1..window.bottom {
+                        for c in window.left + 1..window.right {
+                            let index = grid.idx(r, c);
+                            if state[index] < 99 || visited[index] {
+                                continue;
+                            }
+                            for (rr, cc) in grid.neighbours(r, c) {
+                                let n = grid.idx(rr, cc);
+                                if grid.valid[n] && state[n] < 99 && grid.z[n] >= grid.z[index] {
+                                    state[n] += 99;
+                                    changed = true;
+                                }
+                            }
+                            visited[index] = true;
+                        }
+                    }
+                    if !changed {
+                        break;
+                    }
+                }
+
+                let mut minimum = i64::MAX;
+                let mut spill = i64::MAX;
+                let mut has_outlet = false;
+                for r in window.top..=window.bottom {
+                    for c in window.left..=window.right {
+                        let index = grid.idx(r, c);
+                        if state[index] < 99 {
+                            continue;
+                        }
+                        minimum = minimum.min(grid.z[index]);
+                        if grid.z[index] >= spill {
+                            continue;
+                        }
+                        if r == 0 || c == 0 || r + 1 == grid.rows || c + 1 == grid.cols {
+                            spill = grid.z[index];
+                            has_outlet = true;
+                            continue;
+                        }
+                        if grid.neighbours(r, c).iter().any(|&(rr, cc)| {
+                            let n = grid.idx(rr, cc);
+                            !grid.valid[n] || (state[n] < 99 && grid.z[n] < grid.z[index])
+                        }) {
+                            spill = grid.z[index];
+                            has_outlet = true;
+                        }
+                    }
+                }
+
+                if !has_outlet {
+                    let mut boundary_min = i64::MAX;
+                    for r in window.top..=window.bottom {
+                        boundary_min = boundary_min.min(grid.z[grid.idx(r, window.left)]);
+                        boundary_min = boundary_min.min(grid.z[grid.idx(r, window.right)]);
+                    }
+                    for c in window.left..=window.right {
+                        boundary_min = boundary_min.min(grid.z[grid.idx(window.top, c)]);
+                        boundary_min = boundary_min.min(grid.z[grid.idx(window.bottom, c)]);
+                    }
+                    let mut expanded = false;
+                    if window.left > 0
+                        && (window.top..=window.bottom)
+                            .any(|r| grid.z[grid.idx(r, window.left)] == boundary_min)
+                    {
+                        window.left = window.left.saturating_sub(5);
+                        expanded = true;
+                    }
+                    if window.right + 1 < grid.cols
+                        && (window.top..=window.bottom)
+                            .any(|r| grid.z[grid.idx(r, window.right)] == boundary_min)
+                    {
+                        window.right = (window.right + 5).min(grid.cols - 1);
+                        expanded = true;
+                    }
+                    if window.top > 0
+                        && (window.left..=window.right)
+                            .any(|c| grid.z[grid.idx(window.top, c)] == boundary_min)
+                    {
+                        window.top = window.top.saturating_sub(5);
+                        expanded = true;
+                    }
+                    if window.bottom + 1 < grid.rows
+                        && (window.left..=window.right)
+                            .any(|c| grid.z[grid.idx(window.bottom, c)] == boundary_min)
+                    {
+                        window.bottom = (window.bottom + 5).min(grid.rows - 1);
+                        expanded = true;
+                    }
+                    if expanded {
+                        continue;
+                    }
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        "TOPAZ depression search found no outlet and could not expand its window.",
+                    ));
+                }
+
+                let mut expanded = false;
+                if window.left > 0
+                    && (window.top..=window.bottom).any(|r| {
+                        let i = grid.idx(r, window.left);
+                        state[i] >= 99 && grid.z[i] < spill
+                    })
+                {
+                    window.left = window.left.saturating_sub(5);
+                    expanded = true;
+                }
+                if window.right + 1 < grid.cols
+                    && (window.top..=window.bottom).any(|r| {
+                        let i = grid.idx(r, window.right);
+                        state[i] >= 99 && grid.z[i] < spill
+                    })
+                {
+                    window.right = (window.right + 5).min(grid.cols - 1);
+                    expanded = true;
+                }
+                if window.top > 0
+                    && (window.left..=window.right).any(|c| {
+                        let i = grid.idx(window.top, c);
+                        state[i] >= 99 && grid.z[i] < spill
+                    })
+                {
+                    window.top = window.top.saturating_sub(5);
+                    expanded = true;
+                }
+                if window.bottom + 1 < grid.rows
+                    && (window.left..=window.right).any(|c| {
+                        let i = grid.idx(window.bottom, c);
+                        state[i] >= 99 && grid.z[i] < spill
+                    })
+                {
+                    window.bottom = (window.bottom + 5).min(grid.rows - 1);
+                    expanded = true;
+                }
+                if expanded {
                     continue;
                 }
-                if grid.neighbours(r, c).iter().any(|&(rr, cc)| {
-                    let n = grid.idx(rr, cc);
-                    grid.valid[n] && !member[n] && grid.z[n] < grid.z[index]
-                }) {
-                    spill = spill.min(grid.z[index]);
-                }
-            }
-            if spill == i64::MAX {
-                continue;
-            }
 
-            if minimum != spill {
+                final_spill = spill;
+                if max_width == 0 || minimum == spill {
+                    break;
+                }
                 if let Some((cut, outlet, inside)) =
-                    choose_obstruction(grid, seed, &cells, &member, &resolved, spill, max_width)
+                    choose_obstruction(grid, &state, window, spill, max_width)
                 {
-                    spill -= cut;
-                    grid.z[outlet] = spill;
+                    final_spill -= cut;
+                    grid.z[outlet] = final_spill;
                     if let Some(inner) = inside {
-                        grid.z[inner] = spill;
+                        grid.z[inner] = final_spill;
                         stats.obstruction_width_2 += 1;
                     } else {
                         stats.obstruction_width_1 += 1;
                     }
+                    break;
                 }
+                if max_width == 2 && !widened_for_zero_cut {
+                    window.top = window.top.saturating_sub(1);
+                    window.bottom = (window.bottom + 1).min(grid.rows - 1);
+                    window.left = window.left.saturating_sub(1);
+                    window.right = (window.right + 1).min(grid.cols - 1);
+                    widened_for_zero_cut = true;
+                    continue;
+                }
+                break;
             }
 
             let mut changed = false;
-            for &index in &cells {
-                if grid.z[index] <= spill {
-                    changed |= grid.z[index] != spill;
-                    grid.z[index] = spill;
-                    resolved[index] = true;
+            for r in window.top..=window.bottom {
+                for c in window.left..=window.right {
+                    let index = grid.idx(r, c);
+                    if state[index] < 99 {
+                        continue;
+                    }
+                    visited[index] = false;
+                    if grid.z[index] > final_spill {
+                        state[index] -= 99;
+                    } else {
+                        changed |= grid.z[index] != final_spill;
+                        grid.z[index] = final_spill;
+                        state[index] = 1;
+                    }
                 }
             }
             if changed {
@@ -330,6 +439,7 @@ fn fill_depressions(grid: &mut Grid, max_width: u8, stats: &mut ConditioningStat
             }
         }
     }
+    Ok(())
 }
 
 fn resolve_flats(grid: &mut Grid, stats: &mut ConditioningStats) {
@@ -350,7 +460,7 @@ fn resolve_flats(grid: &mut Grid, stats: &mut ConditioningStats) {
             }
             status[index] = if grid.neighbours(row, col).iter().any(|&(rr, cc)| {
                 let n = grid.idx(rr, cc);
-                grid.valid[n] && grid.z[n] < grid.z[index]
+                !grid.valid[n] || grid.z[n] < grid.z[index]
             }) {
                 1
             } else {
@@ -446,7 +556,7 @@ fn resolve_flats(grid: &mut Grid, stats: &mut ConditioningStats) {
                     }
                     let has_lower = grid.neighbours(row, col).iter().any(|&(rr, cc)| {
                         let n = grid.idx(rr, cc);
-                        grid.valid[n] && grid.z[n] < grid.z[index]
+                        !grid.valid[n] || grid.z[n] < grid.z[index]
                     });
                     if has_lower {
                         work[index] = grid.z[index];
@@ -474,7 +584,7 @@ fn resolve_flats(grid: &mut Grid, stats: &mut ConditioningStats) {
                     }
                     let has_lower = grid.neighbours(row, col).iter().any(|&(rr, cc)| {
                         let n = grid.idx(rr, cc);
-                        grid.valid[n] && work[n] < work[index]
+                        !grid.valid[n] || work[n] < work[index]
                     });
                     if has_lower {
                         grid.z[index] = work[index];
@@ -499,11 +609,14 @@ fn resolve_flats(grid: &mut Grid, stats: &mut ConditioningStats) {
     }
 }
 
-fn condition_topaz(input: &Grid, max_width: u8) -> (Grid, Vec<i64>, Vec<i64>, ConditioningStats) {
+fn condition_topaz(
+    input: &Grid,
+    max_width: u8,
+) -> Result<(Grid, Vec<i64>, Vec<i64>, ConditioningStats), Error> {
     let original = input.z.clone();
     let mut output = input.clone();
     let mut stats = ConditioningStats::default();
-    fill_depressions(&mut output, max_width, &mut stats);
+    fill_depressions(&mut output, max_width, &mut stats)?;
     let fildep = output.z.clone();
     resolve_flats(&mut output, &mut stats);
 
@@ -527,7 +640,7 @@ fn condition_topaz(input: &Grid, max_width: u8) -> (Grid, Vec<i64>, Vec<i64>, Co
             stats.max_relief = stats.max_relief.max(relief_delta.abs());
         }
     }
-    (output, fildep, original, stats)
+    Ok((output, fildep, original, stats))
 }
 
 pub struct TopazConditionDem {
@@ -567,6 +680,14 @@ impl TopazConditionDem {
                 description: "TOPAZ obstruction adjustment width: 0, 1, or 2 cells.".to_owned(),
                 parameter_type: ParameterType::Integer,
                 default_value: Some("2".to_string()),
+                optional: true,
+            },
+            ToolParameter {
+                name: "FILDEP Stage Raster".to_owned(),
+                flags: vec!["--fildep".to_owned()],
+                description: "Optional post-FILDEP, pre-RELIEF stage raster.".to_owned(),
+                parameter_type: ParameterType::NewFile(ParameterFileType::Raster),
+                default_value: None,
                 optional: true,
             },
             ToolParameter {
@@ -641,6 +762,7 @@ impl WhiteboxTool for TopazConditionDem {
         }
         let mut dem = String::new();
         let mut output_file = String::new();
+        let mut fildep_file = String::new();
         let mut delta_file = String::new();
         let mut diagnostics_file = String::new();
         let mut max_width = 2u8;
@@ -663,6 +785,7 @@ impl WhiteboxTool for TopazConditionDem {
             match flag.as_str() {
                 "-i" | "-input" | "-dem" => dem = value,
                 "-o" | "-output" => output_file = value,
+                "-fildep" => fildep_file = value,
                 "-max_obstruction_width" => {
                     max_width = value.parse::<u8>().map_err(|_| {
                         Error::new(ErrorKind::InvalidInput, "Invalid obstruction width.")
@@ -690,6 +813,7 @@ impl WhiteboxTool for TopazConditionDem {
         for filename in [
             &mut dem,
             &mut output_file,
+            &mut fildep_file,
             &mut delta_file,
             &mut diagnostics_file,
         ] {
@@ -719,7 +843,7 @@ impl WhiteboxTool for TopazConditionDem {
             valid,
         };
         let start = Instant::now();
-        let (conditioned, fildep, original, stats) = condition_topaz(&grid, max_width);
+        let (conditioned, fildep, original, stats) = condition_topaz(&grid, max_width)?;
         let elapsed = get_formatted_elapsed_time(start);
 
         let mut output = Raster::initialize_using_file(&output_file, &input);
@@ -740,6 +864,28 @@ impl WhiteboxTool for TopazConditionDem {
         output.add_metadata_entry(format!("TOPAZ compatibility source: {}", SOURCE_REVISION));
         output.add_metadata_entry(format!("Elapsed Time (excluding I/O): {}", elapsed));
         output.write()?;
+
+        if !fildep_file.is_empty() {
+            let mut fildep_output = Raster::initialize_using_file(&fildep_file, &input);
+            fildep_output.configs.data_type = DataType::F64;
+            for row in 0..rows {
+                let mut data = vec![nodata; cols];
+                for col in 0..cols {
+                    let index = row * cols + col;
+                    if conditioned.valid[index] {
+                        data[col] = fildep[index] as f64 / SCALE;
+                    }
+                }
+                fildep_output.set_row_data(row as isize, data);
+            }
+            fildep_output.add_metadata_entry(
+                "TOPAZ FILDEP stage: depression filling and obstruction adjustment".to_string(),
+            );
+            fildep_output.add_metadata_entry(format!("Maximum obstruction width: {}", max_width));
+            fildep_output
+                .add_metadata_entry(format!("TOPAZ compatibility source: {}", SOURCE_REVISION));
+            fildep_output.write()?;
+        }
 
         if !delta_file.is_empty() {
             let mut delta = Raster::initialize_using_file(&delta_file, &input);
@@ -767,6 +913,7 @@ impl WhiteboxTool for TopazConditionDem {
                 "source_revision": SOURCE_REVISION,
                 "input": dem,
                 "output": output_file,
+                "fildep_output": if fildep_file.is_empty() { None } else { Some(&fildep_file) },
                 "parameters": {"max_obstruction_width": max_width},
                 "raster": {"rows": rows, "columns": cols, "nodata": nodata},
                 "counts": {
@@ -833,9 +980,27 @@ mod tests {
             &[10., 8., 8., 8., 10.],
             &[10., 10., 10., 10., 10.],
         ]);
-        let (output, fildep, _, _) = condition_topaz(&input, 0);
+        let (output, fildep, _, _) = condition_topaz(&input, 0).unwrap();
         assert!(fildep[12] >= topaz_round(8.).unwrap());
         assert!(output.z[12] >= fildep[12]);
+    }
+
+    #[test]
+    fn expands_search_window_to_find_spill() {
+        let mut values = vec![vec![9.0; 17]; 17];
+        for row in values.iter_mut().take(14).skip(3) {
+            for value in row.iter_mut().take(14).skip(3) {
+                *value = 5.0;
+            }
+        }
+        values[8][8] = 1.0;
+        values[2][8] = 4.0;
+        values[1][8] = 3.0;
+        values[0][8] = 2.0;
+        let rows: Vec<&[f64]> = values.iter().map(Vec::as_slice).collect();
+        let input = grid(&rows);
+        let (_, fildep, _, _) = condition_topaz(&input, 0).unwrap();
+        assert_eq!(fildep[input.idx(8, 8)], topaz_round(5.0).unwrap());
     }
 
     #[test]
@@ -850,30 +1015,42 @@ mod tests {
     }
 
     #[test]
-    fn resolved_cells_break_obstruction_candidate_reachability() {
-        let input = grid(&[&[1.0, 2.0, 3.0]]);
-        let member = vec![true; 3];
-        assert!(unresolved_reaches(
-            &input,
-            0,
-            2,
-            &[false, false, false],
-            &member
-        ));
-        assert!(!unresolved_reaches(
-            &input,
-            0,
-            2,
-            &[false, true, false],
-            &member
-        ));
-    }
-
-    #[test]
     fn preserves_nodata_mask() {
         let mut input = grid(&[&[5., 5., 5.], &[5., 1., 5.], &[5., 5., 5.]]);
         input.valid[4] = false;
-        let (output, _, _, _) = condition_topaz(&input, 2);
+        let (output, _, _, _) = condition_topaz(&input, 2).unwrap();
         assert!(!output.valid[4]);
+    }
+
+    #[test]
+    fn treats_nodata_as_an_open_lower_boundary_during_relief() {
+        let mut input = grid(&[&[5., 5., 5.], &[5., 7., 5.], &[5., 5., 5.]]);
+        input.valid.fill(false);
+        input.valid[4] = true;
+        let original = input.z[4];
+        let mut stats = ConditioningStats::default();
+
+        resolve_flats(&mut input, &mut stats);
+
+        assert_eq!(input.z[4], original);
+    }
+
+    #[test]
+    fn does_not_fill_a_cell_that_drains_to_nodata() {
+        let mut input = grid(&[
+            &[9., 9., 9., 9., 9.],
+            &[9., 8., 8., 8., 9.],
+            &[9., 8., 1., 8., 9.],
+            &[9., 8., 8., 8., 9.],
+            &[9., 9., 9., 9., 9.],
+        ]);
+        let nodata = input.idx(2, 1);
+        input.valid[nodata] = false;
+        let original = input.z[input.idx(2, 2)];
+        let mut stats = ConditioningStats::default();
+
+        fill_depressions(&mut input, 2, &mut stats).unwrap();
+
+        assert_eq!(input.z[input.idx(2, 2)], original);
     }
 }

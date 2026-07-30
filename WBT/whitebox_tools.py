@@ -5253,7 +5253,7 @@ Okay, that's it for now.
         args.append("--output='{}'".format(output))
         return self.run_tool('fill_single_cell_pits', args, callback)  # returns 1 if error
 
-    def topaz_condition_dem(self, dem, output, max_obstruction_width=2, delta=None, diagnostics=None, callback=None):
+    def topaz_condition_dem(self, dem, output, max_obstruction_width=2, delta=None, diagnostics=None, callback=None, fildep=None):
         """Conditions a DEM using TOPAZ-compatible FILDEP and RELIEF methods.
 
         dem -- Input raster DEM file.
@@ -5262,6 +5262,7 @@ Okay, that's it for now.
         delta -- Optional signed conditioned-minus-input raster.
         diagnostics -- Optional JSON diagnostics file.
         callback -- Custom function for handling tool text outputs.
+        fildep -- Optional post-FILDEP, pre-RELIEF stage raster.
         """
         args = []
         args.append("--dem='{}'".format(dem))
@@ -5269,6 +5270,7 @@ Okay, that's it for now.
         args.append("--max_obstruction_width='{}'".format(max_obstruction_width))
         if delta is not None: args.append("--delta='{}'".format(delta))
         if diagnostics is not None: args.append("--diagnostics='{}'".format(diagnostics))
+        if fildep is not None: args.append("--fildep='{}'".format(fildep))
         return self.run_tool('topaz_condition_dem', args, callback)  # returns 1 if error
 
     def find_no_flow_cells(self, dem, output, callback=None):

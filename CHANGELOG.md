@@ -19,6 +19,25 @@
   D8/watershed equivalence, determinism, and performance evidence.
 - Added the exact checksummed 430-by-447 production-representative DEM under
   `test_fixtures/topaz_condition_dem/` for reproducible parity tests.
+- Added burned-out-harmonic and Portland high-severity production DEM fixtures
+  and checksummed TOPAZ oracle evidence.
+- Added optional post-FILDEP raster output, a manifest-driven canonical
+  FILDEP/RELIEF parity harness, and independent golden coverage for obstruction
+  widths 0, 1, and 2.
+- Added a synthetic irregular-NoData fixture and a production-scale
+  burned-out-harmonic fixture masking 25,541 NLCD class-11 water cells.
+- Added repository-local work-package scaffolding and completed parity
+  hardening evidence.
+
+### Fixed
+
+- Replaced unbounded FILDEP region growth with TOPAZ's normative expanding
+  search-window state machine. The correction preserves exact parity on the
+  original fixture and removes 137 and 2,082 mismatches respectively on the
+  two larger fixtures.
+- Matched TOPAZ's open-boundary treatment of indeterminate cells in FILDEP and
+  RELIEF, preventing non-termination for valid islands surrounded by NoData
+  and preventing erroneous fills beside NoData.
 
 ## [2.3.0.post2] - 2026-06-10
 - Bumped the PyPI package version to `2.3.0.post2` for a Windows wheel repair release.

@@ -21,16 +21,23 @@ same scale: two internal units in its first pass and one in its second pass.
 The Rust implementation deliberately performs the multiplication in `f32`.
 Using `f64` changes half-decimetre cases present in the production DEM.
 
-NoData cells remain NoData and are excluded from conditioning. Non-finite valid
-cells and internal-scale overflow are errors.
+NoData cells remain NoData and are excluded from depression membership,
+obstruction candidates, flat membership, and relief propagation. TOPAZ stores
+indeterminate cells at a sentinel below valid terrain, so a valid cell beside
+NoData nevertheless sees an open lower boundary. The Rust implementation
+models that relation explicitly rather than assigning a fabricated elevation
+to invalid cells. Non-finite valid cells and internal-scale overflow are errors.
 
 ## FILDEP
 
 FILDEP visits interior cells in row-major order. A candidate has no lower
 eight-neighbour and at least one higher neighbour. From the candidate it grows
-the connected, monotonically non-decreasing depression region. The original
-uses search windows that expand in five-cell steps; expansion is an
-implementation optimization and does not change the intended region.
+the connected, monotonically non-decreasing depression region inside an
+initial 11-by-11 search window. TOPAZ expands selected window boundaries in
+five-cell steps when the current boundary controls the search or a member below
+the current spill reaches it. The window and its visited/resolved state are
+normative: replacing them with an unbounded region traversal changes FILDEP
+results on larger terrain.
 
 The spill is the lowest region cell on the raster edge or adjacent to a lower
 cell outside the region. With obstruction adjustment disabled, cells at or
@@ -40,12 +47,12 @@ For one-cell adjustment, FILDEP looks for the greatest defensible cut through a
 single spill obstruction. For two-cell adjustment, it also examines a second
 cell on the depression side. It selects greatest cut first and shortest
 eight-neighbour path second. In the final equal-distance replacement case,
-TOPAZ compares the outside drop with the selected cut, and the candidate must
-remain connected to the seed without crossing cells resolved by an earlier
-depression. These details determine which member of an otherwise equivalent
-two-cell obstruction is lowered. FILDEP then fills the depression to the
-adjusted spill. The public modes are 0, 1, and 2; the default is 2, matching
-WEPPpy's historical TOPAZ control.
+TOPAZ compares the outside drop with the selected cut. Search-window membership
+determines which previously resolved cells can participate. These details
+determine which member of an otherwise equivalent two-cell obstruction is
+lowered. FILDEP then fills the depression to the adjusted spill. The public
+modes are 0, 1, and 2; the default is 2, matching WEPPpy's historical TOPAZ
+control.
 
 ## RELIEF
 
@@ -64,7 +71,10 @@ neighbours. This preserves TOPAZ's open-edge drainage behavior.
 
 ## Current parity status
 
-On the 430-by-447 production DEM, all 192,210 valid final cells match TOPAZ
-exactly. Input quantization, fill/cut counts and extrema, RELIEF modifications,
-derived D8 pointer values, and the outlet watershed values also match. See
+Canonical FILDEP and RELIEF content matches TOPAZ exactly in all seven golden
+cases: obstruction widths 0, 1, and 2 on the original 430-by-447 DEM; two
+larger production DEMs; a synthetic irregular-NoData case; and a
+production-scale NLCD-water mask with 25,541 NoData cells. Input quantization,
+fill/cut counts and extrema, and RELIEF modifications match. Derived D8 pointer
+and outlet watershed values also match on the original case. See
 `prompts/artifacts/topaz_condition_dem_validation.md`.

@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "canonical_contract": {
+    "elevation": "valid cells in raster row-major order as little-endian signed i32 TOPAZ 1/100000 units",
+    "mask": "one row-major uint8 byte per cell; 1 valid and 0 NoData",
+    "hash": "SHA-256"
+  },
+  "topaz_revision": "116607fc1185800ca78e387454ef1ccd3ffd73b4",
+  "cases": [
+    {
+      "id": "original-width-0",
+      "dem": "dem.tif",
+      "dem_sha256": "b87f189bf3aa79b7f25542f0982378e193d11164fec55a68f7310e6256a8282a",
+      "rows": 430,
+      "columns": 447,
+      "nodata_cells": 0,
+      "max_obstruction_width": 0,
+      "mask_sha256": "a5e0c57dc15341c36af1f9e774e9f620dc4948f59024318dbe32c1b8f1b4a941",
+      "fildep_sha256": "8a71ac81d5ed9291c9eceefa8834aa2a5551ef4760b197a7cee88a5bb7baf494",
+      "relief_sha256": "f00f4d493aed78e1226076f477fa14814c3db831fbaa0b83a4f239358a085ebe"
+    },
+    {
+      "id": "original-width-1",
+      "dem": "dem.tif",
+      "dem_sha256": "b87f189bf3aa79b7f25542f0982378e193d11164fec55a68f7310e6256a8282a",
+      "rows": 430,
+      "columns": 447,
+      "nodata_cells": 0,
+      "max_obstruction_width": 1,
+      "mask_sha256": "a5e0c57dc15341c36af1f9e774e9f620dc4948f59024318dbe32c1b8f1b4a941",
+      "fildep_sha256": "b29ec84c87b9bc8f65498bcbfa8b1cfebbb61f8b3b74870a6d46244688678991",
+      "relief_sha256": "c153f0357bc8148d8780713275799ebf7b63bdba432922acbe49dc9e19108aea"
+    },
+    {
+      "id": "original-width-2",
+      "dem": "dem.tif",
+      "dem_sha256": "b87f189bf3aa79b7f25542f0982378e193d11164fec55a68f7310e6256a8282a",
+      "rows": 430,
+      "columns": 447,
+      "nodata_cells": 0,
+      "max_obstruction_width": 2,
+      "mask_sha256": "a5e0c57dc15341c36af1f9e774e9f620dc4948f59024318dbe32c1b8f1b4a941",
+      "fildep_sha256": "d094fd015cef5f9e9f5ccbadb19143e1d75342040f00af84be23fbe5dbea4313",
+      "relief_sha256": "90b440669d65e54aab6e33e560164bf53f936d96dbed2d2ed7011fc174f7c1ab"
+    },
+    {
+      "id": "burned-out-harmonic-width-2",
+      "dem": "burned-out-harmonic_dem.tif",
+      "dem_sha256": "a2535e3564f8ebc488d3af18f05f0eaf80b25d305eac22bfd59b56c8cbe9757f",
+      "rows": 1184,
+      "columns": 1233,
+      "nodata_cells": 0,
+      "max_obstruction_width": 2,
+      "mask_sha256": "7f6322193cd882a4c0e5f619f9417a02c1514f613f3fa96d31009817bc88c95b",
+      "fildep_sha256": "764de54f1ddbed93ab632212e7c386df7884edfcaa1281f7a09d22df856788a8",
+      "relief_sha256": "ba51928deba1cd93988358cad277561460339b568227c4d5a808323ca25b62ba"
+    },
+    {
+      "id": "portland-high-severity-width-2",
+      "dem": "portland_BRnearMultnoma_HighSevS.202009.chn_cs200_dem.tif",
+      "dem_sha256": "d0e4c4f1cd32f03ba4cda6d092935a138102214c2199c4a61da5f58266626106",
+      "rows": 1233,
+      "columns": 1269,
+      "nodata_cells": 0,
+      "max_obstruction_width": 2,
+      "mask_sha256": "45b27f15fc730468e32b9e169187145efff3ad7aba1ce6f9fa4e91f8f4ed72ad",
+      "fildep_sha256": "a9059dcadfebc8de03b7da45416dee9b1669b5e6f023387f620e3b3eb401158d",
+      "relief_sha256": "1378d6a3151c0985a3f3282f6d6c1067840b5541f1d571495bfc943dbfc0a6c3"
+    },
+    {
+      "id": "synthetic-irregular-nodata-width-2",
+      "dem": "synthetic_irregular_nodata.tif",
+      "dem_sha256": "6a66f27ae94c9957977231ea00f25ba0f9b4ab255fb1fd1213be9daeb64e876d",
+      "rows": 41,
+      "columns": 47,
+      "nodata_cells": 131,
+      "max_obstruction_width": 2,
+      "mask_sha256": "cfa23a596a96fe7a6ea2439466665457ed7e34728258cf4228feccaccfe197c6",
+      "fildep_sha256": "989501e187549cb2c66bd21d3e3d96a458b3d5581b8da2e84362bf856c695ea6",
+      "relief_sha256": "da42dfafe973d716b637fab42bba83ff82ea07cc3d59c3e9dd62e320778c72b6"
+    },
+    {
+      "id": "burned-out-harmonic-nlcd-water-width-2",
+      "dem": "burned-out-harmonic_nlcd-water-mask_dem.tif",
+      "dem_sha256": "4197c6689ca96f8dd349ea200b2776e27c7691ebd9a8e13ac7e7150e973ec78f",
+      "rows": 1184,
+      "columns": 1233,
+      "nodata_cells": 25541,
+      "max_obstruction_width": 2,
+      "mask_sha256": "1763799d1daa30810cd0fe4a343e10b69b82363eee187341f1ad6740b07fd95f",
+      "fildep_sha256": "64271225606020ec3e4897247265205fba4dc112c1989de288f4884fbba8047d",
+      "relief_sha256": "d18383f744c7ee5fb52b2f2ba091bd6614c3a57aed86fef32c6b56777aa296e5"
+    }
+  ]
+}
