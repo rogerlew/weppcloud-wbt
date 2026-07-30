@@ -17,6 +17,8 @@
 - Added algorithm, exact-input validation, fixture-materialization, and WEPPpy
   handoff documentation, including zero-mismatch production parity, downstream
   D8/watershed equivalence, determinism, and performance evidence.
+- Added the `TopazConditionDem` end-user guide and listed the tool in the
+  README's "Tools added in this fork" catalog.
 - Added the exact checksummed 430-by-447 production-representative DEM under
   `test_fixtures/topaz_condition_dem/` for reproducible parity tests.
 - Added burned-out-harmonic and Portland high-severity production DEM fixtures

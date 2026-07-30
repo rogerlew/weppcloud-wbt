@@ -4,6 +4,10 @@ Status: ready for WEPPpy integration. The production fixture has zero
 cell-value mismatches against TOPAZ, and downstream D8 and watershed values
 also match.
 
+For general command-line and Python usage, output interpretation, limits, and
+troubleshooting, see the
+[TopazConditionDem end-user guide](topaz_condition_dem.ENDUSER.md).
+
 ## Interface
 
 CLI:
@@ -30,7 +34,7 @@ The obstruction width must be 0, 1, or 2. Two is the historical WEPPpy TOPAZ
 default. The primary output is the post-RELIEF DEM. The optional delta is
 `conditioned - TOPAZ-rounded input`.
 
-The tool rounds valid source elevations to TOPAZ's decimetre input precision.
+The tool rounds valid source elevations to TOPAZ's decimeter input precision.
 NoData geometry and georeferencing are preserved. Output and delta rasters are
 64-bit floating point because RELIEF increments may be `0.00001` elevation
 unit.
@@ -38,7 +42,7 @@ unit.
 Diagnostics JSON schema version 1 reports stage counts, fill/cut/relief
 extrema, obstruction counts, and qualified volumes. Volume assumes compatible
 projected horizontal and vertical units; WEPPpy should display that
-qualification rather than silently labeling every result cubic metres.
+qualification rather than silently labeling every result cubic meters.
 
 ## Integration placement
 

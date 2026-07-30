@@ -48,6 +48,9 @@ All tools below are used operationally within WEPPcloud. Python bindings are inc
 - **`RaiseRoads`** (`hydro_analysis/raise_roads.rs`) — [end-user guide](docs/raise_roads.ENDUSER.md)
   Conditions DEMs for road embankments using `constant`, `profile_relative`, or `cross_section` strategies while enforcing a no-lowering guarantee (`output ≥ input` on all valid cells). Supports GeoJSON attribute overrides for cross-section parameters, width/parameter fallback hierarchy, conservative unpaved-road behavior, and automatic reprojection of road vectors to DEM CRS.
 
+- **`TopazConditionDem`** (`hydro_analysis/topaz_condition_dem.rs`) — [algorithm](docs/topaz_condition_dem_algorithm.md) · [end-user guide](docs/topaz_condition_dem.ENDUSER.md)
+  Conditions DEMs with source-faithful TOPAZ FILDEP depression and narrow-obstruction handling followed by RELIEF flat resolution. Preserves TOPAZ input quantization and NoData/open-boundary behavior, and can write the intermediate FILDEP raster, a signed delta raster, and diagnostics JSON.
+
 - **`Watershed`** update (`hydro_analysis/watershed.rs`) — [end-user guide](docs/watershed_geojson.ENDUSER.md)
   Extended to accept GeoJSON pour-point inputs (Point and MultiPoint features) in addition to shapefiles and rasters.
 
