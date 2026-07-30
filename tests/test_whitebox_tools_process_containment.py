@@ -90,6 +90,19 @@ class WhiteboxToolsProcessContainmentTests(unittest.TestCase):
         self.assertIn("--max_obstruction_width='2'", captured["args"])
         self.assertEqual(captured["timeout"], 12.5)
 
+        status = probe.breach_depressions_least_cost(
+            dem="dem.tif",
+            output="relief.tif",
+            dist=33,
+            fill=False,
+            fail_on_unresolved=True,
+        )
+
+        self.assertEqual(status, 0)
+        self.assertEqual(captured["tool_name"], "breach_depressions_least_cost")
+        self.assertIn("--fail_on_unresolved", captured["args"])
+        self.assertNotIn("--fill", captured["args"])
+
     def assert_nonzero_exit_contract(self, module, executable_dir: Path) -> None:
         messages = []
         with patch.dict(os.environ, {"FAKE_WBT_MODE": "nonzero"}):

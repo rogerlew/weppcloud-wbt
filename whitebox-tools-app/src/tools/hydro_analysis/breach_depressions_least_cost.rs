@@ -52,6 +52,9 @@ use whitebox_raster::*;
 /// that remain unresolved by the earlier depression breaching operation. This filling step uses an efficient
 /// filling method based on flooding depressions from their pit cells until outlets are identified and then
 /// raising the elevations of flooded cells back and away from the outlets.
+/// Alternatively, `--fail_on_unresolved` returns a non-zero tool error before writing the output when one or
+/// more depressions remain unresolved. This opt-in mode lets callers reject unresolved terrain without changing
+/// the established no-fill behavior for other users.
 ///
 /// The tool can be run in two modes, based on whether the `--min_dist` is specified. If the `--min_dist` flag
 /// is specified, the accumulated cost (accum<sub>2</sub>) of breaching from *cell1* to *cell2* along a channel
@@ -175,6 +178,15 @@ impl BreachDepressionsLeastCost {
             optional: true,
         });
 
+        parameters.push(ToolParameter {
+            name: "Fail when depressions remain unresolved?".to_owned(),
+            flags: vec!["--fail_on_unresolved".to_owned()],
+            description: "Optional flag that returns an error before writing output when the bounded breach search leaves one or more depressions unresolved.".to_owned(),
+            parameter_type: ParameterType::Boolean,
+            default_value: Some("false".to_string()),
+            optional: true,
+        });
+
         let sep: String = path::MAIN_SEPARATOR.to_string();
         let e = format!("{}", env::current_exe().unwrap().display());
         let mut parent = env::current_exe().unwrap();
@@ -244,6 +256,7 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
         let mut max_dist = 20isize;
         let mut flat_increment = f64::NAN;
         let mut fill_deps = false;
+        let mut fail_on_unresolved = false;
         let mut minimize_dist = false;
 
         if args.len() == 0 {
@@ -311,6 +324,10 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
             } else if flag_val == "-fill" {
                 if vec.len() == 1 || !vec[1].to_string().to_lowercase().contains("false") {
                     fill_deps = true;
+                }
+            } else if flag_val == "-fail_on_unresolved" {
+                if vec.len() == 1 || !vec[1].to_string().to_lowercase().contains("false") {
+                    fail_on_unresolved = true;
                 }
             }
         }
@@ -603,6 +620,10 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
         if verbose {
             println!("Num. solved pits: {}", num_solved);
             println!("Num. unsolved pits: {}", num_unsolved);
+        }
+
+        if fail_on_unresolved && num_unsolved > 0 {
+            return Err(unresolved_depressions_error(num_unsolved, max_dist));
         }
 
         // Solve any remaining pits by filling
@@ -953,6 +974,16 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
     }
 }
 
+fn unresolved_depressions_error(num_unsolved: usize, max_dist: isize) -> Error {
+    Error::new(
+        ErrorKind::InvalidData,
+        format!(
+            "WBT_UNRESOLVED_DEPRESSIONS count={} max_dist_cells={}",
+            num_unsolved, max_dist
+        ),
+    )
+}
+
 #[derive(PartialEq, Debug)]
 struct GridCell {
     row: isize,
@@ -993,5 +1024,21 @@ impl PartialOrd for GridCell2 {
 impl Ord for GridCell2 {
     fn cmp(&self, other: &Self) -> Ordering {
         self.partial_cmp(other).unwrap()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unresolved_error_has_stable_machine_readable_fields() {
+        let error = unresolved_depressions_error(377, 33);
+
+        assert_eq!(error.kind(), ErrorKind::InvalidData);
+        assert_eq!(
+            error.to_string(),
+            "WBT_UNRESOLVED_DEPRESSIONS count=377 max_dist_cells=33"
+        );
     }
 }

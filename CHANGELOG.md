@@ -10,6 +10,11 @@
 
 ### Added
 
+- Added opt-in `BreachDepressionsLeastCost --fail_on_unresolved` behavior and
+  matching Python wrapper arguments. The tool reports a stable
+  `WBT_UNRESOLVED_DEPRESSIONS` error before writing output when its bounded
+  search leaves depressions unresolved, while preserving established
+  `--fill=false` behavior for existing callers.
 - Added the registered `TopazConditionDem` Rust tool with TOPAZ decimetre
   quantization, FILDEP-style depression and narrow-obstruction conditioning,
   RELIEF flat resolution, optional signed delta raster, and JSON diagnostics.

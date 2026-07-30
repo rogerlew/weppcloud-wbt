@@ -4902,7 +4902,7 @@ Okay, that's it for now.
         if fill_pits: args.append("--fill_pits")
         return self.run_tool('breach_depressions', args, callback)  # returns 1 if error
 
-    def breach_depressions_least_cost(self, dem, output, dist, max_cost=None, min_dist=True, flat_increment=None, fill=True, callback=None):
+    def breach_depressions_least_cost(self, dem, output, dist, max_cost=None, min_dist=True, flat_increment=None, fill=True, fail_on_unresolved=False, callback=None):
         """Breaches the depressions in a DEM using a least-cost pathway method.
 
         Keyword arguments:
@@ -4914,6 +4914,7 @@ Okay, that's it for now.
         min_dist -- Optional flag indicating whether to minimize breach distances. 
         flat_increment -- Optional elevation increment applied to flat areas. 
         fill -- Optional flag indicating whether to fill any remaining unbreached depressions. 
+        fail_on_unresolved -- Optional flag indicating whether to fail before writing output when depressions remain unresolved.
         callback -- Custom function for handling tool text outputs.
         """
         args = []
@@ -4924,6 +4925,7 @@ Okay, that's it for now.
         if min_dist: args.append("--min_dist")
         if flat_increment is not None: args.append("--flat_increment='{}'".format(flat_increment))
         if fill: args.append("--fill")
+        if fail_on_unresolved: args.append("--fail_on_unresolved")
         return self.run_tool('breach_depressions_least_cost', args, callback)  # returns 1 if error
 
     def breach_single_cell_pits(self, dem, output, callback=None):
