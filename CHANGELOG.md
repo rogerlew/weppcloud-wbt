@@ -48,6 +48,8 @@
   production-reproducer regression evidence.
 - Rebuilt the tracked WEPPpy runtime binary from the locked source with the
   corrected `FillDepressions` implementation.
+- Fixed a `FillDepressions` worker-lifetime race that could make fast,
+  small-raster runs panic while reclaiming the shared input raster.
 - Added optional per-call native-tool timeouts to both Python wrappers. Timed
   out or cancelled POSIX tools now run in their own session, receive
   process-group termination, are reaped, and report failure explicitly;

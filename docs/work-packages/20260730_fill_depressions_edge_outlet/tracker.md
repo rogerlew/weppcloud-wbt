@@ -44,6 +44,9 @@
 - [x] Built the locked release, installed the byte-identical tracked WEPPpy
   runtime binary, and passed host/container execution smoke tests
   (2026-07-30 21:09 UTC).
+- [x] Closed the CI-only shared-raster worker-lifetime race exposed by the
+  small synthetic fixture and repeated the validation/release cycle
+  (2026-07-30 22:15 UTC).
 
 ## Decisions
 

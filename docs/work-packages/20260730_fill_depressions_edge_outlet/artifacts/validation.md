@@ -65,3 +65,12 @@ The detected inventory is structurally protected because the correction runs
 only after `undefined_flow_cells` has been completely assembled. The identical
 processed and skipped counts additionally prove the fixed pass still visits
 the same depression candidates rather than silently dropping any.
+
+## CI race follow-up
+
+The first GitHub Actions run exposed a nondeterministic worker-lifetime race in
+the established pit-detection code: a worker could send its result before
+dropping its cloned shared-raster reference, allowing the receiver to reach
+`Arc::try_unwrap` too early. Workers now explicitly release that reference
+before sending results. The focused small-raster tests were stress-run
+repeatedly before the full suite and release rebuild.

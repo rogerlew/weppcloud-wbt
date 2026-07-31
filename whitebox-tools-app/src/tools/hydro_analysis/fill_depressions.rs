@@ -371,6 +371,9 @@ impl WhiteboxTool for FillDepressions {
                         }
                     }
                 }
+                // The receiver unwraps the shared raster after collecting all
+                // worker results, so release this worker's reference first.
+                drop(output2);
                 tx.send(pits).unwrap();
             });
         }
