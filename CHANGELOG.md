@@ -2,12 +2,6 @@
 
 ## [Unreleased]
 
-### Planning
-
-- Added the active `TopazConditionDem` ExecPlan for a source-faithful TOPAZ
-  FILDEP/RELIEF conditioning tool, exact-input parity evidence, diagnostics,
-  Python wrappers, and a WEPPpy integration handoff.
-
 ### Added
 
 - Added opt-in `BreachDepressionsLeastCost --fail_on_unresolved` behavior and
@@ -24,6 +18,9 @@
   D8/watershed equivalence, determinism, and performance evidence.
 - Added the `TopazConditionDem` end-user guide and listed the tool in the
   README's "Tools added in this fork" catalog.
+- Expanded the README's tool catalog with the `FillDepressions` edge-outlet
+  and `Slope` ratio-unit updates, supporting validation links, and clickable
+  repository source-file references.
 - Added the exact checksummed 430-by-447 production-representative DEM under
   `test_fixtures/topaz_condition_dem/` for reproducible parity tests.
 - Added burned-out-harmonic and Portland high-severity production DEM fixtures
@@ -38,6 +35,18 @@
 - Added a compiled-default `settings.example.json`; mutable
   `WBT/settings.json` and generated GDAL `.aux.xml` sidecars are no longer
   tracked.
+
+### Changed
+
+- Updated the JOSS manuscript title to identify WEPPcloud workflows and added
+  the archived `weppcloud-wbt` software DOI citation.
+- Added standardized optional JSON conditioning diagnostics to
+  `FillDepressions`, `BreachDepressions`, `BreachDepressionsLeastCost`, and
+  `TopazConditionDem`, including common cut/fill metrics and method-specific
+  fields.
+- Hardened diagnostics publication with caller-supplied operation IDs,
+  exclusive same-directory temporary files, and atomic sidecar renames so
+  workflows can detect stale or colliding output.
 
 ### Fixed
 
