@@ -1,0 +1,32 @@
+{
+  "binary_sha256": "c7334a191c4b04a69ef602343a4b851005f457de0fc2d5baf36b16ed357735ff",
+  "dem_sha256": "b87f189bf3aa79b7f25542f0982378e193d11164fec55a68f7310e6256a8282a",
+  "checks": [
+    "runtime overrides saved setting",
+    "override not persisted during other saves",
+    "concurrent 1/12-worker isolation and exact parity",
+    "unset uses saved limit",
+    "explicit CLI limit persists while environment wins execution",
+    "invalid values fail before writes",
+    "unset without settings preserves -1"
+  ],
+  "reference_raster": {
+    "shape": [
+      430,
+      447
+    ],
+    "transform": [
+      601331.21711046,
+      30.0,
+      0.0,
+      5291083.97981617,
+      0.0,
+      -30.0
+    ],
+    "projection": "PROJCS[\"WGS 84 / UTM zone 10N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-123],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32610\"]]",
+    "nodata": -999999.0,
+    "mask_sha256": "a5e0c57dc15341c36af1f9e774e9f620dc4948f59024318dbe32c1b8f1b4a941",
+    "values_sha256": "6328b967d7ad421d031ee15cce464a39742fd9439e0f606db520160f8eb5f072"
+  },
+  "status": "passed"
+}

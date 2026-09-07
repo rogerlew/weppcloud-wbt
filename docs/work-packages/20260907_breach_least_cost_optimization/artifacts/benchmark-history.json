@@ -1,0 +1,179 @@
+[
+  {
+    "description": "Serial reference manually stopped; lower bound only",
+    "result": {
+      "command": [
+        "taskset",
+        "-c",
+        "12",
+        "/home/workdir/weppcloud-wbt/target/breach-benchmark/reference/whitebox_tools",
+        "-r=BreachDepressionsLeastCost",
+        "--dem=/home/workdir/weppcloud-wbt/test_fixtures/breach_least_cost/valid-tabletop/dem.tif",
+        "--output=/home/workdir/weppcloud-wbt/target/breach-benchmark/baseline-valid-tabletop/relief.tif",
+        "--dist=600",
+        "--diagnostics=/home/workdir/weppcloud-wbt/target/breach-benchmark/baseline-valid-tabletop/diagnostics.json",
+        "--diagnostics_id=0123456789abcdef0123456789abcdef",
+        "-v",
+        "--min_dist",
+        "--fail_on_unresolved"
+      ],
+      "binary_sha256": "9778a9c7e56c805633e02ee4c03c595d7383feaa8b0386a2f7538dd777e95c98",
+      "dem_sha256": "6d49e9e92daef8a9b5709db6833975cebfafda92ac97d6c4d6d77eeb1f05ee60",
+      "host": "forest",
+      "cores": 1,
+      "cpus": "12",
+      "started_utc": "2026-09-07T22:04:48Z",
+      "elapsed_seconds": 525.6967694408959,
+      "returncode": -15,
+      "unresolved_error": []
+    }
+  },
+  {
+    "description": "Ordered parallel prototype stopped after missing 600-second target",
+    "result": {
+      "command": [
+        "taskset",
+        "-c",
+        "0-11",
+        "/home/workdir/weppcloud-wbt/target/breach-benchmark/candidate-large/whitebox_tools",
+        "-r=BreachDepressionsLeastCost",
+        "--dem=/home/workdir/weppcloud-wbt/test_fixtures/breach_least_cost/valid-tabletop/dem.tif",
+        "--output=/home/workdir/weppcloud-wbt/target/breach-benchmark/candidate-valid-tabletop/relief.tif",
+        "--dist=600",
+        "--diagnostics=/home/workdir/weppcloud-wbt/target/breach-benchmark/candidate-valid-tabletop/diagnostics.json",
+        "--diagnostics_id=0123456789abcdef0123456789abcdef",
+        "-v",
+        "--min_dist",
+        "--fail_on_unresolved"
+      ],
+      "binary_sha256": "1b70ce5291e567f48755d53c506f2f354ca049b59cfb62e1f0563ccdebdf803e",
+      "dem_sha256": "6d49e9e92daef8a9b5709db6833975cebfafda92ac97d6c4d6d77eeb1f05ee60",
+      "host": "forest",
+      "cores": 12,
+      "cpus": "0-11",
+      "started_utc": "2026-09-07T22:09:27Z",
+      "elapsed_seconds": 618.0919019550784,
+      "returncode": -15,
+      "unresolved_error": []
+    }
+  },
+  {
+    "description": "Generation-tag prototype stopped after missing 600-second target",
+    "result": {
+      "command": [
+        "taskset",
+        "-c",
+        "12-23",
+        "/home/workdir/weppcloud-wbt/target/breach-benchmark/candidate-v2-large/whitebox_tools",
+        "-r=BreachDepressionsLeastCost",
+        "--dem=/home/workdir/weppcloud-wbt/test_fixtures/breach_least_cost/valid-tabletop/dem.tif",
+        "--output=/home/workdir/weppcloud-wbt/target/breach-benchmark/candidate-v2-valid-tabletop/relief.tif",
+        "--dist=600",
+        "--diagnostics=/home/workdir/weppcloud-wbt/target/breach-benchmark/candidate-v2-valid-tabletop/diagnostics.json",
+        "--diagnostics_id=0123456789abcdef0123456789abcdef",
+        "-v",
+        "--min_dist",
+        "--fail_on_unresolved"
+      ],
+      "binary_sha256": "e562f59668718de39221bb910d8f3ea4d87b13032449942dded4881e47b852ec",
+      "dem_sha256": "6d49e9e92daef8a9b5709db6833975cebfafda92ac97d6c4d6d77eeb1f05ee60",
+      "host": "forest",
+      "cores": 12,
+      "cpus": "12-23",
+      "started_utc": "2026-09-07T22:13:34Z",
+      "elapsed_seconds": 639.7715334830573,
+      "returncode": -15,
+      "unresolved_error": []
+    }
+  },
+  {
+    "description": "First exact flat-translation cache; completed successfully",
+    "result": {
+      "command": [
+        "taskset",
+        "-c",
+        "0-11",
+        "/home/workdir/weppcloud-wbt/target/breach-benchmark/candidate-v3-large/whitebox_tools",
+        "-r=BreachDepressionsLeastCost",
+        "--dem=/home/workdir/weppcloud-wbt/test_fixtures/breach_least_cost/valid-tabletop/dem.tif",
+        "--output=/home/workdir/weppcloud-wbt/target/breach-benchmark/candidate-v3-valid-tabletop/relief.tif",
+        "--dist=600",
+        "--diagnostics=/home/workdir/weppcloud-wbt/target/breach-benchmark/candidate-v3-valid-tabletop/diagnostics.json",
+        "--diagnostics_id=0123456789abcdef0123456789abcdef",
+        "-v",
+        "--min_dist",
+        "--fail_on_unresolved"
+      ],
+      "binary_sha256": "b8102ebd9191ddec56f7c801b282e4157dfdb0cbc7990af0a73a598a129074f8",
+      "dem_sha256": "6d49e9e92daef8a9b5709db6833975cebfafda92ac97d6c4d6d77eeb1f05ee60",
+      "host": "forest",
+      "cores": 12,
+      "cpus": "0-11",
+      "started_utc": "2026-09-07T22:22:22Z",
+      "elapsed_seconds": 373.7831160610076,
+      "returncode": 0,
+      "raster": {
+        "shape": [
+          2053,
+          2015
+        ],
+        "transform": [
+          354164.7893031073,
+          5.0,
+          0.0,
+          3150760.658995497,
+          0.0,
+          -5.0
+        ],
+        "projection": "PROJCS[\"WGS 84 / UTM zone 28N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-15],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32628\"]]",
+        "nodata": -3.4028234663852886e+38,
+        "mask_sha256": "5b84d9ca17204465a73c5c7e4cef7d1949ac1e31a876edbe6e58da1d342e9ae8",
+        "values_sha256": "0821d7091a2c9585ca7754431ee123d85290379ddb07579ae766b6eeb396e1c3"
+      },
+      "diagnostics": {
+        "conditioning": {
+          "detected_low_point_count": 400026,
+          "fallback_fill_used": false,
+          "fallback_filled_low_point_count": 0,
+          "longest_breach_path": 2180.0,
+          "longest_breach_path_cells": 436,
+          "resolved_low_point_count": 400026,
+          "unresolved_low_point_count": 0
+        },
+        "input_name": "dem.tif",
+        "operation_id": "0123456789abcdef0123456789abcdef",
+        "output_name": "relief.tif",
+        "parameters": {
+          "fail_on_unresolved": true,
+          "fill": false,
+          "flat_increment": 8e-05,
+          "max_cost": null,
+          "minimize_distance": true,
+          "search_distance": 3000.0,
+          "search_distance_cells": 600
+        },
+        "schema_version": 1,
+        "status": "success",
+        "terrain_change": {
+          "cut_volume": 122287.90485258175,
+          "fill_volume": 17142.86649515998,
+          "lowered_area": 10087000.0,
+          "lowered_cell_count": 403480,
+          "maximum_cut": 15.795049969177247,
+          "maximum_raise": 10.688987840576175,
+          "raised_area": 109700.0,
+          "raised_cell_count": 4388,
+          "valid_cell_count": 4136795
+        },
+        "tool": "BreachDepressionsLeastCost",
+        "units": {
+          "area": "m2",
+          "elevation": "m",
+          "horizontal": "m",
+          "volume": "m3"
+        }
+      },
+      "unresolved_error": []
+    }
+  }
+]

@@ -1,0 +1,2946 @@
+./whitebox_tools --run="BreachDepressionsLeastCost" --dem='/home/workdir/weppcloud-wbt/test_fixtures/breach_least_cost/valid-tabletop/dem.tif' --output='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/relief.tif' --dist='600' --min_dist --fail_on_unresolved --diagnostics='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/relief.diagnostics.json' --diagnostics_id='43d6226758ba4d25b91f49e7c6acc0eb' -v --compress_rasters=False
+
+*****************************************
+* Welcome to BreachDepressionsLeastCost *
+* Powered by WhiteboxTools              *
+* www.whiteboxgeo.com                   *
+*****************************************
+Reading data...
+Finding pits: 0%
+Finding pits: 1%
+Finding pits: 2%
+Finding pits: 3%
+Finding pits: 4%
+Finding pits: 5%
+Finding pits: 6%
+Finding pits: 7%
+Finding pits: 8%
+Finding pits: 9%
+Finding pits: 10%
+Finding pits: 11%
+Finding pits: 12%
+Finding pits: 13%
+Finding pits: 14%
+Finding pits: 15%
+Finding pits: 16%
+Finding pits: 17%
+Finding pits: 18%
+Finding pits: 19%
+Finding pits: 20%
+Finding pits: 21%
+Finding pits: 22%
+Finding pits: 23%
+Finding pits: 24%
+Finding pits: 25%
+Finding pits: 26%
+Finding pits: 27%
+Finding pits: 28%
+Finding pits: 29%
+Finding pits: 30%
+Finding pits: 31%
+Finding pits: 32%
+Finding pits: 33%
+Finding pits: 34%
+Finding pits: 35%
+Finding pits: 36%
+Finding pits: 37%
+Finding pits: 38%
+Finding pits: 39%
+Finding pits: 40%
+Finding pits: 41%
+Finding pits: 42%
+Finding pits: 43%
+Finding pits: 44%
+Finding pits: 45%
+Finding pits: 46%
+Finding pits: 47%
+Finding pits: 48%
+Finding pits: 49%
+Finding pits: 50%
+Finding pits: 51%
+Finding pits: 52%
+Finding pits: 53%
+Finding pits: 54%
+Finding pits: 55%
+Finding pits: 56%
+Finding pits: 57%
+Finding pits: 58%
+Finding pits: 59%
+Finding pits: 60%
+Finding pits: 61%
+Finding pits: 62%
+Finding pits: 63%
+Finding pits: 64%
+Finding pits: 65%
+Finding pits: 66%
+Finding pits: 67%
+Finding pits: 68%
+Finding pits: 69%
+Finding pits: 70%
+Finding pits: 71%
+Finding pits: 72%
+Finding pits: 73%
+Finding pits: 74%
+Finding pits: 75%
+Finding pits: 76%
+Finding pits: 77%
+Finding pits: 78%
+Finding pits: 79%
+Finding pits: 80%
+Finding pits: 81%
+Finding pits: 82%
+Finding pits: 83%
+Finding pits: 84%
+Finding pits: 85%
+Finding pits: 86%
+Finding pits: 87%
+Finding pits: 88%
+Finding pits: 89%
+Finding pits: 90%
+Finding pits: 91%
+Finding pits: 92%
+Finding pits: 93%
+Finding pits: 94%
+Finding pits: 95%
+Finding pits: 96%
+Finding pits: 97%
+Finding pits: 98%
+Finding pits: 99%
+Finding pits: 100%
+Breaching: 0%
+Breaching: 1%
+Breaching: 2%
+Breaching: 3%
+Breaching: 4%
+Breaching: 5%
+Breaching: 6%
+Breaching: 7%
+Breaching: 8%
+Breaching: 9%
+Breaching: 10%
+Breaching: 11%
+Breaching: 12%
+Breaching: 13%
+Breaching: 14%
+Breaching: 15%
+Breaching: 16%
+Breaching: 17%
+Breaching: 18%
+Breaching: 19%
+Breaching: 20%
+Breaching: 21%
+Breaching: 22%
+Breaching: 23%
+Breaching: 24%
+Breaching: 25%
+Breaching: 26%
+Breaching: 27%
+Breaching: 28%
+Breaching: 29%
+Breaching: 30%
+Breaching: 31%
+Breaching: 32%
+Breaching: 33%
+Breaching: 34%
+Breaching: 35%
+Breaching: 36%
+Breaching: 37%
+Breaching: 38%
+Breaching: 39%
+Breaching: 40%
+Breaching: 41%
+Breaching: 42%
+Breaching: 43%
+Breaching: 44%
+Breaching: 45%
+Breaching: 46%
+Breaching: 47%
+Breaching: 48%
+Breaching: 49%
+Breaching: 50%
+Breaching: 51%
+Breaching: 52%
+Breaching: 53%
+Breaching: 54%
+Breaching: 55%
+Breaching: 56%
+Breaching: 57%
+Breaching: 58%
+Breaching: 59%
+Breaching: 60%
+Breaching: 61%
+Breaching: 62%
+Breaching: 63%
+Breaching: 64%
+Breaching: 65%
+Breaching: 66%
+Breaching: 67%
+Breaching: 68%
+Breaching: 69%
+Breaching: 70%
+Breaching: 71%
+Breaching: 72%
+Breaching: 73%
+Breaching: 74%
+Breaching: 75%
+Breaching: 76%
+Breaching: 77%
+Breaching: 78%
+Breaching: 79%
+Breaching: 80%
+Breaching: 81%
+Breaching: 82%
+Breaching: 83%
+Breaching: 84%
+Breaching: 85%
+Breaching: 86%
+Breaching: 87%
+Breaching: 88%
+Breaching: 89%
+Breaching: 90%
+Breaching: 91%
+Breaching: 92%
+Breaching: 93%
+Breaching: 94%
+Breaching: 95%
+Breaching: 96%
+Breaching: 97%
+Breaching: 98%
+Breaching: 99%
+Breaching: 100%
+Translated flat searches reused: 175668
+Speculative searches recomputed: 320
+Num. solved pits: 400026
+Num. unsolved pits: 0
+Saving data...
+Output file written
+Elapsed Time (excluding I/O): 6min 23.408s
+Relief file created successfully: /home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/relief.tif
+./whitebox_tools --run="D8Pointer" --dem='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/relief.tif' --output='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/flovec.tif' -v --compress_rasters=False
+
+****************************
+* Welcome to D8Pointer     *
+* Powered by WhiteboxTools *
+* www.whiteboxgeo.com      *
+****************************
+Reading data...
+Progress: 0%
+Progress: 1%
+Progress: 2%
+Progress: 3%
+Progress: 4%
+Progress: 5%
+Progress: 6%
+Progress: 7%
+Progress: 8%
+Progress: 9%
+Progress: 10%
+Progress: 11%
+Progress: 12%
+Progress: 13%
+Progress: 14%
+Progress: 15%
+Progress: 16%
+Progress: 17%
+Progress: 18%
+Progress: 19%
+Progress: 20%
+Progress: 21%
+Progress: 22%
+Progress: 23%
+Progress: 24%
+Progress: 25%
+Progress: 26%
+Progress: 27%
+Progress: 28%
+Progress: 29%
+Progress: 30%
+Progress: 31%
+Progress: 32%
+Progress: 33%
+Progress: 34%
+Progress: 35%
+Progress: 36%
+Progress: 37%
+Progress: 38%
+Progress: 39%
+Progress: 40%
+Progress: 41%
+Progress: 42%
+Progress: 43%
+Progress: 44%
+Progress: 45%
+Progress: 46%
+Progress: 47%
+Progress: 48%
+Progress: 49%
+Progress: 50%
+Progress: 51%
+Progress: 52%
+Progress: 53%
+Progress: 54%
+Progress: 55%
+Progress: 56%
+Progress: 57%
+Progress: 58%
+Progress: 59%
+Progress: 60%
+Progress: 61%
+Progress: 62%
+Progress: 63%
+Progress: 64%
+Progress: 65%
+Progress: 66%
+Progress: 67%
+Progress: 68%
+Progress: 69%
+Progress: 70%
+Progress: 71%
+Progress: 72%
+Progress: 73%
+Progress: 74%
+Progress: 75%
+Progress: 76%
+Progress: 77%
+Progress: 78%
+Progress: 79%
+Progress: 80%
+Progress: 81%
+Progress: 82%
+Progress: 83%
+Progress: 84%
+Progress: 85%
+Progress: 86%
+Progress: 87%
+Progress: 88%
+Progress: 89%
+Progress: 90%
+Progress: 91%
+Progress: 92%
+Progress: 93%
+Progress: 94%
+Progress: 95%
+Progress: 96%
+Progress: 97%
+Progress: 98%
+Progress: 99%
+Progress: 100%
+Saving data...
+Output file written
+Elapsed Time (excluding I/O): 0.58s
+Flow vector file created successfully: /home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/flovec.tif
+Flow vector WGS84 file created successfully: /home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/flovec.wgs.tif
+./whitebox_tools --run="D8FlowAccumulation" --input='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/flovec.tif' --output='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/floaccum.tif' --out_type=cells --pntr -v --compress_rasters=False
+
+*********************************
+* Welcome to D8FlowAccumulation *
+* Powered by WhiteboxTools      *
+* www.whiteboxgeo.com           *
+*********************************
+Reading data...
+Flow directions: 0%
+Flow directions: 1%
+Flow directions: 2%
+Flow directions: 3%
+Flow directions: 4%
+Flow directions: 5%
+Flow directions: 6%
+Flow directions: 7%
+Flow directions: 8%
+Flow directions: 9%
+Flow directions: 10%
+Flow directions: 11%
+Flow directions: 12%
+Flow directions: 13%
+Flow directions: 14%
+Flow directions: 15%
+Flow directions: 16%
+Flow directions: 17%
+Flow directions: 18%
+Flow directions: 19%
+Flow directions: 20%
+Flow directions: 21%
+Flow directions: 22%
+Flow directions: 23%
+Flow directions: 24%
+Flow directions: 25%
+Flow directions: 26%
+Flow directions: 27%
+Flow directions: 28%
+Flow directions: 29%
+Flow directions: 30%
+Flow directions: 31%
+Flow directions: 32%
+Flow directions: 33%
+Flow directions: 34%
+Flow directions: 35%
+Flow directions: 36%
+Flow directions: 37%
+Flow directions: 38%
+Flow directions: 39%
+Flow directions: 40%
+Flow directions: 41%
+Flow directions: 42%
+Flow directions: 43%
+Flow directions: 44%
+Flow directions: 45%
+Flow directions: 46%
+Flow directions: 47%
+Flow directions: 48%
+Flow directions: 49%
+Flow directions: 50%
+Flow directions: 51%
+Flow directions: 52%
+Flow directions: 53%
+Flow directions: 54%
+Flow directions: 55%
+Flow directions: 56%
+Flow directions: 57%
+Flow directions: 58%
+Flow directions: 59%
+Flow directions: 60%
+Flow directions: 61%
+Flow directions: 62%
+Flow directions: 63%
+Flow directions: 64%
+Flow directions: 65%
+Flow directions: 66%
+Flow directions: 67%
+Flow directions: 68%
+Flow directions: 69%
+Flow directions: 70%
+Flow directions: 71%
+Flow directions: 72%
+Flow directions: 73%
+Flow directions: 74%
+Flow directions: 75%
+Flow directions: 76%
+Flow directions: 77%
+Flow directions: 78%
+Flow directions: 79%
+Flow directions: 80%
+Flow directions: 81%
+Flow directions: 82%
+Flow directions: 83%
+Flow directions: 84%
+Flow directions: 85%
+Flow directions: 86%
+Flow directions: 87%
+Flow directions: 88%
+Flow directions: 89%
+Flow directions: 90%
+Flow directions: 91%
+Flow directions: 92%
+Flow directions: 93%
+Flow directions: 94%
+Flow directions: 95%
+Flow directions: 96%
+Flow directions: 97%
+Flow directions: 98%
+Flow directions: 99%
+Flow directions: 100%
+Num. inflowing neighbours: 0%
+Num. inflowing neighbours: 1%
+Num. inflowing neighbours: 2%
+Num. inflowing neighbours: 3%
+Num. inflowing neighbours: 4%
+Num. inflowing neighbours: 5%
+Num. inflowing neighbours: 6%
+Num. inflowing neighbours: 7%
+Num. inflowing neighbours: 8%
+Num. inflowing neighbours: 9%
+Num. inflowing neighbours: 10%
+Num. inflowing neighbours: 11%
+Num. inflowing neighbours: 12%
+Num. inflowing neighbours: 13%
+Num. inflowing neighbours: 14%
+Num. inflowing neighbours: 15%
+Num. inflowing neighbours: 16%
+Num. inflowing neighbours: 17%
+Num. inflowing neighbours: 18%
+Num. inflowing neighbours: 19%
+Num. inflowing neighbours: 20%
+Num. inflowing neighbours: 21%
+Num. inflowing neighbours: 22%
+Num. inflowing neighbours: 23%
+Num. inflowing neighbours: 24%
+Num. inflowing neighbours: 25%
+Num. inflowing neighbours: 26%
+Num. inflowing neighbours: 27%
+Num. inflowing neighbours: 28%
+Num. inflowing neighbours: 29%
+Num. inflowing neighbours: 30%
+Num. inflowing neighbours: 31%
+Num. inflowing neighbours: 32%
+Num. inflowing neighbours: 33%
+Num. inflowing neighbours: 34%
+Num. inflowing neighbours: 35%
+Num. inflowing neighbours: 36%
+Num. inflowing neighbours: 37%
+Num. inflowing neighbours: 38%
+Num. inflowing neighbours: 39%
+Num. inflowing neighbours: 40%
+Num. inflowing neighbours: 41%
+Num. inflowing neighbours: 42%
+Num. inflowing neighbours: 43%
+Num. inflowing neighbours: 44%
+Num. inflowing neighbours: 45%
+Num. inflowing neighbours: 46%
+Num. inflowing neighbours: 47%
+Num. inflowing neighbours: 48%
+Num. inflowing neighbours: 49%
+Num. inflowing neighbours: 50%
+Num. inflowing neighbours: 51%
+Num. inflowing neighbours: 52%
+Num. inflowing neighbours: 53%
+Num. inflowing neighbours: 54%
+Num. inflowing neighbours: 55%
+Num. inflowing neighbours: 56%
+Num. inflowing neighbours: 57%
+Num. inflowing neighbours: 58%
+Num. inflowing neighbours: 59%
+Num. inflowing neighbours: 60%
+Num. inflowing neighbours: 61%
+Num. inflowing neighbours: 62%
+Num. inflowing neighbours: 63%
+Num. inflowing neighbours: 64%
+Num. inflowing neighbours: 65%
+Num. inflowing neighbours: 66%
+Num. inflowing neighbours: 67%
+Num. inflowing neighbours: 68%
+Num. inflowing neighbours: 69%
+Num. inflowing neighbours: 70%
+Num. inflowing neighbours: 71%
+Num. inflowing neighbours: 72%
+Num. inflowing neighbours: 73%
+Num. inflowing neighbours: 74%
+Num. inflowing neighbours: 75%
+Num. inflowing neighbours: 76%
+Num. inflowing neighbours: 77%
+Num. inflowing neighbours: 78%
+Num. inflowing neighbours: 79%
+Num. inflowing neighbours: 80%
+Num. inflowing neighbours: 81%
+Num. inflowing neighbours: 82%
+Num. inflowing neighbours: 83%
+Num. inflowing neighbours: 84%
+Num. inflowing neighbours: 85%
+Num. inflowing neighbours: 86%
+Num. inflowing neighbours: 87%
+Num. inflowing neighbours: 88%
+Num. inflowing neighbours: 89%
+Num. inflowing neighbours: 90%
+Num. inflowing neighbours: 91%
+Num. inflowing neighbours: 92%
+Num. inflowing neighbours: 93%
+Num. inflowing neighbours: 94%
+Num. inflowing neighbours: 95%
+Num. inflowing neighbours: 96%
+Num. inflowing neighbours: 97%
+Num. inflowing neighbours: 98%
+Num. inflowing neighbours: 99%
+Num. inflowing neighbours: 100%
+Flow accumulation: 0%
+Flow accumulation: 1%
+Flow accumulation: 2%
+Flow accumulation: 3%
+Flow accumulation: 4%
+Flow accumulation: 5%
+Flow accumulation: 6%
+Flow accumulation: 7%
+Flow accumulation: 8%
+Flow accumulation: 9%
+Flow accumulation: 10%
+Flow accumulation: 11%
+Flow accumulation: 12%
+Flow accumulation: 13%
+Flow accumulation: 14%
+Flow accumulation: 15%
+Flow accumulation: 16%
+Flow accumulation: 17%
+Flow accumulation: 18%
+Flow accumulation: 19%
+Flow accumulation: 20%
+Flow accumulation: 21%
+Flow accumulation: 22%
+Flow accumulation: 23%
+Flow accumulation: 24%
+Flow accumulation: 25%
+Flow accumulation: 26%
+Flow accumulation: 27%
+Flow accumulation: 28%
+Flow accumulation: 29%
+Flow accumulation: 30%
+Flow accumulation: 31%
+Flow accumulation: 32%
+Flow accumulation: 33%
+Flow accumulation: 34%
+Flow accumulation: 35%
+Flow accumulation: 36%
+Flow accumulation: 37%
+Flow accumulation: 38%
+Flow accumulation: 39%
+Flow accumulation: 40%
+Flow accumulation: 41%
+Flow accumulation: 42%
+Flow accumulation: 43%
+Flow accumulation: 44%
+Flow accumulation: 45%
+Flow accumulation: 46%
+Flow accumulation: 47%
+Flow accumulation: 48%
+Flow accumulation: 49%
+Flow accumulation: 50%
+Flow accumulation: 51%
+Flow accumulation: 52%
+Flow accumulation: 53%
+Flow accumulation: 54%
+Flow accumulation: 55%
+Flow accumulation: 56%
+Flow accumulation: 57%
+Flow accumulation: 58%
+Flow accumulation: 59%
+Flow accumulation: 60%
+Flow accumulation: 61%
+Flow accumulation: 62%
+Flow accumulation: 63%
+Flow accumulation: 64%
+Flow accumulation: 65%
+Flow accumulation: 66%
+Flow accumulation: 67%
+Flow accumulation: 68%
+Flow accumulation: 69%
+Flow accumulation: 70%
+Flow accumulation: 71%
+Flow accumulation: 72%
+Flow accumulation: 73%
+Flow accumulation: 74%
+Flow accumulation: 75%
+Flow accumulation: 76%
+Flow accumulation: 77%
+Flow accumulation: 78%
+Flow accumulation: 79%
+Flow accumulation: 80%
+Flow accumulation: 81%
+Flow accumulation: 82%
+Flow accumulation: 83%
+Flow accumulation: 84%
+Flow accumulation: 85%
+Flow accumulation: 86%
+Flow accumulation: 87%
+Flow accumulation: 88%
+Flow accumulation: 89%
+Flow accumulation: 90%
+Flow accumulation: 91%
+Flow accumulation: 92%
+Flow accumulation: 93%
+Flow accumulation: 94%
+Flow accumulation: 95%
+Flow accumulation: 96%
+Flow accumulation: 97%
+Flow accumulation: 98%
+Flow accumulation: 99%
+Flow accumulation: 100%
+Correcting values: 0%
+Correcting values: 1%
+Correcting values: 2%
+Correcting values: 3%
+Correcting values: 4%
+Correcting values: 5%
+Correcting values: 6%
+Correcting values: 7%
+Correcting values: 8%
+Correcting values: 9%
+Correcting values: 10%
+Correcting values: 11%
+Correcting values: 12%
+Correcting values: 13%
+Correcting values: 14%
+Correcting values: 15%
+Correcting values: 16%
+Correcting values: 17%
+Correcting values: 18%
+Correcting values: 19%
+Correcting values: 20%
+Correcting values: 21%
+Correcting values: 22%
+Correcting values: 23%
+Correcting values: 24%
+Correcting values: 25%
+Correcting values: 26%
+Correcting values: 27%
+Correcting values: 28%
+Correcting values: 29%
+Correcting values: 30%
+Correcting values: 31%
+Correcting values: 32%
+Correcting values: 33%
+Correcting values: 34%
+Correcting values: 35%
+Correcting values: 36%
+Correcting values: 37%
+Correcting values: 38%
+Correcting values: 39%
+Correcting values: 40%
+Correcting values: 41%
+Correcting values: 42%
+Correcting values: 43%
+Correcting values: 44%
+Correcting values: 45%
+Correcting values: 46%
+Correcting values: 47%
+Correcting values: 48%
+Correcting values: 49%
+Correcting values: 50%
+Correcting values: 51%
+Correcting values: 52%
+Correcting values: 53%
+Correcting values: 54%
+Correcting values: 55%
+Correcting values: 56%
+Correcting values: 57%
+Correcting values: 58%
+Correcting values: 59%
+Correcting values: 60%
+Correcting values: 61%
+Correcting values: 62%
+Correcting values: 63%
+Correcting values: 64%
+Correcting values: 65%
+Correcting values: 66%
+Correcting values: 67%
+Correcting values: 68%
+Correcting values: 69%
+Correcting values: 70%
+Correcting values: 71%
+Correcting values: 72%
+Correcting values: 73%
+Correcting values: 74%
+Correcting values: 75%
+Correcting values: 76%
+Correcting values: 77%
+Correcting values: 78%
+Correcting values: 79%
+Correcting values: 80%
+Correcting values: 81%
+Correcting values: 82%
+Correcting values: 83%
+Correcting values: 84%
+Correcting values: 85%
+Correcting values: 86%
+Correcting values: 87%
+Correcting values: 88%
+Correcting values: 89%
+Correcting values: 90%
+Correcting values: 91%
+Correcting values: 92%
+Correcting values: 93%
+Correcting values: 94%
+Correcting values: 95%
+Correcting values: 96%
+Correcting values: 97%
+Correcting values: 98%
+Correcting values: 99%
+Correcting values: 100%
+Saving data...
+Output file written
+Elapsed Time (excluding I/O): 0.257s
+**********************************************************************************
+WARNING: Interior pit cells were found within the input DEM. It is likely that the
+DEM needs to be processed to remove topographic depressions and flats prior to
+running this tool.
+**********************************************************************************
+Flow accumulation file created successfully: /home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/floaccum.tif
+./whitebox_tools --run="ExtractStreams" --flow_accum='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/floaccum.tif' --output='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/netful0.tif' --threshold='1600.0' -v --compress_rasters=False
+
+*****************************
+* Welcome to ExtractStreams *
+* Powered by WhiteboxTools  *
+* www.whiteboxgeo.com       *
+*****************************
+Reading data...
+Progress: 0%
+Progress: 1%
+Progress: 2%
+Progress: 3%
+Progress: 4%
+Progress: 5%
+Progress: 6%
+Progress: 7%
+Progress: 8%
+Progress: 9%
+Progress: 10%
+Progress: 11%
+Progress: 12%
+Progress: 13%
+Progress: 14%
+Progress: 15%
+Progress: 16%
+Progress: 17%
+Progress: 18%
+Progress: 19%
+Progress: 20%
+Progress: 21%
+Progress: 22%
+Progress: 23%
+Progress: 24%
+Progress: 25%
+Progress: 26%
+Progress: 27%
+Progress: 28%
+Progress: 29%
+Progress: 30%
+Progress: 31%
+Progress: 32%
+Progress: 33%
+Progress: 34%
+Progress: 35%
+Progress: 36%
+Progress: 37%
+Progress: 38%
+Progress: 39%
+Progress: 40%
+Progress: 41%
+Progress: 42%
+Progress: 43%
+Progress: 44%
+Progress: 45%
+Progress: 46%
+Progress: 47%
+Progress: 48%
+Progress: 49%
+Progress: 50%
+Progress: 51%
+Progress: 52%
+Progress: 53%
+Progress: 54%
+Progress: 55%
+Progress: 56%
+Progress: 57%
+Progress: 58%
+Progress: 59%
+Progress: 60%
+Progress: 61%
+Progress: 62%
+Progress: 63%
+Progress: 64%
+Progress: 65%
+Progress: 66%
+Progress: 67%
+Progress: 68%
+Progress: 69%
+Progress: 70%
+Progress: 71%
+Progress: 72%
+Progress: 73%
+Progress: 74%
+Progress: 75%
+Progress: 76%
+Progress: 77%
+Progress: 78%
+Progress: 79%
+Progress: 80%
+Progress: 81%
+Progress: 82%
+Progress: 83%
+Progress: 84%
+Progress: 85%
+Progress: 86%
+Progress: 87%
+Progress: 88%
+Progress: 89%
+Progress: 90%
+Progress: 91%
+Progress: 92%
+Progress: 93%
+Progress: 94%
+Progress: 95%
+Progress: 96%
+Progress: 97%
+Progress: 98%
+Progress: 99%
+Progress: 100%
+Saving data...
+Output file written
+Elapsed Time (excluding I/O): 0.28s
+Stream network file 0 created successfully: /home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/netful0.tif
+./whitebox_tools --run="IterativeFirstOrderLinkPrune" --d8_pntr='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/flovec.tif' --upstream_area='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/floaccum.tif' --output='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/netful.tif' --csa='4.0' --mscl='40.0' --max_junctions='3' -v --compress_rasters=False
+
+*******************************************
+* Welcome to IterativeFirstOrderLinkPrune *
+* Powered by WhiteboxTools                *
+* www.whiteboxgeo.com                     *
+*******************************************
+IFOLP parsed args: csa=4, mscl=40, epsilon=0.00001, esri_pntr=false, fail_if_only_channel_pruned=true, max_junctions=3
+IFOLP WP-03 Phase A complete: 73923 stream cells remain after 1 pass(es).
+IFOLP WP-04 Phase B complete: 73770 stream cells remain after 2 pass(es).
+Saving data...
+Output file written
+Elapsed Time (excluding I/O): 0.523s
+./whitebox_tools --run="StreamJunctionIdentifier" --d8_pntr='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/flovec.tif' --streams='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/netful.tif' --output='/home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/chnjnt.tif' -v --compress_rasters=False
+
+***************************************
+* Welcome to StreamJunctionIdentifier *
+* Powered by WhiteboxTools            *
+* www.whiteboxgeo.com                 *
+***************************************
+Reading pointer data...
+Reading streams data...
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 0%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 1%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 2%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 3%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 4%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 5%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 6%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 7%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 8%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 9%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 10%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 11%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 12%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 13%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 14%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 15%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 16%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 17%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 18%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 19%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 20%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 21%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 22%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 23%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 24%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 25%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 26%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 27%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 28%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 29%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 30%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 31%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 32%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 33%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 34%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 35%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 36%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 37%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 38%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 39%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 40%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 41%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 42%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 43%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 44%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 45%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 46%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 47%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 48%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 49%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 50%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 51%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 52%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 53%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 54%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 55%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 56%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 57%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 58%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 59%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 60%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 61%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 62%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 63%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 64%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 65%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 66%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 67%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 68%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 69%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 70%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 71%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 72%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 73%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 74%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 75%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 76%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 77%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 78%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 79%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 80%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 81%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 82%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 83%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 84%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 85%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 86%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 87%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 88%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 89%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 90%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 91%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 92%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 93%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 94%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 95%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 96%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 97%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 98%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 99%
+Progress: 100%
+Saving data...
+Output file written
+Elapsed Time (excluding I/O): 0.56s
+Stream junction file created successfully: /home/workdir/weppcloud-wbt/target/breach-benchmark/final-channels/wbt/chnjnt.tif
+{"binary_sha256": "86b62cc6670eff3cd6a8b60bf957bdfe3e52b53f4d625c19d2b38ead52a86abf", "dem_sha256": "6d49e9e92daef8a9b5709db6833975cebfafda92ac97d6c4d6d77eeb1f05ee60", "started_utc": "2026-09-07T22:36:04Z", "parameters": {"csa_ha": 4.0, "mcl_m": 40.0, "stream_pruning_method": "ifolp", "fill_or_breach": "breach_least_cost", "blc_dist_m": 3000}, "step_elapsed_seconds": {"relief": 383.7582182090264, "flow_vector": 384.1432356759906, "flow_accumulation": 384.5407020300627, "extract_streams": 385.3263500339817, "identify_stream_junctions": 385.6176662070211, "delineate_channels": 420.56600067799445}, "status": "success", "elapsed_seconds": 420.5660125929862, "ended_utc": "2026-09-07T22:43:04Z", "user_cpu_seconds": 4141.295064, "system_cpu_seconds": 4.89924, "peak_rss_kib": 361016, "relief": {"shape": [2053, 2015], "transform": [354164.7893031073, 5.0, 0.0, 3150760.658995497, 0.0, -5.0], "projection": "PROJCS[\"WGS 84 / UTM zone 28N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-15],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32628\"]]", "nodata": -3.4028234663852886e+38, "mask_sha256": "5b84d9ca17204465a73c5c7e4cef7d1949ac1e31a876edbe6e58da1d342e9ae8", "values_sha256": "0821d7091a2c9585ca7754431ee123d85290379ddb07579ae766b6eeb396e1c3"}, "generated_files": {"wbt/chnjnt.tif": {"bytes": 33111218, "sha256": "0c473c123234a41b588b55ef943e3646e50a98abc10cfd04384222b2a6b97e44"}, "wbt/floaccum.tif": {"bytes": 16564038, "sha256": "422499fa6b92a1ae0104426a99ef7b12f3a032c6ce18dcbfae98e80ba54a7e0a"}, "wbt/flovec.tif": {"bytes": 8290448, "sha256": "eeafb1b7f4d673b4d689a16bcb72c6c88ab436fa767a8ff223a78f9f2aabc59f"}, "wbt/flovec.wgs.tif": {"bytes": 8426747, "sha256": "e5da55502a5f69b07dd222e21038b58a6b9325210d2dd2220202686ac7b7a6c8"}, "wbt/netful.WGS.geojson": {"bytes": 11059108, "sha256": "5fe5019ee27e99245c69931da632944283b369ff4c623f52e8a3e26a756c9934"}, "wbt/netful.geojson": {"bytes": 9945605, "sha256": "48bd0dee02a7b4aa02d17425e3e061b79204203e810ad9b001456e06698e0c23"}, "wbt/netful.tif": {"bytes": 8290448, "sha256": "a19ce5a01828084ea986f419f557442605928721a15da7b7b4734215949e8371"}, "wbt/netful0.tif": {"bytes": 16564038, "sha256": "8277e961ac96c6fe632d31816fea663414c22d94bb1864226f8747c40f1b041c"}, "wbt/relief.diagnostics.json": {"bytes": 1153, "sha256": "36f8516bf39668531ada435507828c2f93791d33516f3bf1ad258d320c82e0df"}, "wbt/relief.tif": {"bytes": 33111252, "sha256": "7ba480cd0f5eea1a7c1ecdc42e9ab23df9719cac750439eba1ff65cb31c1a1a1"}}}

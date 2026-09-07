@@ -9,7 +9,7 @@
 - None.
 
 ## Most Recent Completed ExecPlan
-- `docs/work-packages/20260730_fill_depressions_edge_outlet/prompts/completed/fill_depressions_edge_outlet_execplan.md`
+- `docs/work-packages/20260907_wbt_runtime_concurrency/prompts/completed/wbt_runtime_concurrency_execplan.md`
 
 ## Required Workflow for Active ExecPlan Work
 1. Read this `AGENTS.md` first.

@@ -115,7 +115,8 @@ fn run() -> Result<(), Error> {
     //     println!("{}", arg);
     // }
 
-    let mut configs = whitebox_common::configs::get_configs()?;
+    // CLI settings may be saved; never persist process-local environment overrides.
+    let mut configs = whitebox_common::configs::get_persisted_configs()?;
     let mut configs_modified = false;
 
     // if args.contains(&String::from("--compress_rasters")) {
@@ -360,6 +361,15 @@ fn run() -> Result<(), Error> {
     //     working_dir.push_str(&(sep.to_string()));
     //     configs.working_directory = working_dir.clone();
     // }
+
+    if run_tool {
+        // Validate before writing settings or starting any tool work.
+        if let Some(limit) = whitebox_common::configs::max_procs_override()? {
+            if configs.verbose_mode {
+                println!("WBT_MAX_PROCS={} (process-local thread limit)", limit);
+            }
+        }
+    }
 
     if configs_modified {
         whitebox_common::configs::save_configs(&configs)?;

@@ -1,0 +1,12 @@
+{
+  "app_tests": 147,
+  "common_tests": 42,
+  "common_doctests": 7,
+  "cargo_check": "passed",
+  "python_compile": "passed",
+  "compose_models": 5,
+  "compose_cases": 10,
+  "docs_lint": "2 files, no errors or warnings",
+  "container": "forest rq-worker, UID 1000 / GID 993, inherited 12, persisted 4",
+  "deployment": "not performed"
+}

@@ -1,0 +1,16 @@
+{
+  "cargo_check": "passed; 6 existing warnings",
+  "cargo_test": "147 passed, 0 failed",
+  "python_compile": "both bindings and all five benchmark/fixture tools passed",
+  "git_diff_check": "passed",
+  "parity": "30 exact matches to reference one-core binary",
+  "large_fixture_candidate_versions": "v3/v4 exact raster and diagnostics match",
+  "full_channel_call": "success, 420.566 seconds on CPUs 0-11",
+  "full_channel_relief_parity": "exact match to standalone final conditioning",
+  "rustc": "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+  "cargo": "cargo 1.92.0 (344c4567c 2025-10-21)",
+  "source_base_revision": "46272ca42a5b5b95e59713deee3af20e06fc93b4",
+  "rust_source_sha256": "6e2256068b1ddf484c88ec3a0d45c448ad1c6d930784003a62bf75a4c4564e89",
+  "wepppy_revision": "cc227e9c72d10add6b6c14ecfd0b5aa539f6fd58",
+  "final_binary_sha256": "86b62cc6670eff3cd6a8b60bf957bdfe3e52b53f4d625c19d2b38ead52a86abf"
+}

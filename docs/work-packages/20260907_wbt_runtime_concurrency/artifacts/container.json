@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "uid": 1000,
+  "gid": 993,
+  "environment_limit": "12",
+  "persisted_limit": 4,
+  "resolved_workers": 12,
+  "diagnostic_parity": true,
+  "binary_sha256": "c7334a191c4b04a69ef602343a4b851005f457de0fc2d5baf36b16ed357735ff"
+}

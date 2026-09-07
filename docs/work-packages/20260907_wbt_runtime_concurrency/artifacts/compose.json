@@ -1,0 +1,104 @@
+[
+  {
+    "files": [
+      "docker-compose.dev.yml"
+    ],
+    "operator_override": null,
+    "resolved": {
+      "rq-worker": "12",
+      "rq-worker-batch": "12"
+    }
+  },
+  {
+    "files": [
+      "docker-compose.dev.yml"
+    ],
+    "operator_override": "6",
+    "resolved": {
+      "rq-worker": "6",
+      "rq-worker-batch": "6"
+    }
+  },
+  {
+    "files": [
+      "docker-compose.dev.hpc.yml"
+    ],
+    "operator_override": null,
+    "resolved": {
+      "rq-worker": "12",
+      "rq-worker-batch": "12"
+    }
+  },
+  {
+    "files": [
+      "docker-compose.dev.hpc.yml"
+    ],
+    "operator_override": "6",
+    "resolved": {
+      "rq-worker": "6",
+      "rq-worker-batch": "6"
+    }
+  },
+  {
+    "files": [
+      "docker-compose.prod.yml"
+    ],
+    "operator_override": null,
+    "resolved": {
+      "rq-worker": "12",
+      "rq-worker-batch": "12"
+    }
+  },
+  {
+    "files": [
+      "docker-compose.prod.yml"
+    ],
+    "operator_override": "6",
+    "resolved": {
+      "rq-worker": "6",
+      "rq-worker-batch": "6"
+    }
+  },
+  {
+    "files": [
+      "docker-compose.prod.yml",
+      "docker-compose.prod.wepp1.yml"
+    ],
+    "operator_override": null,
+    "resolved": {
+      "rq-worker": "12",
+      "rq-worker-batch": "12"
+    }
+  },
+  {
+    "files": [
+      "docker-compose.prod.yml",
+      "docker-compose.prod.wepp1.yml"
+    ],
+    "operator_override": "6",
+    "resolved": {
+      "rq-worker": "6",
+      "rq-worker-batch": "6"
+    }
+  },
+  {
+    "files": [
+      "docker-compose.prod.worker.yml"
+    ],
+    "operator_override": null,
+    "resolved": {
+      "rq-worker": "12",
+      "rq-worker-batch": "12"
+    }
+  },
+  {
+    "files": [
+      "docker-compose.prod.worker.yml"
+    ],
+    "operator_override": "6",
+    "resolved": {
+      "rq-worker": "6",
+      "rq-worker-batch": "6"
+    }
+  }
+]

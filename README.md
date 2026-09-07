@@ -32,7 +32,7 @@ from weppcloud_wbt.whitebox_tools import WhiteboxTools
 
 ## Tools added in this fork
 
-All tools below are used operationally within WEPPcloud. Python bindings are included in [`whitebox_tools.py`](whitebox_tools.py) and [`WBT/whitebox_tools.py`](WBT/whitebox_tools.py) unless noted.
+The tools below support WEPPcloud workflows. Python bindings are included in [`whitebox_tools.py`](whitebox_tools.py) and [`WBT/whitebox_tools.py`](WBT/whitebox_tools.py) unless noted.
 
 ### Hydrology / terrain
 
@@ -56,6 +56,9 @@ All tools below are used operationally within WEPPcloud. Python bindings are inc
 
 - **`FillDepressions` update** ([`hydro_analysis/fill_depressions.rs`](whitebox-tools-app/src/tools/hydro_analysis/fill_depressions.rs)) — [issue #1](https://github.com/rogerlew/weppcloud-wbt/issues/1) · [validation](docs/work-packages/20260730_fill_depressions_edge_outlet/artifacts/validation.md)
   Treats valid cells on all four outer raster edges as open drainage outlets, preserving edge-connected low regions at their exterior connection elevation instead of raising them to a higher internal spill. Retains established enclosed-depression, flat-fixing, `max_depth`, and interior-NoData behavior, and fixes a worker-lifetime race exposed by fast, small-raster runs.
+
+- **`BreachDepressionsLeastCost` optimization** ([source](whitebox-tools-app/src/tools/hydro_analysis/breach_depressions_least_cost.rs)) — [algorithm and parity contract](docs/breach_depressions_least_cost_optimization.md) · [benchmark results](docs/work-packages/20260907_breach_least_cost_optimization/artifacts/results.md)
+  Runs pit searches in parallel with ordered terrain updates, rechecks searches affected by earlier changes, and reuses identical no-write searches across flat terrain. Deterministic pit ordering matches the legacy one-worker result; 30 parity cases cover exact raster, diagnostic, and error behavior at one and twelve workers. Cost equations, search limits, and optional filling semantics are preserved.
 
 - **`Watershed`** update ([`hydro_analysis/watershed.rs`](whitebox-tools-app/src/tools/hydro_analysis/watershed.rs)) — [end-user guide](docs/watershed_geojson.ENDUSER.md)
   Extended to accept GeoJSON pour-point inputs (Point and MultiPoint features) in addition to shapefiles and rasters.
@@ -89,8 +92,25 @@ All tools below are used operationally within WEPPcloud. Python bindings are inc
 
 ### Runtime and Python API
 
+- **Runtime concurrency** — [`WBT_MAX_PROCS`](docs/wbt_runtime_configuration.md) accepts a positive integer and overrides `settings.json` for execution without persisting the override. When unset, WBT uses the saved `max_procs`, defaulting to `-1` (automatic CPU selection). WEPPpy Compose workers supply `12` by default. This requires a binary built with the runtime override support.
 - **CLI error propagation** — [`main.rs`](whitebox-tools-app/src/main.rs) returns `Result`, enabling backtraces from scripted environments.
 - **Python wrapper enhancements** — `raise_on_error` semantics, custom exceptions, environment propagation, and richer error reporting across all tools.
+
+---
+
+## Least-cost breaching performance
+
+On forest with 12 physical cores, the `valid-tabletop` fixture (2015 × 2053 cells at 5 m resolution) completed standalone conditioning in **384.4 seconds** and the full WEPPpy channel computation in **420.6 seconds**, below the 600-second target. The full computation includes flow routing, stream extraction, pruning, and polygons; Redis/RQ bookkeeping is outside the timer. All 400,026 pits were resolved using a 3,000 m search radius, minimum-distance mode, and no filling. These are measured fixture results, not a runtime guarantee for other DEMs. See the [timing and parity evidence](docs/work-packages/20260907_breach_least_cost_optimization/artifacts/results.md).
+
+After building from source, run with a twelve-worker limit:
+
+```bash
+WBT_MAX_PROCS=12 ./target/release/whitebox_tools \
+  --run=BreachDepressionsLeastCost --dem=dem.tif --output=relief.tif \
+  --dist=600 --min_dist --fail_on_unresolved
+```
+
+`--dist` is in cells: 600 cells corresponds to 3,000 m on a 5 m DEM. The [optimization guide](docs/breach_depressions_least_cost_optimization.md) includes fixture provenance, benchmark commands, and memory considerations.
 
 ---
 

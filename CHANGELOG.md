@@ -2,7 +2,24 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Least-cost breach searches now use ordered parallel evaluation, validated
+  reuse of identical flat-edge searches, and generation-tagged scratch storage.
+  Equal-height pit order reproduces the legacy one-worker result across core
+  counts; legacy multi-worker ordering depended on thread arrival. See
+  `docs/breach_depressions_least_cost_optimization.md` for fidelity and validation.
+- Fixed the optional breach-filling worker ownership handoff before reclaiming
+  its shared raster, avoiding a completion race in `Arc::try_unwrap`.
+
 ### Added
+
+- Added process-local `WBT_MAX_PROCS` configuration, with strict positive-integer
+  validation and separation from persistent CLI settings. Unset retains legacy
+  settings/automatic CPU selection.
+
+- Added the checksummed valid-tabletop 5 m DEM and a 1/12-core least-cost breach
+  parity/benchmark suite, including tied-pit, NoData, filling, and failure cases.
 
 - Added opt-in `BreachDepressionsLeastCost --fail_on_unresolved` behavior and
   matching Python wrapper arguments. The tool reports a stable

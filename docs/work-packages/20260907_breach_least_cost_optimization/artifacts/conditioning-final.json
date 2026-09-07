@@ -1,0 +1,91 @@
+{
+  "command": [
+    "taskset",
+    "-c",
+    "12-23",
+    "/home/workdir/weppcloud-wbt/target/breach-benchmark/candidate-v4-large/whitebox_tools",
+    "-r=BreachDepressionsLeastCost",
+    "--dem=/home/workdir/weppcloud-wbt/test_fixtures/breach_least_cost/valid-tabletop/dem.tif",
+    "--output=/home/workdir/weppcloud-wbt/target/breach-benchmark/candidate-v4-valid-tabletop/relief.tif",
+    "--dist=600",
+    "--diagnostics=/home/workdir/weppcloud-wbt/target/breach-benchmark/candidate-v4-valid-tabletop/diagnostics.json",
+    "--diagnostics_id=0123456789abcdef0123456789abcdef",
+    "-v",
+    "--min_dist",
+    "--fail_on_unresolved"
+  ],
+  "binary_sha256": "86b62cc6670eff3cd6a8b60bf957bdfe3e52b53f4d625c19d2b38ead52a86abf",
+  "dem_sha256": "6d49e9e92daef8a9b5709db6833975cebfafda92ac97d6c4d6d77eeb1f05ee60",
+  "host": "forest",
+  "cores": 12,
+  "cpus": "12-23",
+  "started_utc": "2026-09-07T22:28:40Z",
+  "elapsed_seconds": 384.38610282202717,
+  "returncode": 0,
+  "user_cpu_seconds": 4151.187378,
+  "system_cpu_seconds": 5.245853,
+  "peak_rss_kib": 360692,
+  "ended_utc": "2026-09-07T22:35:05Z",
+  "raster": {
+    "shape": [
+      2053,
+      2015
+    ],
+    "transform": [
+      354164.7893031073,
+      5.0,
+      0.0,
+      3150760.658995497,
+      0.0,
+      -5.0
+    ],
+    "projection": "PROJCS[\"WGS 84 / UTM zone 28N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-15],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32628\"]]",
+    "nodata": -3.4028234663852886e+38,
+    "mask_sha256": "5b84d9ca17204465a73c5c7e4cef7d1949ac1e31a876edbe6e58da1d342e9ae8",
+    "values_sha256": "0821d7091a2c9585ca7754431ee123d85290379ddb07579ae766b6eeb396e1c3"
+  },
+  "diagnostics": {
+    "conditioning": {
+      "detected_low_point_count": 400026,
+      "fallback_fill_used": false,
+      "fallback_filled_low_point_count": 0,
+      "longest_breach_path": 2180.0,
+      "longest_breach_path_cells": 436,
+      "resolved_low_point_count": 400026,
+      "unresolved_low_point_count": 0
+    },
+    "input_name": "dem.tif",
+    "operation_id": "0123456789abcdef0123456789abcdef",
+    "output_name": "relief.tif",
+    "parameters": {
+      "fail_on_unresolved": true,
+      "fill": false,
+      "flat_increment": 8e-05,
+      "max_cost": null,
+      "minimize_distance": true,
+      "search_distance": 3000.0,
+      "search_distance_cells": 600
+    },
+    "schema_version": 1,
+    "status": "success",
+    "terrain_change": {
+      "cut_volume": 122287.90485258175,
+      "fill_volume": 17142.86649515998,
+      "lowered_area": 10087000.0,
+      "lowered_cell_count": 403480,
+      "maximum_cut": 15.795049969177247,
+      "maximum_raise": 10.688987840576175,
+      "raised_area": 109700.0,
+      "raised_cell_count": 4388,
+      "valid_cell_count": 4136795
+    },
+    "tool": "BreachDepressionsLeastCost",
+    "units": {
+      "area": "m2",
+      "elevation": "m",
+      "horizontal": "m",
+      "volume": "m3"
+    }
+  },
+  "unresolved_error": []
+}

@@ -1,0 +1,157 @@
+OUTPUT_DIRECTORY /wc1/runs/va/valid-tabletop/_logs/channel-timing-20260907T214729Z
+DEM 2015 2053 (354164.7893031073, 5.0, 0.0, 3150760.658995497, 0.0, -5.0)
+./whitebox_tools --run="BreachDepressionsLeastCost" --dem='/wc1/runs/va/valid-tabletop/dem/dem.tif' --output='/wc1/runs/va/valid-tabletop/_logs/channel-timing-20260907T214729Z/wbt/relief.tif' --dist='600' --min_dist --fail_on_unresolved --diagnostics='/wc1/runs/va/valid-tabletop/_logs/channel-timing-20260907T214729Z/wbt/relief.diagnostics.json' --diagnostics_id='f11e4bf1e3c04a699153ebb674c3caef' -v --compress_rasters=False
+
+Could not create output settings.json file. WBT is likely installed somewhere without write permission.
+*****************************************
+* Welcome to BreachDepressionsLeastCost *
+* Powered by WhiteboxTools              *
+* www.whiteboxgeo.com                   *
+*****************************************
+Reading data...
+Finding pits: 0%
+Finding pits: 1%
+Finding pits: 2%
+Finding pits: 3%
+Finding pits: 4%
+Finding pits: 5%
+Finding pits: 6%
+Finding pits: 7%
+Finding pits: 8%
+Finding pits: 9%
+Finding pits: 10%
+Finding pits: 11%
+Finding pits: 12%
+Finding pits: 13%
+Finding pits: 14%
+Finding pits: 15%
+Finding pits: 16%
+Finding pits: 17%
+Finding pits: 18%
+Finding pits: 19%
+Finding pits: 20%
+Finding pits: 21%
+Finding pits: 22%
+Finding pits: 23%
+Finding pits: 24%
+Finding pits: 25%
+Finding pits: 26%
+Finding pits: 27%
+Finding pits: 28%
+Finding pits: 29%
+Finding pits: 30%
+Finding pits: 31%
+Finding pits: 32%
+Finding pits: 33%
+Finding pits: 34%
+Finding pits: 35%
+Finding pits: 36%
+Finding pits: 37%
+Finding pits: 38%
+Finding pits: 39%
+Finding pits: 40%
+Finding pits: 41%
+Finding pits: 42%
+Finding pits: 43%
+Finding pits: 44%
+Finding pits: 45%
+Finding pits: 46%
+Finding pits: 47%
+Finding pits: 48%
+Finding pits: 49%
+Finding pits: 50%
+Finding pits: 51%
+Finding pits: 52%
+Finding pits: 53%
+Finding pits: 54%
+Finding pits: 55%
+Finding pits: 56%
+Finding pits: 57%
+Finding pits: 58%
+Finding pits: 59%
+Finding pits: 60%
+Finding pits: 61%
+Finding pits: 62%
+Finding pits: 63%
+Finding pits: 64%
+Finding pits: 65%
+Finding pits: 66%
+Finding pits: 67%
+Finding pits: 68%
+Finding pits: 69%
+Finding pits: 70%
+Finding pits: 71%
+Finding pits: 72%
+Finding pits: 73%
+Finding pits: 74%
+Finding pits: 75%
+Finding pits: 76%
+Finding pits: 77%
+Finding pits: 78%
+Finding pits: 79%
+Finding pits: 80%
+Finding pits: 81%
+Finding pits: 82%
+Finding pits: 83%
+Finding pits: 84%
+Finding pits: 85%
+Finding pits: 86%
+Finding pits: 87%
+Finding pits: 88%
+Finding pits: 89%
+Finding pits: 90%
+Finding pits: 91%
+Finding pits: 92%
+Finding pits: 93%
+Finding pits: 94%
+Finding pits: 95%
+Finding pits: 96%
+Finding pits: 97%
+Finding pits: 98%
+Finding pits: 99%
+Finding pits: 100%
+Breaching: 0%
+Breaching: 1%
+Breaching: 2%
+Breaching: 3%
+Breaching: 4%
+Breaching: 5%
+Breaching: 6%
+Breaching: 7%
+Breaching: 8%
+Breaching: 9%
+Breaching: 10%
+Breaching: 11%
+Breaching: 12%
+Breaching: 13%
+Breaching: 14%
+Traceback (most recent call last):
+  File "/workdir/weppcloud-wbt/WBT/whitebox_tools.py", line 503, in run_tool
+    return self._read_process_output(proc, callback, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workdir/weppcloud-wbt/WBT/whitebox_tools.py", line 438, in _read_process_output
+    raise CalledProcessError(return_code, proc.args)
+subprocess.CalledProcessError: Command '['./whitebox_tools', '--run="BreachDepressionsLeastCost"', "--dem='/wc1/runs/va/valid-tabletop/dem/dem.tif'", "--output='/wc1/runs/va/valid-tabletop/_logs/channel-timing-20260907T214729Z/wbt/relief.tif'", "--dist='600'", '--min_dist', '--fail_on_unresolved', "--diagnostics='/wc1/runs/va/valid-tabletop/_logs/channel-timing-20260907T214729Z/wbt/relief.diagnostics.json'", "--diagnostics_id='f11e4bf1e3c04a699153ebb674c3caef'", '-v', '--compress_rasters=False']' died with <Signals.SIGTERM: 15>.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<stdin>", line 25, in <module>
+  File "/workdir/wepppy/wepppy/topo/wbt/wbt_topaz_emulator.py", line 420, in wrapper
+    result = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workdir/wepppy/wepppy/topo/wbt/wbt_topaz_emulator.py", line 1237, in delineate_channels
+    self._create_relief(
+  File "/workdir/wepppy/wepppy/topo/wbt/wbt_topaz_emulator.py", line 420, in wrapper
+    result = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workdir/wepppy/wepppy/topo/wbt/wbt_topaz_emulator.py", line 918, in _create_relief
+    ret = self.wbt.breach_depressions_least_cost(**kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workdir/weppcloud-wbt/WBT/whitebox_tools.py", line 4933, in breach_depressions_least_cost
+    return self.run_tool('breach_depressions_least_cost', args, callback)  # returns 1 if error
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workdir/weppcloud-wbt/WBT/whitebox_tools.py", line 509, in run_tool
+    raise WhiteboxToolsRunningError(f"An error occurred while running the tool '{tool_name}'. Return code: {proc.returncode} - {str(err)}")
+whitebox_tools.WhiteboxToolsRunningError: An error occurred while running the tool 'breach_depressions_least_cost'. Return code: -15 - Command '['./whitebox_tools', '--run="BreachDepressionsLeastCost"', "--dem='/wc1/runs/va/valid-tabletop/dem/dem.tif'", "--output='/wc1/runs/va/valid-tabletop/_logs/channel-timing-20260907T214729Z/wbt/relief.tif'", "--dist='600'", '--min_dist', '--fail_on_unresolved', "--diagnostics='/wc1/runs/va/valid-tabletop/_logs/channel-timing-20260907T214729Z/wbt/relief.diagnostics.json'", "--diagnostics_id='f11e4bf1e3c04a699153ebb674c3caef'", '-v', '--compress_rasters=False']' died with <Signals.SIGTERM: 15>.
+{"started_utc": "2026-09-07T21:47:29.197557+00:00", "output_directory": "/wc1/runs/va/valid-tabletop/_logs/channel-timing-20260907T214729Z", "uid": 1002, "gid": 130, "status": "failed", "error": "An error occurred while running the tool 'breach_depressions_least_cost'. Return code: -15 - Command '['./whitebox_tools', '--run=\"BreachDepressionsLeastCost\"', \"--dem='/wc1/runs/va/valid-tabletop/dem/dem.tif'\", \"--output='/wc1/runs/va/valid-tabletop/_logs/channel-timing-20260907T214729Z/wbt/relief.tif'\", \"--dist='600'\", '--min_dist', '--fail_on_unresolved', \"--diagnostics='/wc1/runs/va/valid-tabletop/_logs/channel-timing-20260907T214729Z/wbt/relief.diagnostics.json'\", \"--diagnostics_id='f11e4bf1e3c04a699153ebb674c3caef'\", '-v', '--compress_rasters=False']' died with <Signals.SIGTERM: 15>.", "elapsed_seconds": 794.3186451010406, "ended_utc": "2026-09-07T22:00:43.516211+00:00"}

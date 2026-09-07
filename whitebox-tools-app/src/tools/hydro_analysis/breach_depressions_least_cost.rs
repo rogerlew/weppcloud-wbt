@@ -7,10 +7,11 @@ License: MIT
 */
 
 use crate::tools::*;
+use rayon::prelude::*;
 use serde_json::json;
 use std::cmp::Ordering;
 use std::cmp::Ordering::Equal;
-use std::collections::{BinaryHeap, VecDeque};
+use std::collections::{BinaryHeap, HashMap, VecDeque};
 use std::env;
 use std::f64;
 use std::i32;
@@ -333,9 +334,17 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
                     fail_on_unresolved = true;
                 }
             } else if flag_val == "-diagnostics" {
-                diagnostics_file = if keyval { vec[1].to_string() } else { args[i + 1].to_string() };
+                diagnostics_file = if keyval {
+                    vec[1].to_string()
+                } else {
+                    args[i + 1].to_string()
+                };
             } else if flag_val == "-diagnostics_id" {
-                diagnostics_id = if keyval { vec[1].to_string() } else { args[i + 1].to_string() };
+                diagnostics_id = if keyval {
+                    vec[1].to_string()
+                } else {
+                    args[i + 1].to_string()
+                };
             }
         }
 
@@ -368,7 +377,10 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
         if !output_file.contains(&sep) && !output_file.contains("/") {
             output_file = format!("{}{}", working_directory, output_file);
         }
-        if !diagnostics_file.is_empty() && !diagnostics_file.contains(&sep) && !diagnostics_file.contains("/") {
+        if !diagnostics_file.is_empty()
+            && !diagnostics_file.contains(&sep)
+            && !diagnostics_file.contains("/")
+        {
             diagnostics_file = format!("{}{}", working_directory, diagnostics_file);
         }
         if !diagnostics_file.is_empty() {
@@ -388,11 +400,9 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
         let nodata = input.configs.nodata;
         let (mut col, mut row): (isize, isize);
         let (mut rn, mut cn): (isize, isize);
-        let mut accum: f64;
-        let (mut z, mut zn, mut zout): (f64, f64, f64);
+        let (mut z, mut zn): (f64, f64);
         let dx = [1, 1, 1, 0, -1, -1, -1, 0];
         let dy = [-1, 0, 1, 1, 1, 0, -1, -1];
-        let mut flag: bool;
         let mut num_solved: usize;
         // let mut overall_num_solved = 0;
         let mut num_unsolved = 0;
@@ -400,12 +410,6 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
         let resy = input.configs.resolution_y;
         let diagres = (resx * resx + resy * resy).sqrt();
         let cost_dist = [diagres, resx, diagres, resy, diagres, resx, diagres, resy];
-        let mut cost1: f64;
-        let mut cost2: f64;
-        let mut new_cost: f64;
-        let mut length: i16;
-        let mut length_n: i16;
-        let mut b: usize;
         let mut num_procs = num_cpus::get() as isize;
         let configs = whitebox_common::configs::get_configs()?;
         let max_procs = configs.max_procs;
@@ -496,142 +500,102 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
 
         /* Vec is a stack and so if we want to pop the values from lowest to highest, we need to sort
         them from highest to lowest. */
-        undefined_flow_cells.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(Equal));
+        undefined_flow_cells.sort_by(|a, b| {
+            b.2.partial_cmp(&a.2)
+                .unwrap_or(Equal)
+                .then_with(|| a.0.cmp(&b.0))
+                .then_with(|| a.1.cmp(&b.1))
+        });
         let num_deps = undefined_flow_cells.len();
         if num_deps == 0 && verbose {
             println!("No depressions found. Process ending...");
         }
 
         num_solved = 0;
-        let backlink_dir = [4i8, 5, 6, 7, 0, 1, 2, 3];
-        let mut backlink: Array2D<i8> = Array2D::new(rows, columns, -1, -2)?;
-        let mut encountered: Array2D<i8> = Array2D::new(rows, columns, 0, -1)?;
-        let mut path_length: Array2D<i16> = Array2D::new(rows, columns, 0, -1)?;
-        let mut scanned_cells = vec![];
-        let max_length = max_dist as i16;
-        let filter_size = ((max_dist * 2 + 1) * (max_dist * 2 + 1)) as usize;
-        let mut minheap = BinaryHeap::with_capacity(filter_size);
+        let search = BreachSearch {
+            nodata,
+            small_num,
+            max_length: max_dist as i16,
+            max_cost,
+            minimize_dist,
+            cost_dist,
+        };
+        let workers = (num_procs as usize).min(num_deps.max(1));
+        if verbose {
+            println!("Breach search worker threads: {}", workers);
+        }
+        let mut uniform = UniformTiles::new(&output);
+        let pool = rayon::ThreadPoolBuilder::new()
+            .num_threads(workers)
+            .build()
+            .map_err(|err| Error::new(ErrorKind::Other, err.to_string()))?;
+        let mut scratch = (0..workers)
+            .map(|_| SearchScratch::new(rows, columns))
+            .collect::<Result<Vec<_>, _>>()?;
         let mut longest_breach_path_cells = 0usize;
-        while let Some(cell) = undefined_flow_cells.pop() {
-            row = cell.0;
-            col = cell.1;
-            z = output.get_value(row, col);
-
-            // Is it still a pit cell? It may have been solved during a previous depression solution.
-            flag = true;
-            for n in 0..8 {
-                zn = output.get_value(row + dy[n], col + dx[n]);
-                if zn < z && zn != nodata {
-                    // It has a lower non-nodata cell
-                    // Resolving some other pit cell resulted in a solution for this one.
+        let mut completed = 0usize;
+        let mut recomputed = 0usize;
+        // Search an immutable raster concurrently, then commit in serial pit order.
+        // A prior write anywhere in a search's read bounds invalidates that result.
+        while !undefined_flow_cells.is_empty() {
+            let batch: Vec<_> = (0..(workers * 4))
+                .filter_map(|_| undefined_flow_cells.pop())
+                .collect();
+            let mut results = pool.install(|| {
+                scratch
+                    .par_iter_mut()
+                    .enumerate()
+                    .flat_map_iter(|(worker, state)| {
+                        batch
+                            .iter()
+                            .enumerate()
+                            .skip(worker)
+                            .step_by(workers)
+                            .map(|(index, cell)| {
+                                (index, search.run_cached(&output, *cell, state, &uniform))
+                            })
+                            .collect::<Vec<_>>()
+                    })
+                    .collect::<Vec<_>>()
+            });
+            results.sort_by_key(|(index, _)| *index);
+            let mut changed = Vec::new();
+            for (index, mut result) in results {
+                if changed
+                    .iter()
+                    .any(|&(r, c)| result.read_bounds.contains(r, c))
+                {
+                    result = search.run(&output, batch[index], &mut scratch[0]);
+                    recomputed += 1;
+                }
+                if result.solved {
                     num_solved += 1;
-                    flag = false;
-                    break;
-                }
-            }
-            if flag {
-                // Perform the cost-accumulation operation.
-                encountered.set_value(row, col, 1i8);
-                if !minheap.is_empty() {
-                    minheap.clear();
-                }
-                minheap.push(GridCell {
-                    row: row,
-                    column: col,
-                    priority: 0f64,
-                });
-                scanned_cells.push((row, col));
-                flag = true;
-                while !minheap.is_empty() && flag {
-                    let cell2 = minheap.pop().expect("Error during pop operation.");
-                    accum = cell2.priority;
-                    if accum > max_cost {
-                        // There isn't a breach channel cheap enough
-                        undefined_flow_cells2.push((row, col, z)); // Add it to the list for the filling step
-                        num_unsolved += 1;
-                        flag = false;
-                        break;
+                    longest_breach_path_cells = longest_breach_path_cells.max(result.path_length);
+                    for (r, c, value) in result.writes {
+                        output.set_value(r, c, value);
+                        changed.push((r, c));
                     }
-                    length = path_length.get_value(cell2.row, cell2.column);
-                    zn = output.get_value(cell2.row, cell2.column);
-                    cost1 = zn - z + length as f64 * small_num;
-                    for n in 0..8 {
-                        cn = cell2.column + dx[n];
-                        rn = cell2.row + dy[n];
-                        if encountered.get_value(rn, cn) != 1i8 {
-                            scanned_cells.push((rn, cn));
-                            // not yet encountered
-                            length_n = length + 1;
-                            path_length.set_value(rn, cn, length_n);
-                            backlink.set_value(rn, cn, backlink_dir[n]);
-                            zn = output.get_value(rn, cn);
-                            zout = z - (length_n as f64 * small_num);
-                            if zn > zout && zn != nodata {
-                                cost2 = zn - zout;
-                                new_cost = if minimize_dist {
-                                    accum + (cost1 + cost2) / 2f64 * cost_dist[n]
-                                } else {
-                                    accum + cost2
-                                };
-                                encountered.set_value(rn, cn, 1i8);
-                                if length_n <= max_length {
-                                    minheap.push(GridCell {
-                                        row: rn,
-                                        column: cn,
-                                        priority: new_cost,
-                                    });
-                                }
-                            } else if zn <= zout || zn == nodata {
-                                // We're at a cell that we can breach to
-                                longest_breach_path_cells =
-                                    longest_breach_path_cells.max(length_n as usize);
-                                while flag {
-                                    // Find which cell to go to from here
-                                    if backlink.get_value(rn, cn) > -1i8 {
-                                        b = backlink.get_value(rn, cn) as usize;
-                                        rn += dy[b];
-                                        cn += dx[b];
-                                        zn = output.get_value(rn, cn);
-                                        length = path_length.get_value(rn, cn);
-                                        zout = z - (length as f64 * small_num);
-                                        if zn > zout {
-                                            output.set_value(rn, cn, zout);
-                                        }
-                                    } else {
-                                        flag = false;
-                                    }
-                                }
-                                num_solved += 1;
-                                flag = false;
-                                break; // don't check any more neighbours.
-                            }
-                        }
-                    }
-                }
-
-                // clear the intermediate rasters
-                while let Some(cell2) = scanned_cells.pop() {
-                    backlink.set_value(cell2.0, cell2.1, -1i8);
-                    encountered.set_value(cell2.0, cell2.1, 0i8);
-                    path_length.set_value(cell2.0, cell2.1, 0i16);
-                }
-
-                if flag {
-                    // Didn't find any lower cells.
-                    undefined_flow_cells2.push((row, col, z)); // Add it to the list for the next iteration
+                } else {
                     num_unsolved += 1;
+                    undefined_flow_cells2.push((batch[index].0, batch[index].1, result.elevation));
+                }
+                completed += 1;
+                if verbose {
+                    progress = (100 * completed / num_deps.max(1)) as usize;
+                    if progress != old_progress {
+                        println!("Breaching: {}%", progress);
+                        old_progress = progress;
+                    }
                 }
             }
-
-            if verbose {
-                progress = (100.0_f64
-                    * (1f64 - (undefined_flow_cells.len()) as f64 / (num_deps - 1) as f64))
-                    as usize;
-                if progress != old_progress {
-                    println!("Breaching: {}%", progress);
-                    old_progress = progress;
-                }
-            }
+            uniform.refresh(&output, &changed);
+        }
+        if verbose {
+            println!(
+                "Translated flat searches reused: {}",
+                scratch.iter().map(|s| s.cache_hits).sum::<usize>()
+            );
+            println!("Speculative searches recomputed: {}", recomputed);
         }
         if verbose {
             println!("Num. solved pits: {}", num_solved);
@@ -678,6 +642,8 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
                             }
                         }
                     }
+                    // Release the raster before signalling completion to Arc::try_unwrap.
+                    drop(output2);
                     tx.send(pits).unwrap();
                 });
             }
@@ -710,7 +676,12 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
             let mut flats: Array2D<i8> = Array2D::new(rows, columns, 0, -1)?;
             let mut possible_outlets = vec![];
             // solve from highest to lowest
-            undefined_flow_cells.sort_by(|a, b| a.2.partial_cmp(&b.2).unwrap_or(Equal));
+            undefined_flow_cells.sort_by(|a, b| {
+                a.2.partial_cmp(&b.2)
+                    .unwrap_or(Equal)
+                    .then_with(|| a.0.cmp(&b.0))
+                    .then_with(|| a.1.cmp(&b.1))
+            });
             let mut pit_id = 1;
             let mut flag: bool;
             while let Some(cell) = undefined_flow_cells.pop() {
@@ -1023,6 +994,402 @@ impl WhiteboxTool for BreachDepressionsLeastCost {
     }
 }
 
+/// Conservative read set: false conflicts cost a serial retry, never stale writes.
+#[derive(Clone, Default)]
+struct ReadBounds {
+    bounds: Option<(isize, isize, isize, isize)>,
+}
+
+impl ReadBounds {
+    fn read(&mut self, raster: &Raster, row: isize, col: isize) -> f64 {
+        self.bounds = Some(match self.bounds {
+            Some((r0, r1, c0, c1)) => (r0.min(row), r1.max(row), c0.min(col), c1.max(col)),
+            None => (row, row, col, col),
+        });
+        raster.get_value(row, col)
+    }
+
+    fn contains(&self, row: isize, col: isize) -> bool {
+        self.bounds.map_or(false, |(r0, r1, c0, c1)| {
+            row >= r0 && row <= r1 && col >= c0 && col <= c1
+        })
+    }
+}
+
+/// Exact uniform-tile summaries accelerate checking a translated read rectangle.
+/// Mixed tiles never pass without checking the requested cells individually.
+struct UniformTiles {
+    values: Vec<Option<f64>>,
+    tile_columns: usize,
+    rows: isize,
+    columns: isize,
+}
+
+const UNIFORM_TILE_SIZE: isize = 32;
+
+impl UniformTiles {
+    fn new(raster: &Raster) -> Self {
+        let rows = raster.configs.rows as isize;
+        let columns = raster.configs.columns as isize;
+        let tile_columns = ((columns + UNIFORM_TILE_SIZE - 1) / UNIFORM_TILE_SIZE) as usize;
+        let tile_rows = ((rows + UNIFORM_TILE_SIZE - 1) / UNIFORM_TILE_SIZE) as usize;
+        let mut result = Self {
+            values: vec![None; tile_columns * tile_rows],
+            tile_columns,
+            rows,
+            columns,
+        };
+        for index in 0..result.values.len() {
+            result.update_tile(raster, index);
+        }
+        result
+    }
+
+    fn update_tile(&mut self, raster: &Raster, index: usize) {
+        let r0 = (index / self.tile_columns) as isize * UNIFORM_TILE_SIZE;
+        let c0 = (index % self.tile_columns) as isize * UNIFORM_TILE_SIZE;
+        // Edge cells have a separate value band in cached searches. Summarize
+        // only interior cells so an otherwise uniform edge tile remains useful.
+        let r1 = (r0 + UNIFORM_TILE_SIZE).min(self.rows - 1);
+        let c1 = (c0 + UNIFORM_TILE_SIZE).min(self.columns - 1);
+        let r0 = r0.max(1);
+        let c0 = c0.max(1);
+        if r0 >= r1 || c0 >= c1 {
+            self.values[index] = None;
+            return;
+        }
+        let value = raster.get_value(r0, c0);
+        for row in r0..r1 {
+            for col in c0..c1 {
+                if raster.get_value(row, col).to_bits() != value.to_bits() {
+                    self.values[index] = None;
+                    return;
+                }
+            }
+        }
+        self.values[index] = Some(value);
+    }
+
+    fn refresh(&mut self, raster: &Raster, changed: &[(isize, isize)]) {
+        let mut tiles: Vec<_> = changed
+            .iter()
+            .map(|&(row, col)| {
+                (row / UNIFORM_TILE_SIZE) as usize * self.tile_columns
+                    + (col / UNIFORM_TILE_SIZE) as usize
+            })
+            .collect();
+        tiles.sort_unstable();
+        tiles.dedup();
+        for tile in tiles {
+            self.update_tile(raster, tile);
+        }
+    }
+
+    fn matches(&self, raster: &Raster, bounds: (isize, isize, isize, isize), value: f64) -> bool {
+        let (r0, r1, c0, c1) = bounds;
+        if r0 > r1 || c0 > c1 {
+            return true;
+        }
+        for tr in r0 / UNIFORM_TILE_SIZE..=r1 / UNIFORM_TILE_SIZE {
+            for tc in c0 / UNIFORM_TILE_SIZE..=c1 / UNIFORM_TILE_SIZE {
+                let index = tr as usize * self.tile_columns + tc as usize;
+                if self.values[index].map(|v| v.to_bits()) == Some(value.to_bits()) {
+                    continue;
+                }
+                let ra = r0.max(tr * UNIFORM_TILE_SIZE);
+                let rb = r1.min((tr + 1) * UNIFORM_TILE_SIZE - 1);
+                let ca = c0.max(tc * UNIFORM_TILE_SIZE);
+                let cb = c1.min((tc + 1) * UNIFORM_TILE_SIZE - 1);
+                for row in ra..=rb {
+                    for col in ca..=cb {
+                        if raster.get_value(row, col).to_bits() != value.to_bits() {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        true
+    }
+}
+
+struct FlatSearch {
+    origin: (isize, isize),
+    bounds: (isize, isize, isize, isize),
+    edge_value: f64,
+    path_length: usize,
+}
+
+impl FlatSearch {
+    // Only one exterior edge is permitted; corners cannot be translated safely.
+    fn edge(bounds: (isize, isize, isize, isize), rows: isize, cols: isize) -> Option<u8> {
+        let (r0, r1, c0, c1) = bounds;
+        if c0 > 0 && c1 < cols - 1 {
+            if r0 < 0 && r1 < rows - 1 {
+                return Some(0);
+            }
+            if r1 >= rows && r0 > 0 {
+                return Some(1);
+            }
+        }
+        if r0 > 0 && r1 < rows - 1 {
+            if c0 < 0 && c1 < cols - 1 {
+                return Some(2);
+            }
+            if c1 >= cols && c0 > 0 {
+                return Some(3);
+            }
+        }
+        None
+    }
+
+    fn validate(
+        &self,
+        output: &Raster,
+        uniform: &UniformTiles,
+        row: isize,
+        col: isize,
+        edge: u8,
+        z: f64,
+    ) -> Option<ReadBounds> {
+        let dr = row - self.origin.0;
+        let dc = col - self.origin.1;
+        let (r0, r1, c0, c1) = self.bounds;
+        let bounds = (r0 + dr, r1 + dr, c0 + dc, c1 + dc);
+        if Self::edge(bounds, uniform.rows, uniform.columns) != Some(edge) {
+            return None;
+        }
+        let (r0, r1, c0, c1) = bounds;
+        // All interior values and the boundary band must match bit for bit.
+        if !uniform.matches(
+            output,
+            (
+                r0.max(1),
+                r1.min(uniform.rows - 2),
+                c0.max(1),
+                c1.min(uniform.columns - 2),
+            ),
+            z,
+        ) {
+            return None;
+        }
+        let band = match edge {
+            0 => (0, 0, c0, c1),
+            1 => (uniform.rows - 1, uniform.rows - 1, c0, c1),
+            2 => (r0, r1, 0, 0),
+            _ => (r0, r1, uniform.columns - 1, uniform.columns - 1),
+        };
+        // Boundary values are not included in the interior tile summaries.
+        for row in band.0..=band.1 {
+            for col in band.2..=band.3 {
+                if output.get_value(row, col).to_bits() != self.edge_value.to_bits() {
+                    return None;
+                }
+            }
+        }
+        Some(ReadBounds {
+            bounds: Some(bounds),
+        })
+    }
+}
+
+struct SearchScratch {
+    backlink: Array2D<i8>,
+    encountered: Array2D<u32>,
+    generation: u32,
+    path_length: Array2D<i16>,
+    heap: BinaryHeap<GridCell>,
+    cache: HashMap<(u8, isize, u64), FlatSearch>,
+    cache_hits: usize,
+}
+
+impl SearchScratch {
+    fn new(rows: isize, cols: isize) -> Result<Self, Error> {
+        Ok(Self {
+            backlink: Array2D::new(rows, cols, -1, -2)?,
+            encountered: Array2D::new(rows, cols, 0, 0)?,
+            generation: 0,
+            path_length: Array2D::new(rows, cols, 0, -1)?,
+            heap: BinaryHeap::new(),
+            cache: HashMap::new(),
+            cache_hits: 0,
+        })
+    }
+
+    fn begin(&mut self, row: isize, col: isize) {
+        // Generation tags avoid resetting every explored cell after every pit.
+        self.generation = self.generation.wrapping_add(1);
+        if self.generation == 0 {
+            self.encountered.reinitialize_values(0);
+            self.generation = 1;
+        }
+        self.backlink.set_value(row, col, -1);
+        self.path_length.set_value(row, col, 0);
+        self.encountered.set_value(row, col, self.generation);
+    }
+}
+
+struct SearchResult {
+    solved: bool,
+    elevation: f64,
+    path_length: usize,
+    writes: Vec<(isize, isize, f64)>,
+    read_bounds: ReadBounds,
+}
+
+struct BreachSearch {
+    nodata: f64,
+    small_num: f64,
+    max_length: i16,
+    max_cost: f64,
+    minimize_dist: bool,
+    cost_dist: [f64; 8],
+}
+
+impl BreachSearch {
+    fn run_cached(
+        &self,
+        output: &Raster,
+        cell: (isize, isize, f64),
+        state: &mut SearchScratch,
+        uniform: &UniformTiles,
+    ) -> SearchResult {
+        let (row, col, _) = cell;
+        let z = output.get_value(row, col);
+        for edge in 0..4 {
+            let depth = if edge < 2 { row } else { col };
+            if let Some(cached) = state.cache.get(&(edge, depth, z.to_bits())) {
+                if let Some(read_bounds) = cached.validate(output, uniform, row, col, edge, z) {
+                    state.cache_hits += 1;
+                    return SearchResult {
+                        solved: true,
+                        elevation: z,
+                        path_length: cached.path_length,
+                        writes: Vec::new(),
+                        read_bounds,
+                    };
+                }
+            }
+        }
+        let result = self.run(output, cell, state);
+        if result.solved && result.writes.is_empty() {
+            if let Some(bounds) = result.read_bounds.bounds {
+                if let Some(edge) = FlatSearch::edge(bounds, uniform.rows, uniform.columns) {
+                    let edge_value = match edge {
+                        0 => output.get_value(0, col),
+                        1 => output.get_value(uniform.rows - 1, col),
+                        2 => output.get_value(row, 0),
+                        _ => output.get_value(row, uniform.columns - 1),
+                    };
+                    let cached = FlatSearch {
+                        origin: (row, col),
+                        bounds,
+                        edge_value,
+                        path_length: result.path_length,
+                    };
+                    if cached
+                        .validate(output, uniform, row, col, edge, z)
+                        .is_some()
+                    {
+                        let depth = if edge < 2 { row } else { col };
+                        state.cache.insert((edge, depth, z.to_bits()), cached);
+                    }
+                }
+            }
+        }
+        result
+    }
+
+    fn run(
+        &self,
+        output: &Raster,
+        cell: (isize, isize, f64),
+        state: &mut SearchScratch,
+    ) -> SearchResult {
+        let dx = [1, 1, 1, 0, -1, -1, -1, 0];
+        let dy = [-1, 0, 1, 1, 1, 0, -1, -1];
+        let backlink_dir = [4i8, 5, 6, 7, 0, 1, 2, 3];
+        let (row, col, _) = cell;
+        let mut reads = ReadBounds::default();
+        let z = reads.read(output, row, col);
+        let mut result = SearchResult {
+            solved: false,
+            elevation: z,
+            path_length: 0,
+            writes: Vec::new(),
+            read_bounds: ReadBounds::default(),
+        };
+        for n in 0..8 {
+            let zn = reads.read(output, row + dy[n], col + dx[n]);
+            if zn < z && zn != self.nodata {
+                result.solved = true;
+                result.read_bounds = reads;
+                return result;
+            }
+        }
+        state.begin(row, col);
+        state.heap.push(GridCell {
+            row,
+            column: col,
+            priority: 0.0,
+        });
+        'search: while let Some(cell2) = state.heap.pop() {
+            let accum = cell2.priority;
+            if accum > self.max_cost {
+                break;
+            }
+            let length = state.path_length.get_value(cell2.row, cell2.column);
+            let zn = reads.read(output, cell2.row, cell2.column);
+            let cost1 = zn - z + length as f64 * self.small_num;
+            for n in 0..8 {
+                let mut cn = cell2.column + dx[n];
+                let mut rn = cell2.row + dy[n];
+                if state.encountered.get_value(rn, cn) != state.generation {
+                    let length_n = length + 1;
+                    state.path_length.set_value(rn, cn, length_n);
+                    state.backlink.set_value(rn, cn, backlink_dir[n]);
+                    let zn = reads.read(output, rn, cn);
+                    let zout = z - length_n as f64 * self.small_num;
+                    if zn > zout && zn != self.nodata {
+                        let cost2 = zn - zout;
+                        let new_cost = if self.minimize_dist {
+                            accum + (cost1 + cost2) / 2.0 * self.cost_dist[n]
+                        } else {
+                            accum + cost2
+                        };
+                        state.encountered.set_value(rn, cn, state.generation);
+                        if length_n <= self.max_length {
+                            state.heap.push(GridCell {
+                                row: rn,
+                                column: cn,
+                                priority: new_cost,
+                            });
+                        }
+                    } else if zn <= zout || zn == self.nodata {
+                        result.path_length = length_n as usize;
+                        while state.backlink.get_value(rn, cn) > -1 {
+                            let b = state.backlink.get_value(rn, cn) as usize;
+                            rn += dy[b];
+                            cn += dx[b];
+                            let zn = reads.read(output, rn, cn);
+                            let length = state.path_length.get_value(rn, cn);
+                            let zout = z - length as f64 * self.small_num;
+                            if zn > zout {
+                                result.writes.push((rn, cn, zout));
+                            }
+                        }
+                        result.solved = true;
+                        break 'search;
+                    }
+                }
+            }
+        }
+        state.heap.clear();
+        result.read_bounds = reads;
+        result
+    }
+}
+
 fn unresolved_depressions_error(num_unsolved: usize, max_dist: isize) -> Error {
     Error::new(
         ErrorKind::InvalidData,
@@ -1079,6 +1446,165 @@ impl Ord for GridCell2 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn terrain() -> Raster {
+        let mut configs = RasterConfigs::default();
+        configs.rows = 11;
+        configs.columns = 11;
+        configs.nodata = -9999.0;
+        let mut raster = Raster::initialize_using_config("unused.tif", &configs);
+        for row in 0..11 {
+            for col in 0..11 {
+                raster.set_value(row, col, 20.0);
+            }
+        }
+        raster.set_value(5, 5, 10.0);
+        raster.set_value(5, 9, 1.0);
+        raster
+    }
+
+    fn search(max_length: i16) -> BreachSearch {
+        BreachSearch {
+            nodata: -9999.0,
+            small_num: 0.001,
+            max_length,
+            max_cost: f64::INFINITY,
+            minimize_dist: true,
+            cost_dist: [
+                2.0f64.sqrt(),
+                1.0,
+                2.0f64.sqrt(),
+                1.0,
+                2.0f64.sqrt(),
+                1.0,
+                2.0f64.sqrt(),
+                1.0,
+            ],
+        }
+    }
+
+    #[test]
+    fn bounded_search_remains_unsolved_and_scratch_can_be_reused() {
+        let raster = terrain();
+        let mut scratch = SearchScratch::new(11, 11).unwrap();
+        let unsolved = search(1).run(&raster, (5, 5, 10.0), &mut scratch);
+        assert!(!unsolved.solved);
+        assert!(unsolved.writes.is_empty());
+        let solved = search(4).run(&raster, (5, 5, 10.0), &mut scratch);
+        let repeated = search(4).run(&raster, (5, 5, 10.0), &mut scratch);
+        assert!(solved.solved);
+        assert!(!solved.writes.is_empty());
+        assert_eq!(solved.writes, repeated.writes);
+        assert_eq!(solved.path_length, repeated.path_length);
+    }
+
+    #[test]
+    fn initial_pit_check_is_included_in_conflict_bounds() {
+        let mut raster = terrain();
+        raster.set_value(5, 6, 9.0);
+        let mut scratch = SearchScratch::new(11, 11).unwrap();
+        let result = search(1).run(&raster, (5, 5, 10.0), &mut scratch);
+        assert!(result.solved);
+        assert!(result.writes.is_empty());
+        assert!(result.read_bounds.contains(5, 5));
+        assert!(result.read_bounds.contains(5, 6));
+        // A preceding breach can lower the pit itself, invalidating the skip.
+        raster.set_value(5, 5, 0.0);
+        assert!(!search(1).run(&raster, (5, 5, 10.0), &mut scratch).solved);
+    }
+
+    #[test]
+    fn earlier_lowering_invalidates_an_unsolved_search() {
+        let mut raster = terrain();
+        let mut scratch = SearchScratch::new(11, 11).unwrap();
+        let result = search(1).run(&raster, (5, 5, 10.0), &mut scratch);
+        assert!(!result.solved);
+        assert!(result.read_bounds.contains(5, 6));
+        assert!(!result.read_bounds.contains(0, 0));
+        raster.set_value(5, 6, 9.0);
+        assert!(search(1).run(&raster, (5, 5, 10.0), &mut scratch).solved);
+    }
+
+    #[test]
+    fn maximum_cost_exit_clears_search_state() {
+        let raster = terrain();
+        let mut scratch = SearchScratch::new(11, 11).unwrap();
+        let mut limited = search(4);
+        limited.max_cost = 0.0;
+        assert!(!limited.run(&raster, (5, 5, 10.0), &mut scratch).solved);
+        assert!(search(4).run(&raster, (5, 5, 10.0), &mut scratch).solved);
+    }
+
+    #[test]
+    fn generation_wrap_does_not_reuse_stale_visits() {
+        let raster = terrain();
+        let mut scratch = SearchScratch::new(11, 11).unwrap();
+        scratch.generation = u32::MAX;
+        scratch.encountered.reinitialize_values(1);
+        let result = search(4).run(&raster, (5, 5, 10.0), &mut scratch);
+        assert_eq!(scratch.generation, 1);
+        assert!(result.solved);
+        assert!(!result.writes.is_empty());
+    }
+
+    fn flat_edge_terrain() -> Raster {
+        let mut configs = RasterConfigs::default();
+        configs.rows = 65;
+        configs.columns = 65;
+        configs.nodata = -9999.0;
+        let mut raster = Raster::initialize_using_config("unused.tif", &configs);
+        for row in 0..65 {
+            for col in 0..65 {
+                raster.set_value(
+                    row,
+                    col,
+                    if row == 0 || col == 0 || row == 64 || col == 64 {
+                        0.0
+                    } else {
+                        -0.001
+                    },
+                );
+            }
+        }
+        raster
+    }
+
+    #[test]
+    fn translated_flat_search_matches_uncached_search_and_rejects_changes() {
+        let mut raster = flat_edge_terrain();
+        let mut uniform = UniformTiles::new(&raster);
+        let mut scratch = SearchScratch::new(65, 65).unwrap();
+        let algorithm = search(20);
+        let first = algorithm.run_cached(&raster, (30, 3, -0.001), &mut scratch, &uniform);
+        assert!(first.solved);
+        assert!(first.writes.is_empty());
+        assert!(!scratch.cache.is_empty());
+        let cached = algorithm.run_cached(&raster, (31, 3, -0.001), &mut scratch, &uniform);
+        assert_eq!(scratch.cache_hits, 1);
+        let reference = algorithm.run(&raster, (31, 3, -0.001), &mut scratch);
+        assert_eq!(cached.path_length, reference.path_length);
+        assert_eq!(cached.writes, reference.writes);
+        assert_eq!(cached.read_bounds.bounds, reference.read_bounds.bounds);
+        // An interior change must prevent translation reuse, including in a partial tile.
+        raster.set_value(31, 3, 1.0);
+        uniform.refresh(&raster, &[(31, 3)]);
+        algorithm.run_cached(&raster, (32, 3, -0.001), &mut scratch, &uniform);
+        assert_eq!(scratch.cache_hits, 1);
+    }
+
+    #[test]
+    fn translated_cache_rejects_changed_edge_and_corner() {
+        let mut raster = flat_edge_terrain();
+        let mut uniform = UniformTiles::new(&raster);
+        let mut scratch = SearchScratch::new(65, 65).unwrap();
+        let algorithm = search(20);
+        algorithm.run_cached(&raster, (30, 3, -0.001), &mut scratch, &uniform);
+        raster.set_value(31, 0, 1.0);
+        uniform.refresh(&raster, &[(31, 0)]);
+        algorithm.run_cached(&raster, (31, 3, -0.001), &mut scratch, &uniform);
+        assert_eq!(scratch.cache_hits, 0);
+        assert!(FlatSearch::edge((-1, 3, -1, 3), 65, 65).is_none());
+    }
 
     #[test]
     fn unresolved_error_has_stable_machine_readable_fields() {

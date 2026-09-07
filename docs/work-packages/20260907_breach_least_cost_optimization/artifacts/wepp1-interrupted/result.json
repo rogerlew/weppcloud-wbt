@@ -1,0 +1,10 @@
+{
+  "started_utc": "2026-09-07T21:47:29.197557+00:00",
+  "output_directory": "/wc1/runs/va/valid-tabletop/_logs/channel-timing-20260907T214729Z",
+  "uid": 1002,
+  "gid": 130,
+  "status": "failed",
+  "error": "An error occurred while running the tool 'breach_depressions_least_cost'. Return code: -15 - Command '['./whitebox_tools', '--run=\"BreachDepressionsLeastCost\"', \"--dem='/wc1/runs/va/valid-tabletop/dem/dem.tif'\", \"--output='/wc1/runs/va/valid-tabletop/_logs/channel-timing-20260907T214729Z/wbt/relief.tif'\", \"--dist='600'\", '--min_dist', '--fail_on_unresolved', \"--diagnostics='/wc1/runs/va/valid-tabletop/_logs/channel-timing-20260907T214729Z/wbt/relief.diagnostics.json'\", \"--diagnostics_id='f11e4bf1e3c04a699153ebb674c3caef'\", '-v', '--compress_rasters=False']' died with <Signals.SIGTERM: 15>.",
+  "elapsed_seconds": 794.3186451010406,
+  "ended_utc": "2026-09-07T22:00:43.516211+00:00"
+}

@@ -1,0 +1,19 @@
+{
+  "observed_pid": 3795769,
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "configured_max_procs": 12,
+  "command": "PYTHONPATH=/workdir/wepppy taskset -c 0-11 /workdir/wepppy/.venv/bin/python tools/benchmark_breach_channels.py --binary target/breach-benchmark/candidate-final-channels/whitebox_tools --dem test_fixtures/breach_least_cost/valid-tabletop/dem.tif --output-dir target/breach-benchmark/final-channels"
+}
