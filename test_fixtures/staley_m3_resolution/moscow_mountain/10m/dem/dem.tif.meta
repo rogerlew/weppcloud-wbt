@@ -1,0 +1,52 @@
+{
+  "wmesque_retrieve": {
+    "url": "https://wepp.cloud/webservices/wmesque2/retrieve/ned13/2022/?bbox=-116.93381915405627,46.7667441631714,-116.85286383573995,46.82227653281675&cellsize=10.0&format=GTiff",
+    "wmesque_endpoint": "https://wepp.cloud/webservices/wmesque2",
+    "bbox_crs": null
+  },
+  "dataset": "National Elevation Dataset (NED) 1/3 arc-second (~10m)",
+  "publisher": "USGS Earth Resources Observation and Science (EROS) Center",
+  "year": 2022,
+  "variable": "elevation",
+  "units": "meters",
+  "source_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/USGS_Seamless_DEM_13.vrt",
+  "wmesque": {
+    "bbox": [
+      -116.93381915405627,
+      46.7667441631714,
+      -116.85286383573995,
+      46.82227653281675
+    ],
+    "bbox_crs": null,
+    "bbox_source": "wgs84",
+    "cache": "/tmp/2f8b896a6b3f4c7e81d16cd7a157282d.tif",
+    "dataset": "ned13/2022/",
+    "cellsize": 10.0,
+    "ul": {
+      "ul_x": 505048.0963980568,
+      "ul_y": 5185416.780112741,
+      "utm_number": 11,
+      "utm_letter": "T"
+    },
+    "proj4": "+proj=utm +zone=11 +north +datum=WGS84 +ellps=WGS84",
+    "cmd": [
+      "gdalwarp",
+      "-t_srs",
+      "+proj=utm +zone=11 +north +datum=WGS84 +ellps=WGS84",
+      "-tr",
+      "10.0",
+      "10.0",
+      "-te",
+      "505048.0963980568",
+      "5179254.275722698",
+      "511234.69996250136",
+      "5185416.780112741",
+      "-r",
+      "bilinear",
+      "/geodata/ned13/2022/.vrt",
+      "/tmp/2f8b896a6b3f4c7e81d16cd7a157282d.tif"
+    ],
+    "stdout": "Creating output file that is 619P x 616L.\nUsing internal nodata values (e.g. -999999) for image /geodata/ned13/2022/.vrt.\nCopying nodata values from source /geodata/ned13/2022/.vrt to destination /tmp/2f8b896a6b3f4c7e81d16cd7a157282d.tif.\nProcessing /geodata/ned13/2022/.vrt [1/1] : 0...10...20...30...40...50...60...70...80...90...100 - done.\n",
+    "timestamp": "2026-09-09T00:05:07.387225"
+  }
+}

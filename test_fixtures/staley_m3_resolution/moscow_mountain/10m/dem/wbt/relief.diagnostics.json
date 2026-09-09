@@ -1,0 +1,43 @@
+{
+  "conditioning": {
+    "detected_low_point_count": 274,
+    "fallback_fill_used": false,
+    "fallback_filled_low_point_count": 0,
+    "longest_breach_path": 180.0,
+    "longest_breach_path_cells": 18,
+    "resolved_low_point_count": 274,
+    "unresolved_low_point_count": 0
+  },
+  "input_name": "dem.tif",
+  "operation_id": "6fbcd29a1b0e42c39ca64014ea70ea95",
+  "output_name": "relief.tif",
+  "parameters": {
+    "fail_on_unresolved": true,
+    "fill": false,
+    "flat_increment": 0.00015000000000000001,
+    "max_cost": null,
+    "minimize_distance": true,
+    "search_distance": 1000.0,
+    "search_distance_cells": 100
+  },
+  "schema_version": 1,
+  "status": "success",
+  "terrain_change": {
+    "cut_volume": 5578.592666014697,
+    "fill_volume": 4813.150332031546,
+    "lowered_area": 41800.0,
+    "lowered_cell_count": 418,
+    "maximum_cut": 5.009333203125152,
+    "maximum_raise": 1.451998437499924,
+    "raised_area": 26500.0,
+    "raised_cell_count": 265,
+    "valid_cell_count": 381304
+  },
+  "tool": "BreachDepressionsLeastCost",
+  "units": {
+    "area": "m2",
+    "elevation": "m",
+    "horizontal": "m",
+    "volume": "m3"
+  }
+}

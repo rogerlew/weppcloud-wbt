@@ -1,0 +1,1267 @@
+{
+  "schema_version": 1,
+  "captured_utc": "2026-09-09T00:24:02.452198+00:00",
+  "description": "User-supplied canonical WEPPcloud workflow pairs; no resampling or extent normalization performed.",
+  "runs": [
+    {
+      "site": "moscow_mountain",
+      "resolution_m": 30,
+      "runid": "bass-elimination",
+      "source_url": "https://wc.bearhive.duckdns.org/weppcloud/runs/bass-elimination/disturbed9002_wbt/",
+      "source_root": "/wc1/runs/ba/bass-elimination",
+      "files": [
+        {
+          "path": "moscow_mountain/30m/dem/dem.tif",
+          "source_relative_path": "dem/dem.tif",
+          "bytes": 182840,
+          "sha256": "3206099479dc4a925a0375846486fede09a9d9d3e8a9b2134614c32ee679af5c",
+          "crs": "EPSG:32611",
+          "shape": [
+            213,
+            214
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            504590.00225648296,
+            0.0,
+            -30.0,
+            5185328.0168808075
+          ],
+          "dtype": "float32",
+          "nodata": -999999.0
+        },
+        {
+          "path": "moscow_mountain/30m/dem/dem.tif.meta",
+          "source_relative_path": "dem/dem.tif.meta",
+          "bytes": 1928,
+          "sha256": "def8bbe9f030b29c5c13b41f406b0b942c58102825ba4bdb902ef859e2edcfa3"
+        },
+        {
+          "path": "moscow_mountain/30m/dem/wbt/relief.tif",
+          "source_relative_path": "dem/wbt/relief.tif",
+          "bytes": 366794,
+          "sha256": "c73d8a408dff9fe0076581a06a2b5feea1d0076dbc211642fa3002bde990f93c",
+          "crs": "EPSG:32611",
+          "shape": [
+            213,
+            214
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            504590.00225648296,
+            0.0,
+            -30.0,
+            5185328.0168808075
+          ],
+          "dtype": "float64",
+          "nodata": -999999.0
+        },
+        {
+          "path": "moscow_mountain/30m/dem/wbt/relief.diagnostics.json",
+          "source_relative_path": "dem/wbt/relief.diagnostics.json",
+          "bytes": 1145,
+          "sha256": "9d063c93c0e31379ed7b71bae6ed6c3b7ede6db094c57b057a48e517e2b1869e"
+        },
+        {
+          "path": "moscow_mountain/30m/dem/wbt/flovec.tif",
+          "source_relative_path": "dem/wbt/flovec.tif",
+          "bytes": 93302,
+          "sha256": "3150e56da0990c209e82353f07f266dae5349af793345f5c08ed8a7913e286a2",
+          "crs": "EPSG:32611",
+          "shape": [
+            213,
+            214
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            504590.00225648296,
+            0.0,
+            -30.0,
+            5185328.0168808075
+          ],
+          "dtype": "int16",
+          "nodata": -32768.0
+        },
+        {
+          "path": "moscow_mountain/30m/dem/wbt/subwta.tif",
+          "source_relative_path": "dem/wbt/subwta.tif",
+          "bytes": 184770,
+          "sha256": "7220d4026ea6d97d7e6791696a1105b44843f5b6dac7b06311f8201ddad46b90",
+          "crs": "EPSG:32611",
+          "shape": [
+            213,
+            214
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            504590.00225648296,
+            0.0,
+            -30.0,
+            5185328.0168808075
+          ],
+          "dtype": "float32",
+          "nodata": -Infinity
+        },
+        {
+          "path": "moscow_mountain/30m/dem/wbt/netful.tif",
+          "source_relative_path": "dem/wbt/netful.tif",
+          "bytes": 93302,
+          "sha256": "9c06a77a122734acc0194d22de0dfe093528ec79d15f7d2a1504a6c834bc0068",
+          "crs": "EPSG:32611",
+          "shape": [
+            213,
+            214
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            504590.00225648296,
+            0.0,
+            -30.0,
+            5185328.0168808075
+          ],
+          "dtype": "int16",
+          "nodata": -32768.0
+        },
+        {
+          "path": "moscow_mountain/30m/dem/wbt/bound.tif",
+          "source_relative_path": "dem/wbt/bound.tif",
+          "bytes": 184466,
+          "sha256": "b4501adfa603dd804e4940b92fca29b08ccccb07f6b81ce2a554e16bed5c2e27",
+          "crs": "EPSG:32611",
+          "shape": [
+            213,
+            214
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            504590.00225648296,
+            0.0,
+            -30.0,
+            5185328.0168808075
+          ],
+          "dtype": "int32",
+          "nodata": -32768.0
+        },
+        {
+          "path": "moscow_mountain/30m/dem/wbt/outlet.geojson",
+          "source_relative_path": "dem/wbt/outlet.geojson",
+          "bytes": 1022,
+          "sha256": "98619abd71624cfee2dac6378b5dc78da66c28417b28826c20fcecd8f7d8ab88"
+        },
+        {
+          "path": "moscow_mountain/30m/dem/wbt/bound.geojson",
+          "source_relative_path": "dem/wbt/bound.geojson",
+          "bytes": 66776,
+          "sha256": "c9188a16c0691edb9b6bf629895de6b97972249d2975019606993577189e625b"
+        },
+        {
+          "path": "moscow_mountain/30m/dem/wbt/bound.WGS.geojson",
+          "source_relative_path": "dem/wbt/bound.WGS.geojson",
+          "bytes": 61155,
+          "sha256": "03af9b669a4f7bfaaccefd5ac5383183fd2a398b1666a6bb667632008b5ab480"
+        }
+      ],
+      "outlet": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            506375.00225648296,
+            5180063.0168808075
+          ]
+        },
+        "properties": {
+          "Id": 0,
+          "candidate_rank": null,
+          "candidates_considered": 0,
+          "centroid_col": null,
+          "centroid_row": null,
+          "column": 59,
+          "distance_to_boundary": null,
+          "easting": 506375.00225648296,
+          "epsg": 32611,
+          "northing": 5180063.0168808075,
+          "outlet_downstream_of_mask": false,
+          "outlet_in_mask": false,
+          "outlet_junction_count": 1,
+          "outlet_mask_value": null,
+          "perimeter_stream_count": 0,
+          "requested_cell_offset": 0,
+          "requested_col": 60,
+          "requested_easting": 506405.00225648296,
+          "requested_lat": 46.77415587686962,
+          "requested_lon": -116.91645230831963,
+          "requested_northing": 5180063.0168808075,
+          "requested_row": 175,
+          "row": 175,
+          "start_col": 60,
+          "start_distance_to_boundary": null,
+          "start_in_mask": false,
+          "start_mode": "requested",
+          "start_offset_cells": 0,
+          "start_row": 175,
+          "steps_beyond_mask": 0,
+          "steps_from_center": 1,
+          "steps_from_start": 1,
+          "watershed_cell_count": 0
+        }
+      }
+    },
+    {
+      "site": "moscow_mountain",
+      "resolution_m": 10,
+      "runid": "desolate-yea",
+      "source_url": "https://wc.bearhive.duckdns.org/weppcloud/runs/desolate-yea/config/",
+      "source_root": "/wc1/runs/de/desolate-yea",
+      "files": [
+        {
+          "path": "moscow_mountain/10m/dem/dem.tif",
+          "source_relative_path": "dem/dem.tif",
+          "bytes": 1526820,
+          "sha256": "61e8515e7d1e8abbf7ca299d2df5ea1d43814772345fc695db09128edeacd164",
+          "crs": "EPSG:32611",
+          "shape": [
+            616,
+            619
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            505048.0963980568,
+            0.0,
+            -10.0,
+            5185416.780112741
+          ],
+          "dtype": "float32",
+          "nodata": -999999.0
+        },
+        {
+          "path": "moscow_mountain/10m/dem/dem.tif.meta",
+          "source_relative_path": "dem/dem.tif.meta",
+          "bytes": 1931,
+          "sha256": "e12234c8b4d639782b78697b8b9a1005bf4cf112c63807820bc7940616a32f6b"
+        },
+        {
+          "path": "moscow_mountain/10m/dem/wbt/relief.tif",
+          "source_relative_path": "dem/wbt/relief.tif",
+          "bytes": 3055794,
+          "sha256": "1981492933030a55bef7cc9b68d54a26e0c147a2c4f01ca9d4f79e66dacdf08b",
+          "crs": "EPSG:32611",
+          "shape": [
+            616,
+            619
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            505048.0963980568,
+            0.0,
+            -10.0,
+            5185416.780112741
+          ],
+          "dtype": "float64",
+          "nodata": -999999.0
+        },
+        {
+          "path": "moscow_mountain/10m/dem/wbt/relief.diagnostics.json",
+          "source_relative_path": "dem/wbt/relief.diagnostics.json",
+          "bytes": 1148,
+          "sha256": "0e08ab6c5eae9d3adec2a4108627348c17bd72f2f3d2cf705a0f9e2a1c7cf8d4"
+        },
+        {
+          "path": "moscow_mountain/10m/dem/wbt/flovec.tif",
+          "source_relative_path": "dem/wbt/flovec.tif",
+          "bytes": 767970,
+          "sha256": "d4816239a82b2f931d5a90bfe026fde8925d6037264f6929daa257e56f144050",
+          "crs": "EPSG:32611",
+          "shape": [
+            616,
+            619
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            505048.0963980568,
+            0.0,
+            -10.0,
+            5185416.780112741
+          ],
+          "dtype": "int16",
+          "nodata": -32768.0
+        },
+        {
+          "path": "moscow_mountain/10m/dem/wbt/subwta.tif",
+          "source_relative_path": "dem/wbt/subwta.tif",
+          "bytes": 1530882,
+          "sha256": "186e8504385f7592552690388f85a31dc973554e21cff30e58e5922713f281af",
+          "crs": "EPSG:32611",
+          "shape": [
+            616,
+            619
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            505048.0963980568,
+            0.0,
+            -10.0,
+            5185416.780112741
+          ],
+          "dtype": "float32",
+          "nodata": -Infinity
+        },
+        {
+          "path": "moscow_mountain/10m/dem/wbt/netful.tif",
+          "source_relative_path": "dem/wbt/netful.tif",
+          "bytes": 767970,
+          "sha256": "9428cf39fcfe7e8f74b9d140067b50f2255bde8c133c4260b4338f1eabc9d3bd",
+          "crs": "EPSG:32611",
+          "shape": [
+            616,
+            619
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            505048.0963980568,
+            0.0,
+            -10.0,
+            5185416.780112741
+          ],
+          "dtype": "int16",
+          "nodata": -32768.0
+        },
+        {
+          "path": "moscow_mountain/10m/dem/wbt/bound.tif",
+          "source_relative_path": "dem/wbt/bound.tif",
+          "bytes": 1530578,
+          "sha256": "34c8aef3db1e8da47975cbff1cc6ba55d68dbb15aa78219b74128ac5d28b4031",
+          "crs": "EPSG:32611",
+          "shape": [
+            616,
+            619
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            505048.0963980568,
+            0.0,
+            -10.0,
+            5185416.780112741
+          ],
+          "dtype": "int32",
+          "nodata": -32768.0
+        },
+        {
+          "path": "moscow_mountain/10m/dem/wbt/outlet.geojson",
+          "source_relative_path": "dem/wbt/outlet.geojson",
+          "bytes": 1019,
+          "sha256": "aa566aaf22e951dec02caf303d18da8ddc089639f8672720f2d3b37d3c42f2ad"
+        },
+        {
+          "path": "moscow_mountain/10m/dem/wbt/bound.geojson",
+          "source_relative_path": "dem/wbt/bound.geojson",
+          "bytes": 216622,
+          "sha256": "f49b6e24337a63b9f931cb89bbda0731c2c1cec98d52d6695a2128e8f01c77bf"
+        },
+        {
+          "path": "moscow_mountain/10m/dem/wbt/bound.WGS.geojson",
+          "source_relative_path": "dem/wbt/bound.WGS.geojson",
+          "bytes": 187139,
+          "sha256": "4679e9782087fb16c80b9bade7330d4ac5fc09096e62087e378e714d5ac6d74d"
+        }
+      ],
+      "outlet": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            506363.0963980568,
+            5180051.780112741
+          ]
+        },
+        "properties": {
+          "Id": 0,
+          "candidate_rank": null,
+          "candidates_considered": 0,
+          "centroid_col": null,
+          "centroid_row": null,
+          "column": 131,
+          "distance_to_boundary": null,
+          "easting": 506363.0963980568,
+          "epsg": 32611,
+          "northing": 5180051.780112741,
+          "outlet_downstream_of_mask": false,
+          "outlet_in_mask": false,
+          "outlet_junction_count": 1,
+          "outlet_mask_value": null,
+          "perimeter_stream_count": 0,
+          "requested_cell_offset": 0,
+          "requested_col": 133,
+          "requested_easting": 506383.0963980568,
+          "requested_lat": 46.77408624790884,
+          "requested_lon": -116.91649792061206,
+          "requested_northing": 5180061.780112741,
+          "requested_row": 535,
+          "row": 536,
+          "start_col": 133,
+          "start_distance_to_boundary": null,
+          "start_in_mask": false,
+          "start_mode": "requested",
+          "start_offset_cells": 0,
+          "start_row": 535,
+          "steps_beyond_mask": 0,
+          "steps_from_center": 2,
+          "steps_from_start": 2,
+          "watershed_cell_count": 0
+        }
+      }
+    },
+    {
+      "site": "topanga",
+      "resolution_m": 30,
+      "runid": "untucked-hit",
+      "source_url": "https://wc.bearhive.duckdns.org/weppcloud/runs/untucked-hit/disturbed9002_wbt/",
+      "source_root": "/wc1/runs/un/untucked-hit",
+      "files": [
+        {
+          "path": "topanga/30m/dem/dem.tif",
+          "source_relative_path": "dem/dem.tif",
+          "bytes": 66462,
+          "sha256": "1aea882e82d9486a187772c45a27ea006171679ce04b59da88f1d1d237f3c426",
+          "crs": "EPSG:32611",
+          "shape": [
+            130,
+            127
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            353564.90881591244,
+            0.0,
+            -30.0,
+            3778375.667680568
+          ],
+          "dtype": "float32",
+          "nodata": -999999.0
+        },
+        {
+          "path": "topanga/30m/dem/dem.tif.meta",
+          "source_relative_path": "dem/dem.tif.meta",
+          "bytes": 1925,
+          "sha256": "815296cca9dfd42035b00de1f2043a25c6dc9d7bc66a15f76c0d78dba43fd33e"
+        },
+        {
+          "path": "topanga/30m/dem/wbt/relief.tif",
+          "source_relative_path": "dem/wbt/relief.tif",
+          "bytes": 133554,
+          "sha256": "4de089d82390c81b1689f5c278d04d421763e7559bb3a3447b591ab53edd8e56",
+          "crs": "EPSG:32611",
+          "shape": [
+            130,
+            127
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            353564.90881591244,
+            0.0,
+            -30.0,
+            3778375.667680568
+          ],
+          "dtype": "float64",
+          "nodata": -999999.0
+        },
+        {
+          "path": "topanga/30m/dem/wbt/relief.diagnostics.json",
+          "source_relative_path": "dem/wbt/relief.diagnostics.json",
+          "bytes": 1143,
+          "sha256": "0481e84d506b5afa1e11509cffcdec0c481698a4676318788df2e51101cca71a"
+        },
+        {
+          "path": "topanga/30m/dem/wbt/flovec.tif",
+          "source_relative_path": "dem/wbt/flovec.tif",
+          "bytes": 34494,
+          "sha256": "22e0d6800a6e1e4e13df77414afaf0277ef029b27675a782b663d34e535c5785",
+          "crs": "EPSG:32611",
+          "shape": [
+            130,
+            127
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            353564.90881591244,
+            0.0,
+            -30.0,
+            3778375.667680568
+          ],
+          "dtype": "int16",
+          "nodata": -32768.0
+        },
+        {
+          "path": "topanga/30m/dem/wbt/subwta.tif",
+          "source_relative_path": "dem/wbt/subwta.tif",
+          "bytes": 67818,
+          "sha256": "001c1631b3c1124e811722c9f28dbafbba1187e42a02147dfe1721033b19f603",
+          "crs": "EPSG:32611",
+          "shape": [
+            130,
+            127
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            353564.90881591244,
+            0.0,
+            -30.0,
+            3778375.667680568
+          ],
+          "dtype": "float32",
+          "nodata": -Infinity
+        },
+        {
+          "path": "topanga/30m/dem/wbt/netful.tif",
+          "source_relative_path": "dem/wbt/netful.tif",
+          "bytes": 34494,
+          "sha256": "8f6c353ce279c5e5ca2ceb58931a8b85371ba86da8dfd9f0e7ce2a90c4c82f63",
+          "crs": "EPSG:32611",
+          "shape": [
+            130,
+            127
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            353564.90881591244,
+            0.0,
+            -30.0,
+            3778375.667680568
+          ],
+          "dtype": "int16",
+          "nodata": -32768.0
+        },
+        {
+          "path": "topanga/30m/dem/wbt/bound.tif",
+          "source_relative_path": "dem/wbt/bound.tif",
+          "bytes": 67514,
+          "sha256": "89adb948423ebf4501880647fd191479e4f9a7e83fcd8aa56052f567dd1925bf",
+          "crs": "EPSG:32611",
+          "shape": [
+            130,
+            127
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            353564.90881591244,
+            0.0,
+            -30.0,
+            3778375.667680568
+          ],
+          "dtype": "int32",
+          "nodata": -32768.0
+        },
+        {
+          "path": "topanga/30m/dem/wbt/outlet.geojson",
+          "source_relative_path": "dem/wbt/outlet.geojson",
+          "bytes": 1016,
+          "sha256": "ddb528d9aa55a961d50e8a02f0fb262c8e6531c34823bc0f77f9b19d489ded7d"
+        },
+        {
+          "path": "topanga/30m/dem/wbt/bound.geojson",
+          "source_relative_path": "dem/wbt/bound.geojson",
+          "bytes": 40389,
+          "sha256": "f55e42f039e1b15c93e616bc8ff18032c427bfe0a1ec1481c7ff3697deb510db"
+        },
+        {
+          "path": "topanga/30m/dem/wbt/bound.WGS.geojson",
+          "source_relative_path": "dem/wbt/bound.WGS.geojson",
+          "bytes": 34935,
+          "sha256": "c1622e80dfd324187e3aff23f0ea0cba1094cb65192847ddcf6f26f8d1b73268"
+        }
+      ],
+      "outlet": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            353939.90881591244,
+            3776350.667680568
+          ]
+        },
+        "properties": {
+          "Id": 0,
+          "candidate_rank": null,
+          "candidates_considered": 0,
+          "centroid_col": null,
+          "centroid_row": null,
+          "column": 12,
+          "distance_to_boundary": null,
+          "easting": 353939.90881591244,
+          "epsg": 32611,
+          "northing": 3776350.667680568,
+          "outlet_downstream_of_mask": false,
+          "outlet_in_mask": false,
+          "outlet_junction_count": 1,
+          "outlet_mask_value": null,
+          "perimeter_stream_count": 0,
+          "requested_cell_offset": 0,
+          "requested_col": 12,
+          "requested_easting": 353939.90881591244,
+          "requested_lat": 34.11782199134691,
+          "requested_lon": -118.58391420736442,
+          "requested_northing": 3776350.667680568,
+          "requested_row": 67,
+          "row": 67,
+          "start_col": 12,
+          "start_distance_to_boundary": null,
+          "start_in_mask": false,
+          "start_mode": "requested",
+          "start_offset_cells": 0,
+          "start_row": 67,
+          "steps_beyond_mask": 0,
+          "steps_from_center": 0,
+          "steps_from_start": 0,
+          "watershed_cell_count": 0
+        }
+      }
+    },
+    {
+      "site": "topanga",
+      "resolution_m": 10,
+      "runid": "sorrowful-semicircle",
+      "source_url": "https://wc.bearhive.duckdns.org/weppcloud/runs/sorrowful-semicircle/config/",
+      "source_root": "/wc1/runs/so/sorrowful-semicircle",
+      "files": [
+        {
+          "path": "topanga/10m/dem/dem.tif",
+          "source_relative_path": "dem/dem.tif",
+          "bytes": 595162,
+          "sha256": "4b8d13f60905c5beebccce475c948998433d85f74632a09fe5b4cef2b23414e1",
+          "crs": "EPSG:32611",
+          "shape": [
+            391,
+            380
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            353566.5645379969,
+            0.0,
+            -10.0,
+            3778381.5143099623
+          ],
+          "dtype": "float32",
+          "nodata": -999999.0
+        },
+        {
+          "path": "topanga/10m/dem/dem.tif.meta",
+          "source_relative_path": "dem/dem.tif.meta",
+          "bytes": 1937,
+          "sha256": "4601e68d6b953df63e76c91047e07cf509ad50f3379ee16d06cbe38cbcd3abd2"
+        },
+        {
+          "path": "topanga/10m/dem/wbt/relief.tif",
+          "source_relative_path": "dem/wbt/relief.tif",
+          "bytes": 1192202,
+          "sha256": "9b6a47cf7375baa8694222a91095227a4598a16a09f7aed15cbca0fa50e5df19",
+          "crs": "EPSG:32611",
+          "shape": [
+            391,
+            380
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            353566.5645379969,
+            0.0,
+            -10.0,
+            3778381.5143099623
+          ],
+          "dtype": "float64",
+          "nodata": -999999.0
+        },
+        {
+          "path": "topanga/10m/dem/wbt/relief.diagnostics.json",
+          "source_relative_path": "dem/wbt/relief.diagnostics.json",
+          "bytes": 1147,
+          "sha256": "4717be4593166cf3847337c750bec8638c2f071ae65cd1a48a02bf588eb7b57f"
+        },
+        {
+          "path": "topanga/10m/dem/wbt/flovec.tif",
+          "source_relative_path": "dem/wbt/flovec.tif",
+          "bytes": 300722,
+          "sha256": "3c3d1f2cdb246d78ca420d9826677ec0ba9b28759c04b244ad9b607428e05cc4",
+          "crs": "EPSG:32611",
+          "shape": [
+            391,
+            380
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            353566.5645379969,
+            0.0,
+            -10.0,
+            3778381.5143099623
+          ],
+          "dtype": "int16",
+          "nodata": -32768.0
+        },
+        {
+          "path": "topanga/10m/dem/wbt/subwta.tif",
+          "source_relative_path": "dem/wbt/subwta.tif",
+          "bytes": 598186,
+          "sha256": "fd0443a357b14e1f9378e94de917677c8a7eccc29cd39a5daf4618922adfb897",
+          "crs": "EPSG:32611",
+          "shape": [
+            391,
+            380
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            353566.5645379969,
+            0.0,
+            -10.0,
+            3778381.5143099623
+          ],
+          "dtype": "float32",
+          "nodata": -Infinity
+        },
+        {
+          "path": "topanga/10m/dem/wbt/netful.tif",
+          "source_relative_path": "dem/wbt/netful.tif",
+          "bytes": 300722,
+          "sha256": "80003ff07b414b7b69c31f79d183c3b8944c430b55d9a0ea81495eb1d08acb94",
+          "crs": "EPSG:32611",
+          "shape": [
+            391,
+            380
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            353566.5645379969,
+            0.0,
+            -10.0,
+            3778381.5143099623
+          ],
+          "dtype": "int16",
+          "nodata": -32768.0
+        },
+        {
+          "path": "topanga/10m/dem/wbt/bound.tif",
+          "source_relative_path": "dem/wbt/bound.tif",
+          "bytes": 597882,
+          "sha256": "53fbf98ab6223acdaa5a1fbdfc60670dc51169dea3221a391e62ea3ac1285da9",
+          "crs": "EPSG:32611",
+          "shape": [
+            391,
+            380
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            353566.5645379969,
+            0.0,
+            -10.0,
+            3778381.5143099623
+          ],
+          "dtype": "int32",
+          "nodata": -32768.0
+        },
+        {
+          "path": "topanga/10m/dem/wbt/outlet.geojson",
+          "source_relative_path": "dem/wbt/outlet.geojson",
+          "bytes": 1019,
+          "sha256": "4e466491de91b399c457fd513ac09841ac8d4f299e1f1116f8a74028f07ddc1b"
+        },
+        {
+          "path": "topanga/10m/dem/wbt/bound.geojson",
+          "source_relative_path": "dem/wbt/bound.geojson",
+          "bytes": 129429,
+          "sha256": "01a14e0377c92cd072e25d53cd463416ed434cbae906ddfe0d4dc46d58723030"
+        },
+        {
+          "path": "topanga/10m/dem/wbt/bound.WGS.geojson",
+          "source_relative_path": "dem/wbt/bound.WGS.geojson",
+          "bytes": 111855,
+          "sha256": "e2162674b4d54ca6286c1879a913463a70bd4550d5a13d0d37bf37c15279b4ba"
+        }
+      ],
+      "outlet": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            353931.5645379969,
+            3776366.5143099623
+          ]
+        },
+        "properties": {
+          "Id": 0,
+          "candidate_rank": null,
+          "candidates_considered": 0,
+          "centroid_col": null,
+          "centroid_row": null,
+          "column": 36,
+          "distance_to_boundary": null,
+          "easting": 353931.5645379969,
+          "epsg": 32611,
+          "northing": 3776366.5143099623,
+          "outlet_downstream_of_mask": false,
+          "outlet_in_mask": false,
+          "outlet_junction_count": 1,
+          "outlet_mask_value": null,
+          "perimeter_stream_count": 0,
+          "requested_cell_offset": 0,
+          "requested_col": 37,
+          "requested_easting": 353941.5645379969,
+          "requested_lat": 34.11780631920858,
+          "requested_lon": -118.58374424147402,
+          "requested_northing": 3776346.5143099623,
+          "requested_row": 203,
+          "row": 201,
+          "start_col": 37,
+          "start_distance_to_boundary": null,
+          "start_in_mask": false,
+          "start_mode": "requested",
+          "start_offset_cells": 0,
+          "start_row": 203,
+          "steps_beyond_mask": 0,
+          "steps_from_center": 2,
+          "steps_from_start": 2,
+          "watershed_cell_count": 0
+        }
+      }
+    },
+    {
+      "site": "az_ponderosa",
+      "resolution_m": 30,
+      "runid": "offshore-remake",
+      "source_url": "https://wc.bearhive.duckdns.org/weppcloud/runs/offshore-remake/disturbed9002_wbt/",
+      "source_root": "/wc1/runs/of/offshore-remake",
+      "files": [
+        {
+          "path": "az_ponderosa/30m/dem/dem.tif",
+          "source_relative_path": "dem/dem.tif",
+          "bytes": 618500,
+          "sha256": "7c29e7086431a38d83b0d1d4e81e94114301e0ed49d1b0f7ecf30cce2f639bf6",
+          "crs": "EPSG:32613",
+          "shape": [
+            399,
+            387
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            346308.55051379104,
+            0.0,
+            -30.0,
+            3966020.8593238005
+          ],
+          "dtype": "float32",
+          "nodata": -999999.0
+        },
+        {
+          "path": "az_ponderosa/30m/dem/dem.tif.meta",
+          "source_relative_path": "dem/dem.tif.meta",
+          "bytes": 1930,
+          "sha256": "c0b6c7e68d183d21cd1de9e698e14d5ad231195c2ae3c450086d2dd87b6af519"
+        },
+        {
+          "path": "az_ponderosa/30m/dem/wbt/relief.tif",
+          "source_relative_path": "dem/wbt/relief.tif",
+          "bytes": 1238930,
+          "sha256": "55c50cc74a27ca9498a2e9f54815922fea75070d972c69a02b7f83f80a24a622",
+          "crs": "EPSG:32613",
+          "shape": [
+            399,
+            387
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            346308.55051379104,
+            0.0,
+            -30.0,
+            3966020.8593238005
+          ],
+          "dtype": "float64",
+          "nodata": -999999.0
+        },
+        {
+          "path": "az_ponderosa/30m/dem/wbt/relief.diagnostics.json",
+          "source_relative_path": "dem/wbt/relief.diagnostics.json",
+          "bytes": 1152,
+          "sha256": "c4f4b93b6428a04f4bf0dd96808f2bfbaf5cbcaa6adc7dbebc43392e40964e38"
+        },
+        {
+          "path": "az_ponderosa/30m/dem/wbt/flovec.tif",
+          "source_relative_path": "dem/wbt/flovec.tif",
+          "bytes": 312452,
+          "sha256": "764b1bd22b4a67f5a0d1d72d67cfb480b34ab39ee9c56686e80e16c68926d03d",
+          "crs": "EPSG:32613",
+          "shape": [
+            399,
+            387
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            346308.55051379104,
+            0.0,
+            -30.0,
+            3966020.8593238005
+          ],
+          "dtype": "int16",
+          "nodata": -32768.0
+        },
+        {
+          "path": "az_ponderosa/30m/dem/wbt/subwta.tif",
+          "source_relative_path": "dem/wbt/subwta.tif",
+          "bytes": 621582,
+          "sha256": "764d6a6e503262c0e0af8b0fcae24530ec82a74f10f51c468ae673351dad352c",
+          "crs": "EPSG:32613",
+          "shape": [
+            399,
+            387
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            346308.55051379104,
+            0.0,
+            -30.0,
+            3966020.8593238005
+          ],
+          "dtype": "float32",
+          "nodata": -Infinity
+        },
+        {
+          "path": "az_ponderosa/30m/dem/wbt/netful.tif",
+          "source_relative_path": "dem/wbt/netful.tif",
+          "bytes": 312452,
+          "sha256": "712fa7baaa5a9bda01fd98fc4c5735ee8e68616a99610f9d0d6e9c2825725c31",
+          "crs": "EPSG:32613",
+          "shape": [
+            399,
+            387
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            346308.55051379104,
+            0.0,
+            -30.0,
+            3966020.8593238005
+          ],
+          "dtype": "int16",
+          "nodata": -32768.0
+        },
+        {
+          "path": "az_ponderosa/30m/dem/wbt/bound.tif",
+          "source_relative_path": "dem/wbt/bound.tif",
+          "bytes": 621278,
+          "sha256": "e72870a1e8369b694bbe26398bab6dba5650a6c3dedb22eb4da497e2de1debc6",
+          "crs": "EPSG:32613",
+          "shape": [
+            399,
+            387
+          ],
+          "transform": [
+            30.0,
+            0.0,
+            346308.55051379104,
+            0.0,
+            -30.0,
+            3966020.8593238005
+          ],
+          "dtype": "int32",
+          "nodata": -32768.0
+        },
+        {
+          "path": "az_ponderosa/30m/dem/wbt/outlet.geojson",
+          "source_relative_path": "dem/wbt/outlet.geojson",
+          "bytes": 1022,
+          "sha256": "f98095c46124c8885234fa7ca8ec78ee3a45530982655d22da3caf348abe82c7"
+        },
+        {
+          "path": "az_ponderosa/30m/dem/wbt/bound.geojson",
+          "source_relative_path": "dem/wbt/bound.geojson",
+          "bytes": 123917,
+          "sha256": "836f009603f04849d8f9d757a3cb881853d023c62b0b8ecc18bd65cbda81be20"
+        },
+        {
+          "path": "az_ponderosa/30m/dem/wbt/bound.WGS.geojson",
+          "source_relative_path": "dem/wbt/bound.WGS.geojson",
+          "bytes": 107081,
+          "sha256": "abe6610d6eff1cac88dffa098dc28a54b1262c84947f7b4b39ef613672927ff6"
+        }
+      ],
+      "outlet": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            348903.55051379104,
+            3955535.8593238005
+          ]
+        },
+        "properties": {
+          "Id": 0,
+          "candidate_rank": null,
+          "candidates_considered": 0,
+          "centroid_col": null,
+          "centroid_row": null,
+          "column": 86,
+          "distance_to_boundary": null,
+          "easting": 348903.55051379104,
+          "epsg": 32613,
+          "northing": 3955535.8593238005,
+          "outlet_downstream_of_mask": false,
+          "outlet_in_mask": false,
+          "outlet_junction_count": 1,
+          "outlet_mask_value": null,
+          "perimeter_stream_count": 0,
+          "requested_cell_offset": 0,
+          "requested_col": 86,
+          "requested_easting": 348903.55051379104,
+          "requested_lat": 35.73238809243358,
+          "requested_lon": -106.67083115927025,
+          "requested_northing": 3955535.8593238005,
+          "requested_row": 349,
+          "row": 349,
+          "start_col": 86,
+          "start_distance_to_boundary": null,
+          "start_in_mask": false,
+          "start_mode": "requested",
+          "start_offset_cells": 0,
+          "start_row": 349,
+          "steps_beyond_mask": 0,
+          "steps_from_center": 0,
+          "steps_from_start": 0,
+          "watershed_cell_count": 0
+        }
+      }
+    },
+    {
+      "site": "az_ponderosa",
+      "resolution_m": 10,
+      "runid": "full-crocodile",
+      "source_url": "https://wc.bearhive.duckdns.org/weppcloud/runs/full-crocodile/config/",
+      "source_root": "/wc1/runs/fu/full-crocodile",
+      "files": [
+        {
+          "path": "az_ponderosa/10m/dem/dem.tif",
+          "source_relative_path": "dem/dem.tif",
+          "bytes": 5575860,
+          "sha256": "29252ee37842d81e51d4913fc6884877245c850f5b5e98f7c55f9b09fd9a6b53",
+          "crs": "EPSG:32613",
+          "shape": [
+            1198,
+            1162
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            346302.0919053316,
+            0.0,
+            -10.0,
+            3966018.2352388427
+          ],
+          "dtype": "float32",
+          "nodata": -999999.0
+        },
+        {
+          "path": "az_ponderosa/10m/dem/dem.tif.meta",
+          "source_relative_path": "dem/dem.tif.meta",
+          "bytes": 1940,
+          "sha256": "e83b59b467409d1886f578fc10d54f04f2dcf99ed516dcc7052d94b751c85105"
+        },
+        {
+          "path": "az_ponderosa/10m/dem/wbt/relief.tif",
+          "source_relative_path": "dem/wbt/relief.tif",
+          "bytes": 11146626,
+          "sha256": "870000c5e3e74812235fdd0cc8788ff7827ff1066f3a64c30385e611d45df575",
+          "crs": "EPSG:32613",
+          "shape": [
+            1198,
+            1162
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            346302.0919053316,
+            0.0,
+            -10.0,
+            3966018.2352388427
+          ],
+          "dtype": "float64",
+          "nodata": -999999.0
+        },
+        {
+          "path": "az_ponderosa/10m/dem/wbt/relief.diagnostics.json",
+          "source_relative_path": "dem/wbt/relief.diagnostics.json",
+          "bytes": 1151,
+          "sha256": "4bc611de92605b753f097b34662727b13d5a54e0d200eb5d7d9f04a33d76e574"
+        },
+        {
+          "path": "az_ponderosa/10m/dem/wbt/flovec.tif",
+          "source_relative_path": "dem/wbt/flovec.tif",
+          "bytes": 2794170,
+          "sha256": "6e851760076f47c348f7fda317c406e1e3ab143979b18f5a88b7863a46be31d8",
+          "crs": "EPSG:32613",
+          "shape": [
+            1198,
+            1162
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            346302.0919053316,
+            0.0,
+            -10.0,
+            3966018.2352388427
+          ],
+          "dtype": "int16",
+          "nodata": -32768.0
+        },
+        {
+          "path": "az_ponderosa/10m/dem/wbt/subwta.tif",
+          "source_relative_path": "dem/wbt/subwta.tif",
+          "bytes": 5578626,
+          "sha256": "59ddd137ed6503208d1c9c037c0b904250be957ce77d707aba88d6bac4285dac",
+          "crs": "EPSG:32613",
+          "shape": [
+            1198,
+            1162
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            346302.0919053316,
+            0.0,
+            -10.0,
+            3966018.2352388427
+          ],
+          "dtype": "float32",
+          "nodata": -Infinity
+        },
+        {
+          "path": "az_ponderosa/10m/dem/wbt/netful.tif",
+          "source_relative_path": "dem/wbt/netful.tif",
+          "bytes": 2794170,
+          "sha256": "2fdae421ebe85f94d6590b919002103ae80155a654137730a967f2c749a5ff35",
+          "crs": "EPSG:32613",
+          "shape": [
+            1198,
+            1162
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            346302.0919053316,
+            0.0,
+            -10.0,
+            3966018.2352388427
+          ],
+          "dtype": "int16",
+          "nodata": -32768.0
+        },
+        {
+          "path": "az_ponderosa/10m/dem/wbt/bound.tif",
+          "source_relative_path": "dem/wbt/bound.tif",
+          "bytes": 5578322,
+          "sha256": "acc407dc17b3608c4bb65cdfe110bc9d50079eb951193b56850a3af9e0cf65a6",
+          "crs": "EPSG:32613",
+          "shape": [
+            1198,
+            1162
+          ],
+          "transform": [
+            10.0,
+            0.0,
+            346302.0919053316,
+            0.0,
+            -10.0,
+            3966018.2352388427
+          ],
+          "dtype": "int32",
+          "nodata": -32768.0
+        },
+        {
+          "path": "az_ponderosa/10m/dem/wbt/outlet.geojson",
+          "source_relative_path": "dem/wbt/outlet.geojson",
+          "bytes": 1025,
+          "sha256": "3b8a1f950a3fc72afef268d0b0c489a6ab43c67d0fd54571e00b907c0d495c07"
+        },
+        {
+          "path": "az_ponderosa/10m/dem/wbt/bound.geojson",
+          "source_relative_path": "dem/wbt/bound.geojson",
+          "bytes": 377008,
+          "sha256": "774cdc4f012120804460a8f174b4e32ee0570be9e2cc35cffca3fdc73f01b500"
+        },
+        {
+          "path": "az_ponderosa/10m/dem/wbt/bound.WGS.geojson",
+          "source_relative_path": "dem/wbt/bound.WGS.geojson",
+          "bytes": 331974,
+          "sha256": "c6fcc4a5130462af511a53fc58f13707f0766dba0d76f404d9a2dbc07fbb8df0"
+        }
+      ],
+      "outlet": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            348897.0919053316,
+            3955533.2352388427
+          ]
+        },
+        "properties": {
+          "Id": 0,
+          "candidate_rank": null,
+          "candidates_considered": 0,
+          "centroid_col": null,
+          "centroid_row": null,
+          "column": 259,
+          "distance_to_boundary": null,
+          "easting": 348897.0919053316,
+          "epsg": 32613,
+          "northing": 3955533.2352388427,
+          "outlet_downstream_of_mask": false,
+          "outlet_in_mask": false,
+          "outlet_junction_count": 1,
+          "outlet_mask_value": null,
+          "perimeter_stream_count": 0,
+          "requested_cell_offset": 0,
+          "requested_col": 260,
+          "requested_easting": 348907.0919053316,
+          "requested_lat": 35.73222621805862,
+          "requested_lon": -106.67076606035236,
+          "requested_northing": 3955533.2352388427,
+          "requested_row": 1048,
+          "row": 1048,
+          "start_col": 260,
+          "start_distance_to_boundary": null,
+          "start_in_mask": false,
+          "start_mode": "requested",
+          "start_offset_cells": 0,
+          "start_row": 1048,
+          "steps_beyond_mask": 0,
+          "steps_from_center": 1,
+          "steps_from_start": 1,
+          "watershed_cell_count": 0
+        }
+      }
+    }
+  ]
+}

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- Paired canonical 10 m/30 m terrain fixtures for the Staley M3 study: Moscow
+  Mountain, Topanga, and user-labeled AZ ponderosa, including raster/vector
+  boundaries, outlet metadata, provenance hashes, and raster snapshots.
+
 ### Changed
 
 - Least-cost breach searches now use ordered parallel evaluation, validated
