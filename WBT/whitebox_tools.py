@@ -4990,6 +4990,19 @@ Okay, that's it for now.
         if esri_pntr: args.append("--esri_pntr")
         return self.run_tool('d8_flow_accumulation', args, callback)  # returns 1 if error
 
+    def staley_slope_sbs(self, dem, sbs, mask, output_dir, elevation_units,
+                         sbs_classes, callback=None):
+        """Compute strict Horn slope and whole-watershed three-state SBS intersection.
+
+        sbs_classes lists unburned,low,moderate,high integer codes, e.g. "0,1,2,3".
+        output_dir must be fresh; summary.json marks a complete result.
+        See docs/staley_slope_sbs.md for units, support and format restrictions.
+        """
+        args = [f"--dem='{dem}'", f"--sbs='{sbs}'", f"--mask='{mask}'",
+                f"--output_dir='{output_dir}'", f"--elevation_units={elevation_units}",
+                f"--sbs_classes={sbs_classes}"]
+        return self.run_tool("staley_slope_sbs", args, callback)
+
     def d8_upstream_relief(self, dem, d8_pntr, output, area,
                            elevation_units, coverage=None, callback=None):
         """Compute upstream raw-elevation relief (m) and area (m2).

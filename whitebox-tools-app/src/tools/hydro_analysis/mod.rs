@@ -115,5 +115,7 @@ pub use self::unnest_basins::UnnestBasins;
 pub use self::upslope_depression_storage::UpslopeDepressionStorage;
 pub use self::watershed::Watershed;
 
+mod staley_slope_sbs;
+pub use self::staley_slope_sbs::StaleySlopeSbs;
 mod d8_upstream_relief;
 pub use self::d8_upstream_relief::D8UpstreamRelief;

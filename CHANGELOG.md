@@ -4,6 +4,13 @@
 
 ### Added
 
+- `StaleySlopeSbs`: dedicated strict Horn 3×3 slope, three-state burn
+  intersection, independent support diagnostics and full-watershed T bounds,
+  with both Python bindings and fresh-directory completion-marker publication.
+  Explicit units, class mapping and bounded prepared-GeoTIFF validation;
+  analytical/security CLI probes and six-terrain method sensitivity evidence.
+  See `docs/staley_slope_sbs.md`. Existing Slope/FVSlope behavior is unchanged.
+
 - `D8UpstreamRelief`: independent supplied-pointer upstream raw-elevation
   maximum-minus-outlet, area and optional potential-truncation outputs, with
   both Python bindings and analytical/generated-output checks. See
