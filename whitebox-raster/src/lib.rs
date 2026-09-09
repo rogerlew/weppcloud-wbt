@@ -1333,6 +1333,8 @@ pub struct RasterConfigs {
     pub coordinate_ref_system_wkt: String,
     pub model_tiepoint: Vec<f64>,
     pub model_pixel_scale: [f64; 3],
+    /// Original GeoTIFF scale before legacy decoder assumptions, when read.
+    pub source_pixel_scale: Option<[f64; 3]>,
     pub model_transformation: [f64; 16],
     pub geo_key_directory: Vec<u16>,
     pub geo_double_params: Vec<f64>,
@@ -1372,6 +1374,7 @@ impl Default for RasterConfigs {
             coordinate_ref_system_wkt: "not specified".to_string(),
             model_tiepoint: vec![],
             model_pixel_scale: [0f64; 3],
+            source_pixel_scale: None,
             model_transformation: [0f64; 16],
             geo_key_directory: vec![],
             geo_double_params: vec![],

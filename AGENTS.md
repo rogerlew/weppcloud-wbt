@@ -9,7 +9,7 @@
 - None.
 
 ## Most Recent Completed ExecPlan
-- `docs/work-packages/20260907_wbt_runtime_concurrency/prompts/completed/wbt_runtime_concurrency_execplan.md`
+- `/workdir/wepppy/docs/work-packages/20260908_staley_m3_wbt_terrain/prompts/completed/staley_m3_wbt_terrain_execplan.md`
 
 ## Required Workflow for Active ExecPlan Work
 1. Read this `AGENTS.md` first.

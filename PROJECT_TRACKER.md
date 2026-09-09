@@ -8,6 +8,7 @@ No repository-local work packages are active.
 
 | Work package | Closed | Outcome |
 | --- | --- | --- |
+| Staley M3 terrain (canonical package in sibling WEPPpy `docs/work-packages/20260908_staley_m3_wbt_terrain/`) | 2026-09-09 | Registered D8UpstreamRelief, both bindings, verified outputs and 24-pair study; recommend 10 m for initial M3; no runtime binary installation |
 | [WBT runtime concurrency](docs/work-packages/20260907_wbt_runtime_concurrency/package.md) | 2026-09-07 | Process-local WBT_MAX_PROCS, worker default 12, CLI isolation and container-wrapper validation |
 | [Least-cost breach optimization](docs/work-packages/20260907_breach_least_cost_optimization/package.md) | 2026-09-07 | Full channel computation in 420.566 s on 12 cores; 30 exact parity checks and 147 Rust tests pass |
 | [20260730 FillDepressions edge outlets](docs/work-packages/20260730_fill_depressions_edge_outlet/package.md) | 2026-07-30 | Preserved the full depression inventory while correcting outer-edge fill levels on all four sides |

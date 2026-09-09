@@ -661,10 +661,14 @@ pub fn read_geotiff<'a>(
         }
     };
 
-    // let num_samples = match ifd_map.get(&277) {
-    //     Some(ifd) => ifd.interpret_as_u16()[0],
-    //     _ => 0,
-    // };
+    // Preserve the source sample count so single-band consumers can reject
+    // multi-sample inputs instead of trusting the default RasterConfigs value.
+    configs.bands = match ifd_map.get(&277) {
+        Some(ifd) => u8::try_from(ifd.interpret_as_u16()[0]).map_err(|_| {
+            Error::new(ErrorKind::InvalidData, "Unsupported TIFF sample count.")
+        })?,
+        None => 1,
+    };
 
     match ifd_map.get(&280) {
         Some(ifd) => {
@@ -791,6 +795,7 @@ pub fn read_geotiff<'a>(
         _ => {}
     }
 
+    configs.source_pixel_scale = Some(configs.model_pixel_scale);
     if configs.model_tiepoint.len() == 6 {
         // see if the model_pixel_scale tag was actually specified
         if configs.model_pixel_scale[0] == 0.0 {
@@ -4176,6 +4181,14 @@ pub fn write_geotiff<'a>(r: &'a mut Raster) -> Result<(), Error> {
         }
     }
 
+    // Persist tool provenance in the standard ImageDescription ASCII field.
+    if !r.configs.metadata.is_empty() {
+        let description = format!("{:<8}\0", r.configs.metadata.join("\n"));
+        ifd_entries.push(Entry::new(270, DT_ASCII, description.len() as u64,
+            larger_values_data.len() as u64));
+        for byte in description.as_bytes() { larger_values_data.write_u8(*byte)?; }
+    }
+
     // Compression tag (259)
     if use_compression {
         ifd_entries.push(Entry::new(
@@ -4213,8 +4226,12 @@ pub fn write_geotiff<'a>(r: &'a mut Raster) -> Result<(), Error> {
         pi as u64,
     ));
 
-    // StripOffsets tag (273)
-    if !is_big_tiff {
+    // StripOffsets tag (273): a single strip value fits inline in the IFD.
+    if r.configs.rows == 1 {
+        let offset = if use_compression { strip_offsets[0] } else { header_size };
+        ifd_entries.push(Entry::new(TAG_STRIPOFFSETS,
+            if is_big_tiff { DT_TIFF_LONG8 } else { DT_LONG }, 1, offset));
+    } else if !is_big_tiff {
         ifd_entries.push(Entry::new(
             TAG_STRIPOFFSETS,
             DT_LONG,
@@ -4292,8 +4309,13 @@ pub fn write_geotiff<'a>(r: &'a mut Raster) -> Result<(), Error> {
     // RowsPerStrip tag (278)
     ifd_entries.push(Entry::new(TAG_ROWSPERSTRIP, DT_SHORT, 1u64, 1u64));
 
-    // StripByteCounts tag (279)
-    if !is_big_tiff {
+    // StripByteCounts tag (279): a single strip byte count also fits inline.
+    if r.configs.rows == 1 {
+        let length = if use_compression { strip_byte_counts[0] }
+            else { r.configs.columns as u64 * total_bytes_per_pixel as u64 };
+        ifd_entries.push(Entry::new(TAG_STRIPBYTECOUNTS,
+            if is_big_tiff { DT_TIFF_LONG8 } else { DT_LONG }, 1, length));
+    } else if !is_big_tiff {
         ifd_entries.push(Entry::new(
             TAG_STRIPBYTECOUNTS,
             DT_LONG,
@@ -4980,6 +5002,8 @@ pub fn write_geotiff<'a>(r: &'a mut Raster) -> Result<(), Error> {
     // Write the larger_values_data //
     //////////////////////////////////
     write_bytes(&mut writer, larger_values_data.get_inner())?;
+    // Surface final buffered I/O errors to fallible callers before publication.
+    writer.flush()?;
 
     Ok(())
 }

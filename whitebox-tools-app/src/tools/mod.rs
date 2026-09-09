@@ -164,6 +164,7 @@ impl ToolManager {
         tool_names.push("BurnStreamsAtRoads".to_string());
         tool_names.push("D8FlowAccumulation".to_string());
         tool_names.push("D8MassFlux".to_string());
+        tool_names.push("D8UpstreamRelief".to_string());
         tool_names.push("D8Pointer".to_string());
         tool_names.push("DepthInSink".to_string());
         tool_names.push("DInfFlowAccumulation".to_string());
@@ -702,6 +703,7 @@ impl ToolManager {
             "burnstreamsatroads" => Some(Box::new(hydro_analysis::BurnStreamsAtRoads::new())),
             "d8flowaccumulation" => Some(Box::new(hydro_analysis::D8FlowAccumulation::new())),
             "d8massflux" => Some(Box::new(hydro_analysis::D8MassFlux::new())),
+            "d8upstreamrelief" => Some(Box::new(hydro_analysis::D8UpstreamRelief::new())),
             "d8pointer" => Some(Box::new(hydro_analysis::D8Pointer::new())),
             "depthinsink" => Some(Box::new(hydro_analysis::DepthInSink::new())),
             "dinfflowaccumulation" => Some(Box::new(hydro_analysis::DInfFlowAccumulation::new())),

@@ -114,3 +114,6 @@ pub use self::topaz_condition_dem::TopazConditionDem;
 pub use self::unnest_basins::UnnestBasins;
 pub use self::upslope_depression_storage::UpslopeDepressionStorage;
 pub use self::watershed::Watershed;
+
+mod d8_upstream_relief;
+pub use self::d8_upstream_relief::D8UpstreamRelief;

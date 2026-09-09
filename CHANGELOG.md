@@ -4,11 +4,21 @@
 
 ### Added
 
+- `D8UpstreamRelief`: independent supplied-pointer upstream raw-elevation
+  maximum-minus-outlet, area and optional potential-truncation outputs, with
+  both Python bindings and analytical/generated-output checks. See
+  `docs/d8_upstream_relief.md`.
+
 - Paired canonical 10 m/30 m terrain fixtures for the Staley M3 study: Moscow
   Mountain, Topanga, and user-labeled AZ ponderosa, including raster/vector
   boundaries, outlet metadata, provenance hashes, and raster snapshots.
 
 ### Changed
+
+- Repaired GeoTIFF single-row strip encoding, persisted ImageDescription
+  provenance, preserved source sample count/original spacing for validation,
+  and surfaced buffered write failures. Legacy assumed-spacing behavior is
+  preserved. Added strict terrain-command no-replace output publication.
 
 - Least-cost breach searches now use ordered parallel evaluation, validated
   reuse of identical flat-edge searches, and generation-tagged scratch storage.

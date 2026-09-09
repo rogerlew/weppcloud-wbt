@@ -4990,6 +4990,21 @@ Okay, that's it for now.
         if esri_pntr: args.append("--esri_pntr")
         return self.run_tool('d8_flow_accumulation', args, callback)  # returns 1 if error
 
+    def d8_upstream_relief(self, dem, d8_pntr, output, area,
+                           elevation_units, coverage=None, callback=None):
+        """Compute upstream raw-elevation relief (m) and area (m2).
+
+        Requires aligned WGS84 UTM GeoTIFFs, WBT pointers and elevation_units='m'.
+        Outputs must be new paths. Optional coverage flags potential upstream
+        truncation (1) from edge/NoData adjacency. Includes the outlet cell.
+        """
+        args = [f"--dem={dem}", f"--d8_pntr={d8_pntr}",
+                f"--output={output}", f"--area={area}",
+                f"--elevation_units={elevation_units}"]
+        if coverage is not None:
+            args.append(f"--coverage={coverage}")
+        return self.run_tool("d8_upstream_relief", args, callback)
+
     def d8_mass_flux(self, dem, loading, efficiency, absorption, output, callback=None):
         """Performs a D8 mass flux calculation.
 
