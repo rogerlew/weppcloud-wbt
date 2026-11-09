@@ -19,8 +19,12 @@ import sys
 import platform
 import re
 import json
+import queue
+import signal
+import threading
+import time
 # import shutil
-from subprocess import CalledProcessError, Popen, PIPE, STDOUT
+from subprocess import CalledProcessError, Popen, PIPE, STDOUT, TimeoutExpired
 
 from ._paths import whitebox_tools_exe
 
@@ -81,12 +85,13 @@ class WhiteboxTools(object):
         else:
             self.ext = ''
         exe = whitebox_tools_exe()
-        self.exe_path = path.dirname(exe)
+        self.exe_path = path.dirname(path.abspath(exe))
         self.exe_name = path.basename(exe)
+        self.__env = os.environ.copy()
         bundled_proj_data = path.join(self.exe_path, "proj")
         if path.isdir(bundled_proj_data):
-            os.environ.setdefault("PROJ_DATA", bundled_proj_data)
-            os.environ.setdefault("PROJ_LIB", bundled_proj_data)
+            self.__env.setdefault("PROJ_DATA", bundled_proj_data)
+            self.__env.setdefault("PROJ_LIB", bundled_proj_data)
 
         self.work_dir = ""
         if verbose is None:
@@ -96,27 +101,26 @@ class WhiteboxTools(object):
 
         self.__compress_rasters = False
         self.__max_procs = -1
-        self.__env =  os.environ.copy()
 
         if raise_on_error is None:
             self.set_raise_on_error(False)
         else:
             self.set_raise_on_error(raise_on_error)
 
-        if os.path.isfile('settings.json'):
-            # read the settings.json file if it exists
-            with open('settings.json', 'r') as settings_file:
-                data = settings_file.read()
-
-            # parse file
-            settings = json.loads(data)
+        settings_path = path.join(self.exe_path, 'settings.json')
+        try:
+            with open(settings_path, 'r') as settings_file:
+                settings = json.load(settings_file)
+        except FileNotFoundError:
+            settings = None
+        if settings is not None:
             self.work_dir = str(settings['working_directory'])
             if verbose is None:
-                self.verbose = str(settings['verbose_mode'])
+                self.verbose = settings['verbose_mode']
             self.__compress_rasters = settings['compress_rasters']
             self.__max_procs = settings['max_procs']
             if raise_on_error is None:
-                self.set_raise_on_error(bool(settings['raise_on_error']))
+                self.set_raise_on_error(bool(settings.get('raise_on_error', False)))
 
         self.cancel_op = False
 
@@ -124,14 +128,12 @@ class WhiteboxTools(object):
         self.start_minimized = False
         
     def set_raise_on_error(self, val: bool):
-        """
-        Sets the flag used by WhiteboxTools to determine whether to raise an error.
-        """
-        if running_windows:
-            Warning("env is not passed to Popen on Windows in `run_tool`.  Someone needs to test this to make sure it works.")
+        self.__raise_on_error = bool(val)
 
-        self.__env['RUST_BACKTRACE'] = str(int(val))
-        self.__raise_on_error = val
+    def _build_process_env(self):
+        env = self.__env.copy()
+        env['RUST_BACKTRACE'] = str(int(self.__raise_on_error))
+        return env
 
     def get_raise_on_error(self):
         """
@@ -143,7 +145,7 @@ class WhiteboxTools(object):
         ''' 
         Sets the directory to the WhiteboxTools executable file.
         '''
-        self.exe_path = path_str
+        self.exe_path = path.abspath(path_str)
 
     def set_working_dir(self, path_str):
         ''' 
@@ -161,62 +163,9 @@ class WhiteboxTools(object):
         return self.verbose
 
     def set_verbose_mode(self, val=True):
-        ''' 
-        Sets verbose mode. If verbose mode is False, tools will not
-        print output messages. Tools will frequently provide substantial
-        feedback while they are operating, e.g. updating progress for 
-        various sub-routines. When the user has scripted a workflow
-        that ties many tools in sequence, this level of tool output
-        can be problematic. By setting verbose mode to False, these
-        messages are suppressed and tools run as background processes.
-        '''
+        """Set this instance's invocation option without modifying installation defaults."""
         self.verbose = val
-
-        try:
-            callback = self.default_callback
-
-            os.chdir(self.exe_path)
-            args2 = []
-            args2.append("." + path.sep + self.exe_name)
-            
-            if self.verbose:
-                args2.append("-v")
-            else:
-                args2.append("-v=false")
-
-            proc = None
-
-            if running_windows and self.start_minimized == True:
-                si = STARTUPINFO()
-                si.dwFlags = STARTF_USESHOWWINDOW
-                si.wShowWindow = 7 #Set window minimized and not activated
-                proc = Popen(args2, shell=False, stdout=PIPE,
-                            stderr=STDOUT, bufsize=1, universal_newlines=True,
-                            encoding="utf-8", errors="replace",
-                            startupinfo=si)
-            else:
-                proc = Popen(args2, shell=False, stdout=PIPE,
-                            stderr=STDOUT, bufsize=1, universal_newlines=True,
-                            encoding="utf-8", errors="replace")
-
-            while proc is not None:
-                line = proc.stdout.readline()
-                sys.stdout.flush()
-                if line != '':
-                    if not self.cancel_op:
-                        callback(line.strip())
-                    else:
-                        self.cancel_op = False
-                        proc.terminate()
-                        return 2
-
-                else:
-                    break
-
-            return 0
-        except (OSError, ValueError, CalledProcessError) as err:
-            callback(str(err))
-            return 1
+        return 0
 
     def set_default_callback(self, callback_func):
         '''
@@ -225,112 +174,132 @@ class WhiteboxTools(object):
         self.default_callback = callback_func
 
     def set_compress_rasters(self, val=True):
-        ''' 
-        Sets the flag used by WhiteboxTools to determine whether to use compression for output rasters.
-        '''
+        """Set this instance's invocation option without modifying installation defaults."""
         self.__compress_rasters = val
+        return 0
 
-        try:
-            callback = self.default_callback
-
-            os.chdir(self.exe_path)
-            args2 = []
-            args2.append("." + path.sep + self.exe_name)
-            
-            if self.__compress_rasters:
-                args2.append("--compress_rasters=true")
-            else:
-                args2.append("--compress_rasters=false")
-
-            proc = None
-
-            if running_windows and self.start_minimized == True:
-                si = STARTUPINFO()
-                si.dwFlags = STARTF_USESHOWWINDOW
-                si.wShowWindow = 7 #Set window minimized and not activated
-                proc = Popen(args2, shell=False, stdout=PIPE,
-                            stderr=STDOUT, bufsize=1, universal_newlines=True,
-                            encoding="utf-8", errors="replace",
-                            startupinfo=si)
-            else:
-                proc = Popen(args2, shell=False, stdout=PIPE,
-                            stderr=STDOUT, bufsize=1, universal_newlines=True,
-                            encoding="utf-8", errors="replace")
-
-            while proc is not None:
-                line = proc.stdout.readline()
-                sys.stdout.flush()
-                if line != '':
-                    if not self.cancel_op:
-                        callback(line.strip())
-                    else:
-                        self.cancel_op = False
-                        proc.terminate()
-                        return 2
-                else:
-                    break
-
-            return 0
-        except (OSError, ValueError, CalledProcessError) as err:
-
-            callback(str(err))
-            return 1
-    
     def get_compress_rasters(self):
         return self.__compress_rasters
         
     def set_max_procs(self, val=-1):
-        ''' 
-        Sets the flag used by WhiteboxTools to determine whether to use compression for output rasters.
-        '''
+        """Set this instance's invocation option without modifying installation defaults."""
         self.__max_procs = val
+        return 0
 
-        try:
-            callback = self.default_callback
-
-            os.chdir(self.exe_path)
-            args2 = []
-            args2.append("." + path.sep + self.exe_name)
-            
-            args2.append(f"--max_procs={val}")
-
-            proc = None
-
-            if running_windows and self.start_minimized == True:
-                si = STARTUPINFO()
-                si.dwFlags = STARTF_USESHOWWINDOW
-                si.wShowWindow = 7 # Set window minimized and not activated
-                proc = Popen(args2, shell=False, stdout=PIPE,
-                            stderr=STDOUT, bufsize=1, universal_newlines=True,
-                            encoding="utf-8", errors="replace",
-                            startupinfo=si)
-            else:
-                proc = Popen(args2, shell=False, stdout=PIPE,
-                            stderr=STDOUT, bufsize=1, universal_newlines=True,
-                            encoding="utf-8", errors="replace")
-
-            while proc is not None:
-                line = proc.stdout.readline()
-                sys.stdout.flush()
-                if line != '':
-                    if not self.cancel_op:
-                        callback(line.strip())
-                    else:
-                        self.cancel_op = False
-                        proc.terminate()
-                        return 2
-                else:
-                    break
-
-            return 0
-        except (OSError, ValueError, CalledProcessError) as err:
-            callback(str(err))
-            return 1
-    
     def get_max_procs(self):
         return self.__max_procs
-    
-    def run_tool(self, tool_name, args, callback=None):
+
+    def _terminate_process_tree(self, proc, grace_seconds=5.0):
+        """Terminate and reap a WhiteboxTools process and its descendants."""
+        if running_windows:
+            if proc.poll() is not None:
+                proc.wait()
+                return
+            proc.terminate()
+            try:
+                proc.wait(timeout=grace_seconds)
+                return
+            except TimeoutExpired:
+                pass
+            proc.kill()
+            proc.wait()
+            return
+
+        process_group_id = proc.pid
+        try:
+            os.killpg(process_group_id, signal.SIGTERM)
+        except ProcessLookupError:
+            proc.wait()
+            return
+
+        try:
+            proc.wait(timeout=grace_seconds)
+        except TimeoutExpired:
+            pass
+        try:
+            os.killpg(process_group_id, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        proc.wait()
+
+    def _read_process_output(self, proc, callback, timeout):
+        """Stream output while enforcing cancellation and an optional timeout."""
+        output_queue = queue.Queue()
+        stream_complete = object()
+
+        def read_stdout():
+            try:
+                for line in iter(proc.stdout.readline, ''):
+                    output_queue.put(line)
+            finally:
+                output_queue.put(stream_complete)
+
+        reader = threading.Thread(target=read_stdout, daemon=True)
+        reader.start()
+        deadline = None if timeout is None else time.monotonic() + float(timeout)
+
+        try:
+            while True:
+                if self.cancel_op:
+                    self.cancel_op = False
+                    self._terminate_process_tree(proc)
+                    return 2
+
+                wait_seconds = 0.1
+                if deadline is not None:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        self._terminate_process_tree(proc)
+                        raise TimeoutError(
+                            f"WhiteboxTools process timed out after {timeout} seconds"
+                        )
+                    wait_seconds = min(wait_seconds, remaining)
+
+                try:
+                    item = output_queue.get(timeout=wait_seconds)
+                except queue.Empty:
+                    continue
+
+                if item is stream_complete:
+                    break
+                if self.verbose:
+                    callback(item.strip())
+                if self.__raise_on_error and item.startswith('Error:'):
+                    self._terminate_process_tree(proc)
+                    raise WhiteboxAppError(item.strip())
+
+            while proc.poll() is None:
+                if self.cancel_op:
+                    self.cancel_op = False
+                    self._terminate_process_tree(proc)
+                    return 2
+
+                wait_seconds = 0.1
+                if deadline is not None:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        self._terminate_process_tree(proc)
+                        raise TimeoutError(
+                            f"WhiteboxTools process timed out after {timeout} seconds"
+                        )
+                    wait_seconds = min(wait_seconds, remaining)
+
+                try:
+                    proc.wait(timeout=wait_seconds)
+                except TimeoutExpired:
+                    continue
+
+            return_code = proc.returncode
+            if return_code != 0:
+                raise CalledProcessError(return_code, proc.args)
+            return 0
+        finally:
+            if proc.poll() is None:
+                self._terminate_process_tree(proc)
+            reader.join(timeout=1.0)
+            proc.stdout.close()
+
+    def run_tool(self, tool_name, args, callback=None, timeout=None):
         ''' 
         Runs a tool and specifies tool arguments.
         Returns 0 if completes without error.
@@ -341,13 +310,14 @@ class WhiteboxTools(object):
             if callback is None:
                 callback = self.default_callback
 
-            os.chdir(self.exe_path)
             args2 = []
-            args2.append("." + path.sep + self.exe_name)
+            args2.append(path.join(self.exe_path, self.exe_name))
             args2.append("--run=\"{}\"".format(to_camelcase(tool_name)))
 
             if self.work_dir.strip() != "":
                 args2.append("--wd=\"{}\"".format(self.work_dir))
+
+            args2.append(f"--max_procs={self.__max_procs}")
 
             for arg in args:
                 args2.append(arg)
@@ -375,35 +345,20 @@ class WhiteboxTools(object):
                 si = STARTUPINFO()
                 si.dwFlags = STARTF_USESHOWWINDOW
                 si.wShowWindow = 7 #Set window minimized and not activated
-                proc = Popen(args2, shell=False, stdout=PIPE,
+                proc = Popen(args2, cwd=self.exe_path, shell=False, stdout=PIPE,
                             stderr=STDOUT, bufsize=1, universal_newlines=True,
                             encoding="utf-8", errors="replace",
-                            startupinfo=si)
+                            startupinfo=si,
+                            env=self._build_process_env())
             else:
-                proc = Popen(args2, shell=False, stdout=PIPE,
+                proc = Popen(args2, cwd=self.exe_path, shell=False, stdout=PIPE,
                             stderr=STDOUT, bufsize=1, universal_newlines=True,
                             encoding="utf-8", errors="replace",
-                            env=self.__env)
+                            env=self._build_process_env(),
+                            start_new_session=not running_windows)
 
-            while proc is not None:
-                line = proc.stdout.readline()
-
-                sys.stdout.flush()
-                if line != '':
-                    if not self.cancel_op:
-                        if self.verbose:
-                            callback(line.strip())
-                    else:
-                        self.cancel_op = False
-                        proc.terminate()
-                        return 2
-                    if self.__raise_on_error and line.startswith('Error:'):
-                        raise WhiteboxAppError(line.strip())
-                else:
-                    break
-
-            return 0
-        except (OSError, ValueError, CalledProcessError) as err:
+            return self._read_process_output(proc, callback, timeout)
+        except (OSError, ValueError, CalledProcessError, TimeoutError, TimeoutExpired) as err:
             if self.__raise_on_error:
                 if proc is None:
                     raise WhiteboxToolsRunningError(f"An error occurred while running the tool '{tool_name}'. {str(err)}")
@@ -418,12 +373,11 @@ class WhiteboxTools(object):
         Retrieves the help description for WhiteboxTools.
         '''
         try:
-            os.chdir(self.exe_path)
             args = []
-            args.append("." + os.path.sep + self.exe_name)
+            args.append(path.join(self.exe_path, self.exe_name))
             args.append("-h")
 
-            proc = Popen(args, shell=False, stdout=PIPE,
+            proc = Popen(args, cwd=self.exe_path, shell=False, stdout=PIPE,
                          stderr=STDOUT, bufsize=1, universal_newlines=True,
                             encoding="utf-8", errors="replace")
             ret = ""
@@ -443,14 +397,13 @@ class WhiteboxTools(object):
         Retrieves the license information for WhiteboxTools.
         '''
         try:
-            os.chdir(self.exe_path)
             args = []
-            args.append("." + os.path.sep + self.exe_name)
+            args.append(path.join(self.exe_path, self.exe_name))
             args.append("--license")
             if toolname is not None:
                 args.append(f"={toolname}")
 
-            proc = Popen(args, shell=False, stdout=PIPE,
+            proc = Popen(args, cwd=self.exe_path, shell=False, stdout=PIPE,
                          stderr=STDOUT, bufsize=1, universal_newlines=True,
                             encoding="utf-8", errors="replace")
             ret = ""
@@ -470,12 +423,11 @@ class WhiteboxTools(object):
         Retrieves the version information for WhiteboxTools.
         '''
         try:
-            os.chdir(self.exe_path)
             args = []
-            args.append("." + os.path.sep + self.exe_name)
+            args.append(path.join(self.exe_path, self.exe_name))
             args.append("--version")
 
-            proc = Popen(args, shell=False, stdout=PIPE,
+            proc = Popen(args, cwd=self.exe_path, shell=False, stdout=PIPE,
                          stderr=STDOUT, bufsize=1, universal_newlines=True,
                             encoding="utf-8", errors="replace")
             ret = ""
@@ -495,12 +447,11 @@ class WhiteboxTools(object):
         Retrieves the help description for a specific tool.
         '''
         try:
-            os.chdir(self.exe_path)
             args = []
-            args.append("." + os.path.sep + self.exe_name)
+            args.append(path.join(self.exe_path, self.exe_name))
             args.append("--toolhelp={}".format(to_camelcase(tool_name)))
 
-            proc = Popen(args, shell=False, stdout=PIPE,
+            proc = Popen(args, cwd=self.exe_path, shell=False, stdout=PIPE,
                          stderr=STDOUT, bufsize=1, universal_newlines=True,
                             encoding="utf-8", errors="replace")
             ret = ""
@@ -520,12 +471,11 @@ class WhiteboxTools(object):
         Retrieves the tool parameter descriptions for a specific tool.
         '''
         try:
-            os.chdir(self.exe_path)
             args = []
-            args.append("." + os.path.sep + self.exe_name)
+            args.append(path.join(self.exe_path, self.exe_name))
             args.append("--toolparameters={}".format(to_camelcase(tool_name)))
 
-            proc = Popen(args, shell=False, stdout=PIPE,
+            proc = Popen(args, cwd=self.exe_path, shell=False, stdout=PIPE,
                          stderr=STDOUT, bufsize=1, universal_newlines=True,
                             encoding="utf-8", errors="replace")
             ret = ""
@@ -545,12 +495,11 @@ class WhiteboxTools(object):
         Retrieve the toolbox for a specific tool.
         '''
         try:
-            os.chdir(self.exe_path)
             args = []
-            args.append("." + os.path.sep + self.exe_name)
+            args.append(path.join(self.exe_path, self.exe_name))
             args.append("--toolbox={}".format(to_camelcase(tool_name)))
 
-            proc = Popen(args, shell=False, stdout=PIPE,
+            proc = Popen(args, cwd=self.exe_path, shell=False, stdout=PIPE,
                          stderr=STDOUT, bufsize=1, universal_newlines=True,
                             encoding="utf-8", errors="replace")
             ret = ""
@@ -571,12 +520,11 @@ class WhiteboxTools(object):
         on the projects source code repository.
         '''
         try:
-            os.chdir(self.exe_path)
             args = []
-            args.append("." + os.path.sep + self.exe_name)
+            args.append(path.join(self.exe_path, self.exe_name))
             args.append("--viewcode={}".format(to_camelcase(tool_name)))
 
-            proc = Popen(args, shell=False, stdout=PIPE,
+            proc = Popen(args, cwd=self.exe_path, shell=False, stdout=PIPE,
                          stderr=STDOUT, bufsize=1, universal_newlines=True,
                             encoding="utf-8", errors="replace")
             ret = ""
@@ -596,15 +544,14 @@ class WhiteboxTools(object):
         Lists all available tools in WhiteboxTools.
         '''
         try:
-            os.chdir(self.exe_path)
             args = []
-            args.append("." + os.path.sep + self.exe_name)
+            args.append(path.join(self.exe_path, self.exe_name))
             args.append("--listtools")
             if len(keywords) > 0:
                 for kw in keywords:
                     args.append(kw)
 
-            proc = Popen(args, shell=False, stdout=PIPE,
+            proc = Popen(args, cwd=self.exe_path, shell=False, stdout=PIPE,
                          stderr=STDOUT, bufsize=1, universal_newlines=True,
                             encoding="utf-8", errors="replace")
             ret = {}

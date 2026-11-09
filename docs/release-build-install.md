@@ -17,7 +17,7 @@ Run from `/workdir/weppcloud-wbt` unless noted.
 1. Build the release binary.
 
 ```bash
-cargo build --locked -p whitebox-tools-app --release
+cargo build --locked -p whitebox-tools-app -p whitebox_plugins --release
 ```
 
 2. Install the binary into the tracked runtime artifact path.
@@ -28,6 +28,14 @@ chmod 755 WBT/whitebox_tools.new
 mv -f WBT/whitebox_tools.new WBT/whitebox_tools
 ```
 
+Rebuild and install every bundled plugin with the dispatcher: they consume the
+invocation configuration protocol from `whitebox_common`. After retaining prior
+binary hashes/backups, copy each `target/release/<exe>` named by the
+`WBT/plugins/*.json` manifests to `WBT/plugins/<exe>.new`, chmod 755, and rename
+it over `WBT/plugins/<exe>`. Verify built/installed hashes for every plugin.
+Never mix a new dispatcher with old plugin binaries. Third-party binaries need
+separate configuration-propagation acceptance.
+
 3. Optionally create a local runtime configuration.
 
 ```bash
@@ -36,9 +44,10 @@ cp settings.example.json WBT/settings.json
 
 `settings.example.json` mirrors the compiled defaults. Keep
 `working_directory` empty unless the installation needs a persistent default
-directory. `WBT/settings.json` is runtime state: WhiteboxTools reads and may
-rewrite it beside the executable, so it is intentionally ignored and must not
-be committed.
+directory. `WBT/settings.json` supplies optional installation defaults. Tool
+runs only read them; explicit CLI configuration commands without `--run` can
+update them atomically. The file remains local and must not be committed. See
+[stateless execution](stateless-execution.md).
 
 4. Verify tool availability from the installed binary.
 

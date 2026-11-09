@@ -1295,7 +1295,7 @@ impl ToolManager {
                     } else {
                         ""
                     };
-                    // environment flags should be consumed by plugins using the settings.json file instead.
+                    // Forward effective invocation options to rebuilt bundled plugins.
                     let mut args2 = vec![];
                     for a in 0..args.len() {
                         if args[a] != "-v" && args[a] != "--compress_rasters" {
@@ -1316,16 +1316,19 @@ impl ToolManager {
                     );
                     let mut subcommand = vec!["run".to_string()];
                     subcommand.extend_from_slice(&args);
+                    let runtime_config = whitebox_common::configs::get_configs()?;
                     let mut child = Command::new(exe)
+                        .env(whitebox_common::configs::RUNTIME_CONFIG_ENV,
+                             serde_json::to_string(&runtime_config)?)
                         .arg("run")
                         .args(&args2)
-                        .spawn()
-                        .expect("failed to execute process");
+                        .spawn()?;
 
-                    let ecode = child.wait().expect("failed to wait on child");
+                    let ecode = child.wait()?;
 
                     if !ecode.success() {
-                        println!("Failure to run plugin subprocess.");
+                        return Err(Error::new(ErrorKind::Other,
+                            format!("Plugin {} failed with {}", tool_name, ecode)));
                     }
                 } else {
                     // We couldn't find an executable file for the tool, but still check to see if it's

@@ -363,7 +363,7 @@ fn run() -> Result<(), Error> {
     // }
 
     if run_tool {
-        // Validate before writing settings or starting any tool work.
+        // Validate before starting tool work; tool execution never saves defaults.
         if let Some(limit) = whitebox_common::configs::max_procs_override()? {
             if configs.verbose_mode {
                 println!("WBT_MAX_PROCS={} (process-local thread limit)", limit);
@@ -371,7 +371,9 @@ fn run() -> Result<(), Error> {
         }
     }
 
-    if configs_modified {
+    if run_tool {
+        whitebox_common::configs::set_runtime_config(configs.clone())?;
+    } else if configs_modified {
         whitebox_common::configs::save_configs(&configs)?;
     }
 
@@ -427,7 +429,7 @@ fn help() {
 
 The following commands are recognized:
 --cd, --wd          Changes the working directory; used in conjunction with --run flag.
---compress_rasters  Sets the compress_raster option in the settings.json file; determines if newly created rasters are compressed. e.g. --compress_rasters=true
+--compress_rasters  Controls output compression for this tool run; without --run, saves the installation default. e.g. --compress_rasters=true
 -h, --help          Prints help information.
 -l, --license       Prints the whitebox-tools license. Tool names may also be used, --license=\"Slope\"
 --listtools         Lists all available tools. Keywords may also be used, --listtools slope.

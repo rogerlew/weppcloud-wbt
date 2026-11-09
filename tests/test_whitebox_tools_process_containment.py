@@ -1,4 +1,6 @@
+import importlib
 import importlib.util
+import sys
 import os
 from pathlib import Path
 import tempfile
@@ -143,6 +145,20 @@ class WhiteboxToolsProcessContainmentTests(unittest.TestCase):
         while process_is_live(child_pid) and time.monotonic() < deadline:
             time.sleep(0.05)
         self.assertFalse(process_is_live(child_pid))
+
+    def test_packaged_wrapper_contains_processes(self) -> None:
+        sys.path.insert(0, str(REPO_ROOT / 'python'))
+        try:
+            module = importlib.import_module('weppcloud_wbt.whitebox_tools')
+        finally:
+            sys.path.pop(0)
+        with tempfile.TemporaryDirectory() as directory:
+            executable_dir = Path(directory)
+            write_fake_whitebox_tools(executable_dir)
+            with patch.dict(os.environ, {'WHITEBOX_TOOLS_EXE': str(executable_dir / 'whitebox_tools')}):
+                self.assert_nonzero_exit_contract(module, executable_dir)
+                self.assert_timeout_kills_process_group(module, executable_dir, mode='timeout')
+                self.assert_timeout_kills_process_group(module, executable_dir, mode='closed_output_timeout')
 
     def test_both_wrappers_forward_timeout_and_contain_processes(self) -> None:
         original_cwd = Path.cwd()

@@ -22,6 +22,13 @@
 
 ### Changed
 
+- Tool execution now uses immutable invocation configuration without rewriting
+  shared settings; bundled plugins inherit it. All three Python bindings keep
+  options and subprocess cwd local, and the packaged binding now reaps failed
+  or cancelled tool subprocesses. Explicit settings commands publish atomically,
+  preserving Linux ownership, mode, ACLs, attributes and symlink targets. See
+  `docs/stateless-execution.md` and its parallel generated-output regressions.
+
 - Repaired GeoTIFF single-row strip encoding, persisted ImageDescription
   provenance, preserved source sample count/original spacing for validation,
   and surfaced buffered write failures. Legacy assumed-spacing behavior is
