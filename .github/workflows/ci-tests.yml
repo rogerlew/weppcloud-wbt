@@ -15,6 +15,12 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libproj-dev libsqlite3-dev libtiff-dev libclang-dev pkg-config cmake
+          pkg-config --atleast-version=9.2.0 proj
+
       - name: Run Rust tests
         run: cargo test --workspace --lib --tests --bins
 

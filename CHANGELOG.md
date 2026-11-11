@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Test CI explicitly installs native PROJ and bindgen build prerequisites,
+  matching the release build's system-library approach. A PROJ version preflight
+  prevents an unintended bundled-source build on fresh Ubuntu runners.
+
 ### Added
 
 - `StaleySlopeSbs`: dedicated strict Horn 3×3 slope, three-state burn
