@@ -6,7 +6,8 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Keep native PROJ/bindgen compatibility stable; qualify new runner images explicitly.
+    runs-on: ubuntu-24.04
     name: Run tests
     steps:
       - name: Checkout

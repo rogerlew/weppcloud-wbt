@@ -6,7 +6,9 @@
 
 - Test CI explicitly installs native PROJ and bindgen build prerequisites,
   matching the release build's system-library approach. A PROJ version preflight
-  prevents an unintended bundled-source build on fresh Ubuntu runners.
+  prevents an unintended bundled-source build on fresh Ubuntu runners. Pin the
+  runner to Ubuntu 24.04: Ubuntu 26.04 also exposed incompatible generated PROJ
+  bindings with the current Rust dependency versions.
 
 ### Added
 
