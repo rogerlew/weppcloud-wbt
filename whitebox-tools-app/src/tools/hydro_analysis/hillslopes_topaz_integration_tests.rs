@@ -171,6 +171,44 @@ fn expected_parent_channel_id(hillslope_id: i64) -> Option<i64> {
     }
 }
 
+fn generate_network(fixture_root: &std::path::Path, output_subwta: &std::path::Path, output_netw: &std::path::Path) {
+    let tool = HillslopesTopaz::new();
+    let args = vec![
+        format!("--dem={}", fixture_root.join("relief.tif").display()),
+        format!("--d8_pntr={}", fixture_root.join("flovec.tif").display()),
+        format!("--streams={}", fixture_root.join("netw0.tif").display()),
+        format!("--pour_pts={}", fixture_root.join("outlet.geojson").display()),
+        format!("--watershed={}", fixture_root.join("bound.tif").display()),
+        format!("--chnjnt={}", fixture_root.join("chnjnt.tif").display()),
+        format!("--order={}", fixture_root.join("strahler.tif").display()),
+        format!("--subwta={}", output_subwta.display()),
+        format!("--netw={}", output_netw.display()),
+    ];
+    tool.run(args, "", false)
+        .expect("hillslopes_topaz fixture integration should run");
+}
+
+#[test]
+fn upstream_area_includes_both_tributaries_and_excludes_the_receiving_cell() {
+    let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../test_fixtures/upstream_node_area");
+    let raster = temp_output_path("upstream_area");
+    let network = raster.with_extension("tsv");
+    generate_network(&fixture, &raster, &network);
+    let rows = parse_netw_tsv(&network);
+    assert_eq!(rows.len(), 3);
+    for row in rows {
+        let expected = match (row.fields[4].as_str(), row.fields[5].as_str()) {
+            ("2", "1") => 10_000.0,
+            ("2", "5") => 20_000.0,
+            ("4", "3") => 70_000.0,
+            head => panic!("unexpected channel head {:?}", head),
+        };
+        assert_eq!(row.areaup, expected);
+    }
+    cleanup_output_path(&raster);
+    cleanup_output_path(&network);
+}
+
 #[test]
 fn hillslopes_topaz_integration_fixture_regression() {
     // Regression lock: stable, representative multi-cell topology fixture.
@@ -185,32 +223,14 @@ fn hillslopes_topaz_integration_fixture_regression() {
         .expect("repo root should resolve");
     let fixture_root = repo_root.join(format!("test_fixtures/{}", FIXTURE_NAME));
 
-    let dem_path = fixture_root.join("relief.tif");
-    let d8_path = fixture_root.join("flovec.tif");
     let stream_path = fixture_root.join("netw0.tif");
-    let pour_pts_path = fixture_root.join("outlet.geojson");
     let watershed_path = fixture_root.join("bound.tif");
-    let chnjnt_path = fixture_root.join("chnjnt.tif");
-    let order_path = fixture_root.join("strahler.tif");
     let reference_subwta_path = fixture_root.join("subwta.tif");
     let reference_netw_path = fixture_root.join("netw.tsv");
     let output_subwta = temp_output_path(&format!("{}_subwta", FIXTURE_NAME));
     let output_netw = output_subwta.with_extension("netw.tsv");
 
-    let tool = HillslopesTopaz::new();
-    let args = vec![
-        format!("--dem={}", dem_path.display()),
-        format!("--d8_pntr={}", d8_path.display()),
-        format!("--streams={}", stream_path.display()),
-        format!("--pour_pts={}", pour_pts_path.display()),
-        format!("--watershed={}", watershed_path.display()),
-        format!("--chnjnt={}", chnjnt_path.display()),
-        format!("--order={}", order_path.display()),
-        format!("--subwta={}", output_subwta.display()),
-        format!("--netw={}", output_netw.display()),
-    ];
-    tool.run(args, "", false)
-        .expect("hillslopes_topaz fixture integration should run");
+    generate_network(&fixture_root, &output_subwta, &output_netw);
 
     assert!(
         output_subwta.exists(),

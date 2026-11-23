@@ -89,7 +89,7 @@ whitebox_tools -r=HillslopesTopaz \
 | `ds_z`, `us_z` | DEM elevation at downstream and upstream endpoints |
 | `drop_m` | Elevation drop from upstream to downstream end |
 | `order` | Strahler order at upstream endpoint |
-| `areaup` | Area of left and right hillslopes draining to the link (m²) |
+| `areaup` | Cumulative area draining into the upstream node, excluding the node cell itself (m²). |
 | `inflow0_id`, `inflow1_id`, `inflow2_id` | Upstream link indices (−1 if absent) |
 | `is_headwater` | True when the link has no upstream channel inflows |
 | `is_outlet` | True for the single outlet link |

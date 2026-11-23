@@ -6,7 +6,7 @@ Created: 09/06/2025
 
 use crate::tools::*;
 use geojson::{GeoJson, Geometry, Value};
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::env;
 use std::f64;
 use std::fs::File;
@@ -1205,7 +1205,6 @@ impl WhiteboxTool for HillslopesTopaz {
         let mut flood_flow_steps = 0usize;
         let mut flood_assignments = 0usize;
 
-        let mut subwta_counts = HashMap::new();
         if verbose {
             println!("Flood filling hillslope values.");
         }
@@ -1352,10 +1351,6 @@ impl WhiteboxTool for HillslopesTopaz {
                             if profile {
                                 flood_assignments += 1;
                             }
-                            subwta_counts
-                                .entry(found_topaz_id as i32)
-                                .and_modify(|e| *e += 1)
-                                .or_insert(1);
                         }
 
                         let next = next_idx[backtrack_idx as usize];
@@ -1390,17 +1385,38 @@ impl WhiteboxTool for HillslopesTopaz {
             println!("Calculating area for each link.");
         }
 
-        for link in &mut links {
-            let topaz_id = link.topaz_id;
-
-            let mut count = 0;
-            for i in 1..3 {
-                let hill_id = (topaz_id - i) as i32;
-                if let Some(&area_count) = subwta_counts.get(&hill_id) {
-                    count += area_count;
-                }
+        // Accumulate each cell once along the same masked D8 edges used for labeling.
+        // A node starts at zero so the TOPAZ UPSTR. count excludes the node itself.
+        let mut pending = vec![0u8; num_cells];
+        for &downstream in &next_idx {
+            if downstream >= 0 {
+                pending[downstream as usize] += 1;
             }
-            link.areaup = count as f64 * cellsize_x * cellsize_y; // area in m2
+        }
+        let mut ready: Vec<i32> = next_idx.iter().enumerate()
+            .filter(|&(i, &downstream)| downstream >= 0 && pending[i] == 0)
+            .map(|(i, _)| i as i32)
+            .collect();
+        let mut upstream_cells = vec![0u32; num_cells];
+        while let Some(cell) = ready.pop() {
+            let downstream = next_idx[cell as usize];
+            if downstream < 0 {
+                continue;
+            }
+            let dest = downstream as usize;
+            upstream_cells[dest] += upstream_cells[cell as usize] + 1;
+            pending[dest] -= 1;
+            if pending[dest] == 0 {
+                ready.push(downstream);
+            }
+        }
+        for link in &mut links {
+            let head = link.us.0 as usize * columns_usize + link.us.1 as usize;
+            if pending[head] != 0 {
+                return Err(Error::new(ErrorKind::InvalidData,
+                    format!("Unresolved upstream flow at channel {}", link.topaz_id)));
+            }
+            link.areaup = f64::from(upstream_cells[head]) * cellsize_x * cellsize_y;
         }
 
         if verbose {

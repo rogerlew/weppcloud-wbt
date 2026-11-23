@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Restore cumulative upstream-node drainage area in HillslopesTopaz network tables. Regenerate legacy WBT tables and dependent channel widths before reusing them.
+
 - Test CI explicitly installs native PROJ and bindgen build prerequisites,
   matching the release build's system-library approach. A PROJ version preflight
   prevents an unintended bundled-source build on fresh Ubuntu runners. Pin the
